@@ -4,7 +4,7 @@
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2023.1+-blue.svg)](https://www.home-assistant.io/)
 [![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/)
 [![GitHub Release](https://img.shields.io/github/v/release/clayauld/satcom-forecast)](https://github.com/clayauld/satcom-forecast/releases)
-[![GitHub License](https://img.shields.io/github/license/clayauld/satcom-forecast)](https://github.com/clayauld/satcom-forecast/blob/main/LICENSE)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/clayauld/satcom-forecast/validation.yml?branch=main)](https://github.com/clayauld/satcom-forecast/actions)
 [![Discussions](https://img.shields.io/badge/discussions-welcome-brightgreen.svg)](https://github.com/clayauld/satcom-forecast/discussions)
 [![Support the project](https://img.shields.io/badge/support%20the%20project-☕%20Buy%20me%20a%20coffee-orange.svg)](https://www.buymeacoffee.com/clayauld)

@@ -1,6 +1,5 @@
 {
   "name": "Satellite Communicator Weather Forecast",
-  "description": "A Home Assistant integration that fetches weather forecasts from satellite communicator devices via email and provides them as sensors.",
   "content_in_root": false,
   "country": "ALL"
 }
