@@ -1,11 +1,14 @@
 {
   "name": "Satellite Communicator Weather Forecast",
+  "description": "A Home Assistant integration that fetches weather forecasts from satellite communicator devices via email and provides them as sensors.",
   "content_in_root": false,
-  "domain": "satcom_forecast",
-  "repository": "https://github.com/clayauld/satcom-forecast",
-  "documentation": "https://github.com/clayauld/satcom-forecast",
-  "issue_tracker": "https://github.com/clayauld/satcom-forecast/issues",
-  "country": "any",
-  "iot_class": "cloud_polling",
-  "integration_type": "integration"
+  "country": "ALL",
+  "topics": [
+    "homeassistant",
+    "home-assistant",
+    "integration",
+    "weather",
+    "satellite",
+    "forecast"
+  ]
 }

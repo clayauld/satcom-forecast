@@ -10,5 +10,7 @@
     "beautifulsoup4>=4.11.0"
   ],
   "dependencies": [],
-  "codeowners": ["@clayauld"]
+  "codeowners": ["@clayauld"],
+  "iot_class": "cloud_polling",
+  "integration_type": "integration"
 }
