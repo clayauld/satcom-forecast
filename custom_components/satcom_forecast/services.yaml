@@ -1,0 +1,12 @@
+# Define service entries if needed later.
+
+satcom_forecast_set_debug:
+  name: "Set Debug Logging"
+  description: "Enable or disable debug logging for the SatCom Forecast integration"
+  fields:
+    enabled:
+      name: "Debug Enabled"
+      description: "Whether to enable debug logging"
+      required: true
+      selector:
+        boolean:

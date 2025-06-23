@@ -1,0 +1,7 @@
+DOMAIN = "satcom_forecast"
+DEFAULT_IMAP_SERVER = "imap.gmail.com"
+DEFAULT_SMTP_SERVER = "smtp.gmail.com"
+DEFAULT_IMAP_PORT = 993
+DEFAULT_SMTP_PORT = 587
+DEFAULT_FORMAT = "summary"
+DEFAULT_DEBUG = False
