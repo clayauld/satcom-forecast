@@ -45,7 +45,11 @@ def clean_forecast_text(text):
                 if part.endswith(':') and any(day in part for day in ['Today', 'Tonight', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']):
                     current_period = part
                 elif part and current_period:
-                    cleaned_lines.append(f"{current_period} {part}")
+                    # Don't add extra space if the part already starts with a space
+                    if part.startswith(' '):
+                        cleaned_lines.append(f"{current_period}{part}")
+                    else:
+                        cleaned_lines.append(f"{current_period} {part}")
                     current_period = ""
         else:
             cleaned_lines.append(line)
@@ -53,6 +57,14 @@ def clean_forecast_text(text):
     result = '\n'.join(cleaned_lines)
     _LOGGER.debug("Cleaned forecast text, output length: %d characters", len(result))
     return result
+
+def normalize_spaces(text):
+    """Normalize spaces in text - replace multiple spaces with single spaces."""
+    # Replace multiple spaces with single spaces
+    text = re.sub(r' +', ' ', text)
+    # Ensure proper spacing after periods (single space)
+    text = re.sub(r'\. +', '. ', text)
+    return text
 
 def format_full_forecast(text):
     """Format the full forecast with proper line breaks."""
@@ -64,6 +76,8 @@ def format_full_forecast(text):
     for line in lines:
         line = line.strip()
         if ':' in line and any(day in line for day in ['Today', 'Tonight', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']):
+            # Normalize spaces in the line
+            line = normalize_spaces(line)
             formatted_lines.append(line)
     
     result = '\n'.join(formatted_lines)
