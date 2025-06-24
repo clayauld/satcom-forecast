@@ -3,15 +3,26 @@ from email.header import decode_header
 
 _LOGGER = logging.getLogger(__name__)
 
-def check_imap_for_gps(host, port, username, password, folder="INBOX"):
-    _LOGGER.debug("Checking IMAP for GPS coordinates - Host: %s, Port: %s, User: %s, Folder: %s", 
-                 host, port, username, folder)
+def check_imap_for_gps(host, port, username, password, folder="INBOX", security="SSL"):
+    _LOGGER.debug("Checking IMAP for GPS coordinates - Host: %s, Port: %s, User: %s, Folder: %s, Security: %s", 
+                 host, port, username, folder, security)
     
     mail = None
     try:
-        _LOGGER.debug("Establishing IMAP SSL connection to %s:%s", host, port)
-        mail = imaplib.IMAP4_SSL(host, port)
-        _LOGGER.debug("IMAP SSL connection established successfully")
+        # Establish connection based on security type
+        if security == "SSL":
+            _LOGGER.debug("Establishing IMAP SSL connection to %s:%s", host, port)
+            mail = imaplib.IMAP4_SSL(host, port)
+            _LOGGER.debug("IMAP SSL connection established successfully")
+        elif security == "STARTTLS":
+            _LOGGER.debug("Establishing IMAP connection to %s:%s with STARTTLS", host, port)
+            mail = imaplib.IMAP4(host, port)
+            mail.starttls()
+            _LOGGER.debug("IMAP STARTTLS connection established successfully")
+        else:  # None
+            _LOGGER.debug("Establishing unencrypted IMAP connection to %s:%s", host, port)
+            mail = imaplib.IMAP4(host, port)
+            _LOGGER.debug("IMAP unencrypted connection established successfully")
         
         _LOGGER.debug("Attempting login for user: %s", username)
         mail.login(username, password)

@@ -11,13 +11,17 @@
 
 A Home Assistant integration for fetching NOAA weather forecasts and sending them via email to satellite communicators.
 
+<!-- [![My Home Assistant](https://my.home-assistant.io/badge.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=clayauld&repository=satcom-forecast&category=Integration) -->
+
 ## Features
 
 - Fetches NOAA weather forecasts for GPS coordinates
 - Supports multiple forecast formats (summary, compact, full)
 - Email delivery to satellite communicators (ZOLEO, InReach)
 - Automatic message splitting for device character limits
-- Configurable polling interval (1-1440 minutes)
+- Configurable scanning interval (1-1440 minutes)
+- Two-step configuration process (email setup + forecast settings)
+- Automatic folder detection and dropdown selection
 - IMAP folder validation with helpful error messages
 - Debug logging for troubleshooting
 - Comprehensive test suite
@@ -72,11 +76,30 @@ satcom-forecast/
 
 ## Configuration
 
-1. Go to **Settings** > **Devices & Services**
-2. Click **Add Integration**
-3. Search for "SatCom Forecast"
-4. Enter your email configuration and GPS coordinates
-5. Choose your preferred forecast format
+The integration uses a two-step configuration process similar to Mail and Packages:
+
+### Step 1: Email Configuration
+Enter your IMAP and SMTP server details to connect to your email account:
+- **IMAP Host**: Your email provider's IMAP server (e.g., imap.gmail.com)
+- **IMAP Port**: IMAP port (usually 993 for SSL, 143 for STARTTLS, 143 for None)
+- **IMAP Security**: Choose SSL (recommended), STARTTLS, or None (unencrypted)
+- **Username**: Your email address or username (depending on your provider)
+- **Password**: Your email password or app password
+- **SMTP Host**: Your email provider's SMTP server (e.g., smtp.gmail.com)
+- **SMTP Port**: SMTP port (usually 587 for TLS)
+- **SMTP Username**: Your email address
+- **SMTP Password**: Your email password or app password
+
+### Step 2: Forecast Configuration
+After successfully connecting to your email account, configure the forecast settings:
+- **Mail Folder**: Select from available folders in your email account
+- **Forecast Format**: Choose summary, compact, or full format
+- **Device Type**: Select ZOLEO or InReach
+- **Character Limit**: Set message length limit (0 = no limit)
+- **Debug Logging**: Enable detailed logging for troubleshooting
+- **Scanning Interval**: How often to check for new emails (1-1440 minutes)
+
+The integration will automatically detect and list all available folders in your email account, making it easy to select the correct folder to monitor.
 
 ## Reconfiguration
 
@@ -105,9 +128,9 @@ The integration supports three forecast formats:
 
 See [docs/format_comparison.md](docs/format_comparison.md) for detailed format comparisons.
 
-## Polling Interval Configuration
+## Scanning Interval Configuration
 
-The integration checks for new GPS coordinate emails at regular intervals. You can configure this polling interval during setup or reconfiguration:
+The integration checks for new GPS coordinate emails at regular intervals. You can configure this scanning interval during setup or reconfiguration:
 
 - **Range**: 1 to 1440 minutes (1 minute to 24 hours)
 - **Default**: 5 minutes
@@ -115,12 +138,12 @@ The integration checks for new GPS coordinate emails at regular intervals. You c
 
 ### Considerations
 
-- **Faster polling** (1-5 minutes): More responsive but higher email server load
-- **Slower polling** (15+ minutes): Lower server load but delayed responses
+- **Faster scanning** (1-5 minutes): More responsive but higher email server load
+- **Slower scanning** (15+ minutes): Lower server load but delayed responses
 - **Email server limits**: Some providers have rate limits on IMAP connections
 - **Battery usage**: For mobile devices, consider longer intervals to save battery
 
-The polling interval change takes effect immediately when you save the configuration.
+The scanning interval change takes effect immediately when you save the configuration.
 
 ## Testing
 
@@ -208,18 +231,18 @@ Or in the Home Assistant UI, go to Developer Tools > Logs and filter for "satcom
 
 **Error**: `Failed to select folder 'Forecasts': NO` or `[NONEXISTENT] Unknown Mailbox: Forecasts`
 
-**Solution**: The integration now validates IMAP folders during configuration and shows helpful error messages. If you encounter this error:
+**Solution**: The integration now validates email connections and shows available folders during configuration. If you encounter this error:
 
-1. **During initial setup**: The configuration will show an error with available folder names
+1. **During initial setup**: The configuration will automatically detect and list available folders
 2. **During reconfiguration**: The options form will display the error and prevent saving
 3. **Common folder names**: Try "INBOX", "Sent", "Drafts", or check your email client for exact folder names
 4. **Case sensitivity**: Some email providers are case-sensitive with folder names
 
 The integration will now:
-- ✅ List available folders when validation fails
-- ✅ Show specific error messages for folder issues
-- ✅ Prevent configuration with invalid folders
-- ✅ Provide helpful suggestions for common folder names
+- ✅ **Automatically detect folders**: Lists all available folders in your email account
+- ✅ **Dropdown selection**: Choose from available folders instead of typing
+- ✅ **Show specific error messages**: Clear guidance when folder issues occur
+- ✅ **Prevent configuration errors**: Validates folder selection before saving
 
 #### Integration Not Detected
 

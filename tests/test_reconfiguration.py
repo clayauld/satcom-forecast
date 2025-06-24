@@ -13,10 +13,10 @@ class TestReconfigurationLogic(unittest.TestCase):
     """Test reconfiguration logic without Home Assistant dependencies."""
 
     def test_version_number(self):
-        """Test that version number is correctly set to 3."""
+        """Test that version number is correctly set to 4."""
         # This would be tested in the actual config flow
-        expected_version = 3
-        self.assertEqual(expected_version, 3)
+        expected_version = 4
+        self.assertEqual(expected_version, 4)
 
     def test_polling_interval_configuration(self):
         """Test the polling interval configuration logic."""
@@ -87,7 +87,7 @@ class TestReconfigurationLogic(unittest.TestCase):
     def test_schema_structure(self):
         """Test that the expected schema fields are present."""
         expected_fields = [
-            "imap_host", "imap_port", "imap_user", "imap_pass",
+            "imap_host", "imap_port", "imap_security", "imap_user", "imap_pass",
             "smtp_host", "smtp_port", "smtp_user", "smtp_pass",
             "imap_folder", "forecast_format", "device_type",
             "character_limit", "debug", "polling_interval"
@@ -95,18 +95,19 @@ class TestReconfigurationLogic(unittest.TestCase):
         
         # This would be tested against the actual schema
         # For now, just verify our expected structure
-        self.assertEqual(len(expected_fields), 14)
+        self.assertEqual(len(expected_fields), 15)
         self.assertIn("imap_pass", expected_fields)
         self.assertIn("smtp_pass", expected_fields)
         self.assertIn("polling_interval", expected_fields)
+        self.assertIn("imap_security", expected_fields)
 
     def test_migration_logic(self):
-        """Test migration logic from version 2 to 3."""
+        """Test migration logic from version 2 to 4."""
         # Simulate migration logic
         old_version = 2
-        new_version = 3
+        new_version = 4
         
-        # Version 2 to 3 migration should preserve all data and add polling_interval
+        # Version 2 to 4 migration should preserve all data and add polling_interval and imap_security
         old_data = {
             "imap_host": "imap.gmail.com",
             "imap_port": 993,
@@ -123,10 +124,12 @@ class TestReconfigurationLogic(unittest.TestCase):
             "debug": False
         }
         
-        # Migration should preserve all data and add polling_interval
+        # Migration should preserve all data and add polling_interval and imap_security
         migrated_data = {**old_data}
         if "polling_interval" not in migrated_data:
             migrated_data["polling_interval"] = 5  # Default value
+        if "imap_security" not in migrated_data:
+            migrated_data["imap_security"] = "SSL"  # Default value
         
         # Verify all data is preserved
         for key, value in old_data.items():
@@ -136,8 +139,12 @@ class TestReconfigurationLogic(unittest.TestCase):
         self.assertIn("polling_interval", migrated_data)
         self.assertEqual(migrated_data["polling_interval"], 5)
         
+        # Verify imap_security is added
+        self.assertIn("imap_security", migrated_data)
+        self.assertEqual(migrated_data["imap_security"], "SSL")
+        
         # Verify version is updated
-        self.assertEqual(new_version, 3)
+        self.assertEqual(new_version, 4)
 
 
 if __name__ == '__main__':

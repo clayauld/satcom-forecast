@@ -24,6 +24,14 @@ async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) ->
             new["polling_interval"] = 5  # Default to 5 minutes
         hass.config_entries.async_update_entry(config_entry, data=new, version=3)
         _LOGGER.debug("Migration to version 3 successful")
+    
+    if config_entry.version == 3:
+        # Version 3 to 4 migration - add default IMAP security
+        new = {**config_entry.data}
+        if "imap_security" not in new:
+            new["imap_security"] = "SSL"  # Default to SSL for security
+        hass.config_entries.async_update_entry(config_entry, data=new, version=4)
+        _LOGGER.debug("Migration to version 4 successful")
 
     return True
 

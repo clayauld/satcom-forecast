@@ -32,6 +32,7 @@ def run_test_file(test_file):
             'test_reconfiguration_logic',
             'test_imap_handler',
             'test_folder_validation',
+            'test_folder_detection',
             'main'  # For integration structure test
         ]
         
@@ -72,6 +73,7 @@ def main():
         "test_reconfiguration.py",         # Reconfiguration functionality
         "test_imap_handler.py",            # IMAP handler functionality
         "test_folder_validation.py",       # Folder validation functionality
+        "test_folder_detection.py",        # Folder detection functionality
         "test_core_functionality.py",      # Basic functionality
         "test_multi_region.py",            # Multi-region testing
         "test_weather_detection.py",       # Weather detection

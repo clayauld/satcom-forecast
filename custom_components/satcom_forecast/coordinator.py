@@ -34,7 +34,8 @@ class SatcomForecastCoordinator(DataUpdateCoordinator):
         messages = check_imap_for_gps(
             self.config["imap_host"], self.config["imap_port"],
             self.config["imap_user"], self.config["imap_pass"],
-            self.config.get("imap_folder", "INBOX")
+            self.config.get("imap_folder", "INBOX"),
+            self.config.get("imap_security", "SSL")
         )
         
         _LOGGER.debug("IMAP check completed, found %d messages", len(messages) if messages else 0)
