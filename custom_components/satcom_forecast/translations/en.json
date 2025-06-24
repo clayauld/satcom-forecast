@@ -1,0 +1,67 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Email Configuration",
+        "description": "Enter your IMAP and SMTP server details",
+        "data": {
+          "imap_host": "IMAP Host",
+          "imap_port": "IMAP Port",
+          "imap_user": "IMAP Username",
+          "imap_pass": "IMAP Password",
+          "smtp_host": "SMTP Host",
+          "smtp_port": "SMTP Port",
+          "smtp_user": "SMTP Username",
+          "smtp_pass": "SMTP Password"
+        }
+      },
+      "finalize": {
+        "title": "Forecast Configuration",
+        "description": "Configure forecast settings and IMAP folder",
+        "data": {
+          "imap_folder": "IMAP Folder",
+          "forecast_format": "Forecast Format",
+          "device_type": "Device Type",
+          "character_limit": "Character Limit (0 = no limit)",
+          "debug": "Enable Debug Logging",
+          "polling_interval": "Polling Interval (minutes)"
+        }
+      }
+    },
+    "error": {
+      "imap_invalid": "Invalid IMAP credentials or connection failed",
+      "invalid_folder": "Invalid IMAP folder"
+    },
+    "abort": {
+      "already_configured": "Device is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "SatCom Forecast Options",
+        "description": "Configure SatCom Forecast settings",
+        "data": {
+          "imap_host": "IMAP Host",
+          "imap_port": "IMAP Port",
+          "imap_user": "IMAP Username",
+          "imap_pass": "IMAP Password (leave blank to keep current)",
+          "smtp_host": "SMTP Host",
+          "smtp_port": "SMTP Port",
+          "smtp_user": "SMTP Username",
+          "smtp_pass": "SMTP Password (leave blank to keep current)",
+          "imap_folder": "IMAP Folder",
+          "forecast_format": "Forecast Format",
+          "device_type": "Device Type",
+          "character_limit": "Character Limit (0 = no limit)",
+          "debug": "Enable Debug Logging",
+          "polling_interval": "Polling Interval (minutes)"
+        }
+      }
+    },
+    "error": {
+      "imap_invalid": "Invalid IMAP credentials or connection failed",
+      "invalid_folder": "Invalid IMAP folder"
+    }
+  }
+} 

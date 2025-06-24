@@ -7,22 +7,48 @@ def check_imap_for_gps(host, port, username, password, folder="INBOX"):
     _LOGGER.debug("Checking IMAP for GPS coordinates - Host: %s, Port: %s, User: %s, Folder: %s", 
                  host, port, username, folder)
     
+    mail = None
     try:
+        _LOGGER.debug("Establishing IMAP SSL connection to %s:%s", host, port)
         mail = imaplib.IMAP4_SSL(host, port)
-        _LOGGER.debug("IMAP SSL connection established")
+        _LOGGER.debug("IMAP SSL connection established successfully")
         
+        _LOGGER.debug("Attempting login for user: %s", username)
         mail.login(username, password)
         _LOGGER.debug("IMAP login successful")
         
-        mail.select(folder)
-        _LOGGER.debug("Selected folder: %s", folder)
+        # List available folders for debugging
+        try:
+            status, folders = mail.list()
+            if status == "OK":
+                _LOGGER.debug("Available folders: %s", [f.decode().split('"')[-2] if b'"' in f else f.decode().split()[-1] for f in folders])
+            else:
+                _LOGGER.debug("Could not list folders: %s", status)
+        except Exception as e:
+            _LOGGER.debug("Error listing folders: %s", str(e))
         
+        # Select the folder and check the response
+        _LOGGER.debug("Attempting to select folder: %s", folder)
+        status, data = mail.select(folder)
+        if status != "OK":
+            _LOGGER.error("Failed to select folder '%s': %s", folder, status)
+            if data:
+                _LOGGER.error("Folder selection error details: %s", data)
+            return []
+        
+        _LOGGER.debug("Successfully selected folder: %s", folder)
+        
+        # Now we can safely search since we're in SELECTED state
+        _LOGGER.debug("Searching for unread messages")
         status, messages = mail.search(None, '(UNSEEN)')
         if status != "OK":
             _LOGGER.error("Failed to search mailbox: %s", status)
+            if messages:
+                _LOGGER.error("Search error details: %s", messages)
             return []
         
-        _LOGGER.debug("Found %d unread messages", len(messages[0].split()) if messages[0] else 0)
+        message_count = len(messages[0].split()) if messages[0] else 0
+        _LOGGER.debug("Found %d unread messages", message_count)
         
         result = []
         for num in messages[0].split():
@@ -72,11 +98,20 @@ def check_imap_for_gps(host, port, username, password, folder="INBOX"):
             else:
                 _LOGGER.debug("No coordinates found in message from %s", from_email)
                 
-        mail.logout()
-        _LOGGER.debug("IMAP logout successful")
         _LOGGER.debug("Returning %d GPS requests", len(result))
         return result
         
+    except imaplib.IMAP4.error as e:
+        _LOGGER.error("IMAP error: %s", str(e))
+        return []
     except Exception as e:
         _LOGGER.exception("Error checking IMAP: %s", str(e))
         return []
+    finally:
+        if mail:
+            try:
+                _LOGGER.debug("Logging out from IMAP")
+                mail.logout()
+                _LOGGER.debug("IMAP logout successful")
+            except Exception as e:
+                _LOGGER.debug("Error during IMAP logout: %s", str(e))

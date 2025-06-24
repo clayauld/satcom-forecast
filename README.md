@@ -18,6 +18,7 @@ A Home Assistant integration for fetching NOAA weather forecasts and sending the
 - Email delivery to satellite communicators (ZOLEO, InReach)
 - Automatic message splitting for device character limits
 - Configurable polling interval (1-1440 minutes)
+- IMAP folder validation with helpful error messages
 - Debug logging for troubleshooting
 - Comprehensive test suite
 - Enhanced weather event detection (fog, extreme events)
@@ -187,6 +188,77 @@ grep "custom_components.satcom_forecast" /config/home-assistant.log | grep DEBUG
 ```
 
 Or in the Home Assistant UI, go to Developer Tools > Logs and filter for "satcom_forecast".
+
+## Troubleshooting
+
+### Common Issues
+
+#### IMAP Connection Errors
+
+**Error**: `command SEARCH illegal in state AUTH, only allowed in states SELECTED`
+
+**Solution**: This error occurs when the IMAP connection is not properly selecting a mailbox before searching. The integration now includes improved error handling for this issue. If you encounter this error:
+
+1. Check your IMAP folder name (default is "INBOX")
+2. Verify your email server credentials
+3. Enable debug logging to see detailed connection information
+4. Restart the integration if the issue persists
+
+#### Invalid IMAP Folder
+
+**Error**: `Failed to select folder 'Forecasts': NO` or `[NONEXISTENT] Unknown Mailbox: Forecasts`
+
+**Solution**: The integration now validates IMAP folders during configuration and shows helpful error messages. If you encounter this error:
+
+1. **During initial setup**: The configuration will show an error with available folder names
+2. **During reconfiguration**: The options form will display the error and prevent saving
+3. **Common folder names**: Try "INBOX", "Sent", "Drafts", or check your email client for exact folder names
+4. **Case sensitivity**: Some email providers are case-sensitive with folder names
+
+The integration will now:
+- ✅ List available folders when validation fails
+- ✅ Show specific error messages for folder issues
+- ✅ Prevent configuration with invalid folders
+- ✅ Provide helpful suggestions for common folder names
+
+#### Integration Not Detected
+
+If Home Assistant doesn't detect the integration after installation:
+
+1. Ensure the entire `custom_components/satcom_forecast` folder is copied
+2. Restart Home Assistant completely
+3. Check the Home Assistant logs for any error messages
+4. Verify the integration folder is in the correct location: `config/custom_components/satcom_forecast/`
+
+#### Email Delivery Issues
+
+If forecasts are not being sent via email:
+
+1. Verify SMTP server settings and credentials
+2. Check if your email provider requires app-specific passwords
+3. Enable debug logging to see detailed SMTP connection information
+4. Test your SMTP settings with a simple email client first
+
+#### Forecast Fetching Issues
+
+If NOAA forecasts are not being fetched:
+
+1. Verify the GPS coordinates are in the correct format (decimal degrees)
+2. Check your internet connection
+3. Enable debug logging to see NOAA API request details
+4. Verify the coordinates are within the United States (NOAA coverage area)
+
+### Getting Help
+
+If you're still experiencing issues:
+
+1. Enable debug logging and check the logs
+2. Search existing [GitHub Issues](https://github.com/clayauld/satcom-forecast/issues)
+3. Create a new issue with:
+   - Home Assistant version
+   - Integration version
+   - Debug logs (with sensitive information removed)
+   - Steps to reproduce the issue
 
 ## Documentation
 

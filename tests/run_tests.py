@@ -30,6 +30,8 @@ def run_test_file(test_file):
             'test_weather_detection',
             'test_summary_length',
             'test_reconfiguration_logic',
+            'test_imap_handler',
+            'test_folder_validation',
             'main'  # For integration structure test
         ]
         
@@ -68,6 +70,8 @@ def main():
     test_order = [
         "test_integration_structure.py",   # Integration structure validation
         "test_reconfiguration.py",         # Reconfiguration functionality
+        "test_imap_handler.py",            # IMAP handler functionality
+        "test_folder_validation.py",       # Folder validation functionality
         "test_core_functionality.py",      # Basic functionality
         "test_multi_region.py",            # Multi-region testing
         "test_weather_detection.py",       # Weather detection
