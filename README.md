@@ -27,6 +27,69 @@ A Home Assistant integration for fetching NOAA weather forecasts and sending the
 - Comprehensive test suite
 - Enhanced weather event detection (fog, extreme events)
 
+## How to Use
+
+To request a weather forecast, simply send an email to the address monitored by SatCom Forecast (the IMAP account you configured). The integration will extract the GPS coordinates from the email body and send a forecast reply to the sender.
+
+**Basic Syntax:**
+
+- The email body must contain latitude and longitude in decimal degrees (separated by a comma, space, or semicolon):
+
+```
+61.11027, -149.79715
+```
+
+- Optionally, you can specify a format keyword (`summary`, `compact`, or `full`) anywhere in the message to override the default format:
+
+```
+61.11027, -149.79715
+format: summary
+```
+
+or simply:
+
+```
+61.11027, -149.79715 summary
+```
+
+**Example:**
+
+Subject: `Forecast Request`
+
+Body:
+```
+61.11027, -149.79715 compact
+```
+
+The integration will detect the coordinates and format, fetch the forecast, and reply to the sender with the requested weather information.
+
+### Email Filtering Setup
+
+To keep your inbox organized, consider setting up email filters or rules to automatically move forecast request emails to a dedicated folder. This helps separate forecast requests from regular emails and makes it easier to monitor the system.
+
+**Gmail Example:**
+1. Go to Gmail Settings → Filters and Blocked Addresses
+2. Click "Create a new filter"
+3. Set criteria (e.g., "Subject contains: forecast" or "From: your-satellite-device@domain.com")
+4. Choose "Apply the label" and create a new label like "SatCom Forecasts"
+5. Check "Skip the Inbox" to keep requests out of your main inbox
+
+**Outlook Example:**
+1. Go to Settings → View all Outlook settings → Mail → Rules
+2. Click "Add new rule"
+3. Set conditions (e.g., "Subject contains: forecast")
+4. Choose "Move to" and select your forecast folder
+5. Save the rule
+
+**Other Email Providers:**
+Most email providers support similar filtering options. Look for "Rules," "Filters," or "Actions" in your email settings to set up automatic organization.
+
+**Benefits:**
+- Keeps your main inbox clean
+- Makes it easier to monitor forecast requests
+- Allows you to set up different folders for different purposes
+- Helps with troubleshooting if issues arise
+
 ## Quick Installation
 
 ### HACS Installation (Recommended)

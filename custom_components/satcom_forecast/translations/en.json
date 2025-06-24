@@ -21,7 +21,7 @@
         "description": "Configure forecast settings and select the mail folder to monitor. Available folders: {available_folders}",
         "data": {
           "imap_folder": "Mail Folder",
-          "forecast_format": "Forecast Format",
+          "forecast_format": "Default Format",
           "device_type": "Device Type",
           "character_limit": "Character Limit (0 = no limit)",
           "debug": "Enable Debug Logging",
@@ -53,7 +53,7 @@
           "smtp_user": "SMTP Username",
           "smtp_pass": "SMTP Password (leave blank to keep current)",
           "imap_folder": "Mail Folder",
-          "forecast_format": "Forecast Format",
+          "forecast_format": "Default Format",
           "device_type": "Device Type",
           "character_limit": "Character Limit (0 = no limit)",
           "debug": "Enable Debug Logging",
