@@ -17,6 +17,7 @@ A Home Assistant integration for fetching NOAA weather forecasts and sending the
 - Supports multiple forecast formats (summary, compact, full)
 - Email delivery to satellite communicators (ZOLEO, InReach)
 - Automatic message splitting for device character limits
+- Configurable polling interval (1-1440 minutes)
 - Debug logging for troubleshooting
 - Comprehensive test suite
 - Enhanced weather event detection (fog, extreme events)
@@ -76,6 +77,23 @@ satcom-forecast/
 4. Enter your email configuration and GPS coordinates
 5. Choose your preferred forecast format
 
+## Reconfiguration
+
+After the integration is installed, you can reconfigure all settings at any time:
+
+1. Go to **Settings** > **Devices & Services**
+2. Find "SatCom Forecast" in your integrations list
+3. Click on the integration entry
+4. Click **Configure** to open the reconfiguration options
+5. Modify any settings as needed:
+   - Email server settings (IMAP/SMTP)
+   - Forecast format and device type
+   - Character limits and debug settings
+   - Polling interval (how often to check for new emails)
+6. Click **Submit** to save changes
+
+**Note**: Passwords are hidden by default in the configuration forms for security. You only need to enter passwords if you want to change them. The polling interval change takes effect immediately after saving.
+
 ## Forecast Formats
 
 The integration supports three forecast formats:
@@ -85,6 +103,23 @@ The integration supports three forecast formats:
 - **Full**: Complete NOAA forecast text
 
 See [docs/format_comparison.md](docs/format_comparison.md) for detailed format comparisons.
+
+## Polling Interval Configuration
+
+The integration checks for new GPS coordinate emails at regular intervals. You can configure this polling interval during setup or reconfiguration:
+
+- **Range**: 1 to 1440 minutes (1 minute to 24 hours)
+- **Default**: 5 minutes
+- **Recommendation**: 5-15 minutes for most use cases
+
+### Considerations
+
+- **Faster polling** (1-5 minutes): More responsive but higher email server load
+- **Slower polling** (15+ minutes): Lower server load but delayed responses
+- **Email server limits**: Some providers have rate limits on IMAP connections
+- **Battery usage**: For mobile devices, consider longer intervals to save battery
+
+The polling interval change takes effect immediately when you save the configuration.
 
 ## Testing
 

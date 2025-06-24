@@ -8,6 +8,7 @@ import asyncio
 import sys
 import os
 import importlib.util
+import unittest
 from pathlib import Path
 
 def run_test_file(test_file):
@@ -27,30 +28,46 @@ def run_test_file(test_file):
             'test_core_functionality',
             'test_multi_region', 
             'test_weather_detection',
-            'test_summary_length'
+            'test_summary_length',
+            'test_reconfiguration_logic',
+            'main'  # For integration structure test
         ]
         
         for func_name in test_functions:
             if hasattr(module, func_name):
-                if asyncio.iscoroutinefunction(getattr(module, func_name)):
-                    result = asyncio.run(getattr(module, func_name)())
+                func = getattr(module, func_name)
+                if asyncio.iscoroutinefunction(func):
+                    result = asyncio.run(func())
                 else:
-                    result = getattr(module, func_name)()
+                    result = func()
                 return result
+        
+        # If no specific test function found, try running as unittest
+        if hasattr(module, 'TestReconfigurationLogic'):
+            # Run unittest tests
+            loader = unittest.TestLoader()
+            suite = loader.loadTestsFromModule(module)
+            runner = unittest.TextTestRunner(verbosity=2, stream=sys.stdout)
+            result = runner.run(suite)
+            return result.wasSuccessful()
         
         print(f"❌ No test function found in {test_file.name}")
         return False
         
     except Exception as e:
         print(f"❌ Error running {test_file.name}: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 def main():
     """Run all test files in logical order."""
     test_dir = Path(__file__).parent
     
-    # Define test order (core functionality first, then specific features)
+    # Define test order (structure and core functionality first, then specific features)
     test_order = [
+        "test_integration_structure.py",   # Integration structure validation
+        "test_reconfiguration.py",         # Reconfiguration functionality
         "test_core_functionality.py",      # Basic functionality
         "test_multi_region.py",            # Multi-region testing
         "test_weather_detection.py",       # Weather detection
@@ -78,8 +95,10 @@ def main():
         success = run_test_file(test_file)
         if success:
             results['passed'] += 1
+            print(f"✅ {test_file.name} - PASSED")
         else:
             results['failed'] += 1
+            print(f"❌ {test_file.name} - FAILED")
     
     # Final summary
     print(f"\n{'='*70}")

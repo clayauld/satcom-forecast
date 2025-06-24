@@ -9,7 +9,7 @@ description = "Home Assistant integration for NOAA weather forecasts via satelli
 readme = "README.md"
 license = {text = "Apache-2.0"}
 authors = [
-    {name = "SatCom Forecast Team"}
+    {name = "Clayton Auld"}
 ]
 classifiers = [
     "Development Status :: 4 - Beta",

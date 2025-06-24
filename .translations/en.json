@@ -1,1 +1,65 @@
-{ "title": "Satellite Forecast", "description": "Weather forecast reply service for satellite devices" }
+{
+  "title": "Satellite Forecast",
+  "description": "Weather forecast reply service for satellite devices",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Email Configuration",
+        "description": "Enter your email server settings for IMAP and SMTP",
+        "data": {
+          "imap_host": "IMAP Host",
+          "imap_port": "IMAP Port",
+          "imap_user": "IMAP Username",
+          "imap_pass": "IMAP Password",
+          "smtp_host": "SMTP Host",
+          "smtp_port": "SMTP Port",
+          "smtp_user": "SMTP Username",
+          "smtp_pass": "SMTP Password"
+        }
+      },
+      "finalize": {
+        "title": "Forecast Settings",
+        "description": "Configure forecast settings and device type",
+        "data": {
+          "imap_folder": "IMAP Folder",
+          "forecast_format": "Forecast Format",
+          "device_type": "Device Type",
+          "character_limit": "Character Limit",
+          "debug": "Enable Debug Logging"
+        }
+      }
+    },
+    "error": {
+      "imap_invalid": "Invalid IMAP credentials or connection failed"
+    },
+    "abort": {
+      "already_configured": "Device is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "SatCom Forecast Options",
+        "description": "Configure your SatCom Forecast settings",
+        "data": {
+          "imap_host": "IMAP Host",
+          "imap_port": "IMAP Port",
+          "imap_user": "IMAP Username",
+          "imap_pass": "IMAP Password",
+          "smtp_host": "SMTP Host",
+          "smtp_port": "SMTP Port",
+          "smtp_user": "SMTP Username",
+          "smtp_pass": "SMTP Password",
+          "imap_folder": "IMAP Folder",
+          "forecast_format": "Forecast Format",
+          "device_type": "Device Type",
+          "character_limit": "Character Limit",
+          "debug": "Enable Debug Logging"
+        }
+      }
+    },
+    "error": {
+      "imap_invalid": "Invalid IMAP credentials or connection failed"
+    }
+  }
+}

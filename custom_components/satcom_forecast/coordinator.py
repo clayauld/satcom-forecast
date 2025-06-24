@@ -6,12 +6,15 @@ from .forecast_parser import format_forecast
 from .notifier import send_forecast_email
 from .forecast_fetcher import fetch_forecast
 from .split_util import split_message
+from .const import DEFAULT_POLLING_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
 
 class SatcomForecastCoordinator(DataUpdateCoordinator):
     def __init__(self, hass, config):
-        super().__init__(hass, _LOGGER, name="satcom_forecast", update_interval=timedelta(minutes=5))
+        # Get polling interval from config, default to 5 minutes
+        polling_interval = config.get("polling_interval", DEFAULT_POLLING_INTERVAL)
+        super().__init__(hass, _LOGGER, name="satcom_forecast", update_interval=timedelta(minutes=polling_interval))
         self.config = config
         self._data = {
             "last_forecast_time": None,
@@ -22,6 +25,7 @@ class SatcomForecastCoordinator(DataUpdateCoordinator):
         }
         self.data = self._data.copy()
         _LOGGER.debug("SatcomForecastCoordinator initialized with config: %s", {k: v if k not in ['imap_pass', 'smtp_pass'] else '***' for k, v in config.items()})
+        _LOGGER.info("Polling interval set to %d minutes", polling_interval)
 
     async def _async_update_data(self):
         """Update coordinator data and process any new GPS requests."""

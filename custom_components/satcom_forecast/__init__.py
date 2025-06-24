@@ -1,19 +1,26 @@
 import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant import config_entries
-from homeassistant.const import CONF_NAME
-from homeassistant.helpers import config_validation as cv
-import voluptuous as vol
 from .const import DOMAIN, DEFAULT_DEBUG
 from .coordinator import SatcomForecastCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-# Config schema for the integration - since this uses config entries, we use config_entry_only_config_schema
-CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
-
 async def async_setup(hass: HomeAssistant, config: dict):
+    return True
+
+async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
+    """Migrate old entry."""
+    _LOGGER.debug("Migrating from version %s", config_entry.version)
+
+    if config_entry.version == 2:
+        # Version 2 to 3 migration - add default polling interval
+        new = {**config_entry.data}
+        if "polling_interval" not in new:
+            new["polling_interval"] = 5  # Default to 5 minutes
+        hass.config_entries.async_update_entry(config_entry, data=new, version=3)
+        _LOGGER.debug("Migration to version 3 successful")
+
     return True
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
@@ -49,3 +56,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     # Unregister service
     hass.services.async_remove(DOMAIN, "set_debug_logging")
     return True
+
+async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry):
+    """Reload the integration when configuration changes."""
+    await async_unload_entry(hass, entry)
+    await async_setup_entry(hass, entry)
