@@ -1,10 +1,14 @@
 import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.helpers import config_validation as cv
 from .const import DOMAIN, DEFAULT_DEBUG
 from .coordinator import SatcomForecastCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+# Config schema for the integration - since this uses config entries, we use config_entry_only_config_schema
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 async def async_setup(hass: HomeAssistant, config: dict):
     return True
