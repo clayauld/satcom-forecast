@@ -184,6 +184,40 @@ def infer_chance(event, forecast_text):
         return 90
     return 0
 
+def check_significant_wind(forecast_text):
+    """Check if wind speeds are significant (15+ mph) to warrant a wind event."""
+    forecast_lower = forecast_text.lower()
+    
+    # Look for wind speed patterns
+    wind_patterns = [
+        r'(\d+) to (\d+) mph',  # Range like "15 to 25 mph"
+        r'(\d+) mph',           # Single speed like "20 mph"
+        r'gusts (?:up to|as high as|to) (\d+) mph',  # Gusts
+        r'wind (\d+) to (\d+) mph',
+        r'wind (\d+) mph'
+    ]
+    
+    for pattern in wind_patterns:
+        matches = re.findall(pattern, forecast_lower)
+        for match in matches:
+            if len(match) == 2:  # Range
+                try:
+                    min_speed = int(match[0])
+                    max_speed = int(match[1])
+                    if min_speed >= 15 or max_speed >= 15:
+                        return True
+                except ValueError:
+                    continue
+            elif len(match) == 1:  # Single speed
+                try:
+                    speed = int(match[0])
+                    if speed >= 15:
+                        return True
+                except ValueError:
+                    continue
+    
+    return False
+
 def extract_temperature_info(forecast_text):
     """Extracts high and low temperature, returning a dict."""
     temps = {}
@@ -283,6 +317,10 @@ def format_compact_forecast(text):
                 
                 for event, keywords in event_types.items():
                     if any(kw in forecast for kw in keywords):
+                        # For wind events, only add if speeds are significant
+                        if event == 'wind' and not check_significant_wind(forecast):
+                            continue
+                            
                         chance = infer_chance(event, forecast)
                         if chance > 0:
                             if event in extreme_events:
@@ -631,6 +669,10 @@ def summarize_forecast(text):
                 # Extract weather events
                 for event, keywords in event_types.items():
                     if any(kw in forecast for kw in keywords):
+                        # For wind events, only add if speeds are significant
+                        if event == 'wind' and not check_significant_wind(forecast):
+                            continue
+                            
                         chance = infer_chance(event, forecast)
                         if chance > 0:
                             # Format event with proper capitalization and probability
