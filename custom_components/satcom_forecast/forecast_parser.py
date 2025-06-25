@@ -176,6 +176,15 @@ def infer_chance(event, forecast_text):
             return 30
         else:
             return 50
+    elif event == 'smoke':
+        if 'heavy smoke' in forecast_lower or 'thick smoke' in forecast_lower or 'dense smoke' in forecast_lower:
+            return 90
+        elif 'smoke' in forecast_lower or 'smoky' in forecast_lower:
+            return 80
+        elif 'wildfire smoke' in forecast_lower or 'fire smoke' in forecast_lower:
+            return 85
+        else:
+            return 70
     elif event == 'dense fog':
         return 90
     elif event == 'patchy fog':
@@ -287,6 +296,7 @@ def format_compact_forecast(text):
         'wind': ['windy', 'gusts', 'high wind', 'breezy'],
         'hail': ['hail'],
         'thunderstorm': ['thunderstorm', 'thunderstorms', 't-storm', 'tstorms'],
+        'smoke': ['smoke', 'smoky', 'wildfire smoke', 'fire smoke', 'smoke from fires'],
         'fog': ['fog', 'foggy', 'haze', 'mist'],
         'dense fog': ['dense fog', 'thick fog', 'heavy fog'],
         'patchy fog': ['patchy fog'],
@@ -301,7 +311,7 @@ def format_compact_forecast(text):
     
     # List of extreme event keys
     extreme_events = [
-        'blizzard', 'ice storm', 'tornado', 'hurricane', 'severe thunderstorm', 'high wind warning', 'flood warning', 'dense fog'
+        'blizzard', 'ice storm', 'tornado', 'hurricane', 'severe thunderstorm', 'high wind warning', 'flood warning', 'dense fog', 'smoke'
     ]
     
     for line in lines:
@@ -324,10 +334,10 @@ def format_compact_forecast(text):
                         chance = infer_chance(event, forecast)
                         if chance > 0:
                             if event in extreme_events:
-                                detected_events.append(f"🚨{event.title()}")
+                                detected_events.append(f"🚨{event.title()}({chance}%)")
                                 extreme_detected = True
                             else:
-                                detected_events.append(f"{event.title()}")
+                                detected_events.append(f"{event.title()}({chance}%)")
                 
                 # Extract temperature and wind info
                 temp_info = extract_temperature_info(forecast)
@@ -409,6 +419,7 @@ def summarize_forecast(text):
         'wind': ['windy', 'gusts', 'high wind', 'breezy'],
         'hail': ['hail'],
         'thunderstorm': ['thunderstorm', 'thunderstorms', 't-storm', 'tstorms'],
+        'smoke': ['smoke', 'smoky', 'wildfire smoke', 'fire smoke', 'smoke from fires'],
         'fog': ['fog', 'foggy', 'haze', 'mist'],
         'dense fog': ['dense fog', 'thick fog', 'heavy fog'],
         'patchy fog': ['patchy fog'],
@@ -422,7 +433,7 @@ def summarize_forecast(text):
     }
     # List of extreme event keys
     extreme_events = [
-        'blizzard', 'ice storm', 'tornado', 'hurricane', 'severe thunderstorm', 'high wind warning', 'flood warning', 'dense fog'
+        'blizzard', 'ice storm', 'tornado', 'hurricane', 'severe thunderstorm', 'high wind warning', 'flood warning', 'dense fog', 'smoke'
     ]
 
     def short_period(period):
@@ -639,6 +650,15 @@ def summarize_forecast(text):
                 return 30
             else:
                 return 50
+        elif event == 'smoke':
+            if 'heavy smoke' in forecast_lower or 'thick smoke' in forecast_lower or 'dense smoke' in forecast_lower:
+                return 90
+            elif 'smoke' in forecast_lower or 'smoky' in forecast_lower:
+                return 80
+            elif 'wildfire smoke' in forecast_lower or 'fire smoke' in forecast_lower:
+                return 85
+            else:
+                return 70
         elif event == 'dense fog':
             return 90
         elif event == 'patchy fog':
@@ -652,7 +672,7 @@ def summarize_forecast(text):
     
     event_name_map = {
         'rain': 'Rn', 'snow': 'Snw', 'sleet': 'Slt', 'freezing rain': 'FzRn',
-        'wind': 'Wnd', 'hail': 'Hl', 'thunderstorm': 'ThSt', 'fog': 'Fg',
+        'wind': 'Wnd', 'hail': 'Hl', 'thunderstorm': 'ThSt', 'smoke': 'Smk', 'fog': 'Fg',
         'dense fog': 'DFg', 'patchy fog': 'PFg', 'tornado': 'TOR',
         'hurricane': 'HUR', 'blizzard': 'BLZ', 'ice storm': 'ISt',
         'severe thunderstorm': 'SThSt', 'high wind warning': 'HiWW',
