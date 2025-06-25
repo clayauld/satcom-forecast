@@ -51,7 +51,15 @@ class SatcomForecastCoordinator(DataUpdateCoordinator):
             try:
                 # Fetch forecast using the dedicated module
                 _LOGGER.debug("Fetching forecast for coordinates %s, %s", msg['lat'], msg['lon'])
-                forecast_text = await fetch_forecast(msg['lat'], msg['lon'])
+                
+                # Determine number of days to include
+                days = msg.get("days") or self.config.get("default_days", 3)
+                _LOGGER.debug("Using %d days for forecast (override: %s, default: %s)", 
+                             days, msg.get("days"), self.config.get("default_days", 3))
+                _LOGGER.debug("Config default_days value: %s", self.config.get("default_days"))
+                _LOGGER.debug("Message days override: %s", msg.get("days"))
+                
+                forecast_text = await fetch_forecast(msg['lat'], msg['lon'], days)
                 
                 if forecast_text and not forecast_text.startswith("NOAA error"):
                     _LOGGER.debug("Forecast fetched successfully, length: %d characters", len(forecast_text))
@@ -60,7 +68,7 @@ class SatcomForecastCoordinator(DataUpdateCoordinator):
                     format_type = msg.get("format") or self.config.get("forecast_format", "summary")
                     _LOGGER.debug("Formatting forecast using format: %s", format_type)
                     
-                    forecast = format_forecast(forecast_text, format_type)
+                    forecast = format_forecast(forecast_text, format_type, days)
                     _LOGGER.debug("Forecast formatted successfully, length: %d characters", len(forecast))
                     
                     # Split message if needed for device constraints

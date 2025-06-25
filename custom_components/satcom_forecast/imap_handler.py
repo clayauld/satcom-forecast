@@ -93,6 +93,13 @@ def check_imap_for_gps(host, port, username, password, folder="INBOX", security=
             else:
                 _LOGGER.debug("No format preference found, will use default")
                 
+            # Extract days override
+            days_override = extract_days_override(body)
+            if days_override:
+                _LOGGER.debug("Found days override: %d days", days_override)
+            else:
+                _LOGGER.debug("No days override found, will use default")
+                
             coords = re.search(r"(-?\d+\.\d+)[,;\s]+(-?\d+\.\d+)", body)
             if coords:
                 lat, lon = coords.group(1), coords.group(2)
@@ -103,6 +110,7 @@ def check_imap_for_gps(host, port, username, password, folder="INBOX", security=
                     "lon": lon,
                     "sender": from_email,
                     "format": fmt_match.group(1).lower() if fmt_match else None,
+                    "days": days_override,
                     "body": body.strip()
                 })
                 _LOGGER.debug("Added GPS request to processing queue")
@@ -126,3 +134,28 @@ def check_imap_for_gps(host, port, username, password, folder="INBOX", security=
                 _LOGGER.debug("IMAP logout successful")
             except Exception as e:
                 _LOGGER.debug("Error during IMAP logout: %s", str(e))
+
+def extract_days_override(body):
+    """Extract days override from message body.
+    
+    Looks for patterns like "5days", "5 days", "3day", "3 day" etc.
+    Returns the number of days (1-7) if found, otherwise None.
+    """
+    # Pattern to match: number 1-7 followed by optional space and "day" or "days"
+    # Examples: "5days", "5 days", "3day", "3 day", "7days", "7 days", "1days", "1day"
+    # Excludes negative numbers like "-1days" and numbers outside 1-7
+    pattern = r'(?<![\d-])([1-7])\s*(?:day|days)\b'
+    match = re.search(pattern, body, re.IGNORECASE)
+    
+    if match:
+        days = int(match.group(1))
+        # Validate range 1-7 (should always be true with this regex, but double-check)
+        if 1 <= days <= 7:
+            _LOGGER.debug("Found days override: %d days", days)
+            return days
+        else:
+            _LOGGER.debug("Days override out of range (1-7): %d", days)
+            return None
+    
+    _LOGGER.debug("No days override found in message")
+    return None

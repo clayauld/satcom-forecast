@@ -25,7 +25,8 @@
           "device_type": "Device Type",
           "character_limit": "Character Limit (0 = no limit)",
           "debug": "Enable Debug Logging",
-          "polling_interval": "Scanning Interval (minutes)"
+          "polling_interval": "Scanning Interval (minutes)",
+          "default_days": "Default Forecast Days (1-7)"
         }
       }
     },
@@ -57,7 +58,8 @@
           "device_type": "Device Type",
           "character_limit": "Character Limit (0 = no limit)",
           "debug": "Enable Debug Logging",
-          "polling_interval": "Scanning Interval (minutes)"
+          "polling_interval": "Scanning Interval (minutes)",
+          "default_days": "Default Forecast Days (1-7)"
         }
       }
     },

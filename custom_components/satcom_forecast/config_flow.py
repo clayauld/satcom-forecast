@@ -4,7 +4,7 @@ import voluptuous as vol
 from homeassistant import config_entries, core
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
-from .const import DOMAIN, DEFAULT_DEBUG, DEFAULT_POLLING_INTERVAL
+from .const import DOMAIN, DEFAULT_DEBUG, DEFAULT_POLLING_INTERVAL, DEFAULT_DAYS
 import logging
 
 _LOGGER = logging.getLogger(__name__)
@@ -155,6 +155,9 @@ class SatcomForecastConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Required("polling_interval", default=DEFAULT_POLLING_INTERVAL, description="Scanning Interval (minutes)"): vol.All(
                 vol.Coerce(int), vol.Range(min=1, max=1440)
             ),
+            vol.Required("default_days", default=DEFAULT_DAYS, description="Default Forecast Days (1-7)"): vol.All(
+                vol.Coerce(int), vol.Range(min=1, max=7)
+            ),
         })
 
         return self.async_show_form(
@@ -295,5 +298,8 @@ class SatcomForecastOptionsFlow(config_entries.OptionsFlow):
             vol.Optional("debug", default=data.get("debug", DEFAULT_DEBUG), description="Enable Debug Logging"): bool,
             vol.Required("polling_interval", default=data.get("polling_interval", DEFAULT_POLLING_INTERVAL), description="Scanning Interval (minutes)"): vol.All(
                 vol.Coerce(int), vol.Range(min=1, max=1440)
+            ),
+            vol.Required("default_days", default=data.get("default_days", DEFAULT_DAYS), description="Default Forecast Days (1-7)"): vol.All(
+                vol.Coerce(int), vol.Range(min=1, max=7)
             ),
         })
