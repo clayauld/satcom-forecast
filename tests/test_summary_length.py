@@ -26,6 +26,7 @@ async def test_summary_length():
     # Test locations with different weather conditions
     test_locations = [
         ("Fairbanks, AK", 64.8378, -147.7164, "Summer - Rain, Thunderstorms, Fog"),
+        ("Anchorage, AK", 61.11030, -149.79703, 'Coastal weather, rain, fog'),
         ("Miami, FL", 25.7617, -80.1918, "Hurricane Season - Wind, Rain, Thunderstorms"),
         ("Los Angeles, CA", 34.0522, -118.2437, "Spring - Fog Conditions"),
         ("Chicago, IL", 41.8781, -87.6298, "Spring - Rain, Thunderstorms"),

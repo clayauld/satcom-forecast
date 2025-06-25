@@ -310,6 +310,129 @@ def summarize_forecast(text):
                 return v
         return period.strip()[:6]
 
+    def extract_temperature_info(forecast_text):
+        """Extract high and low temperature information from forecast text."""
+        temp_info = []
+        
+        # Look for high temperature patterns
+        high_patterns = [
+            r'with a high near (\d+)',
+            r'high near (\d+)',
+            r'high of (\d+)',
+            r'high (\d+)',
+            r'temperature near (\d+)'
+        ]
+        
+        # Look for low temperature patterns
+        low_patterns = [
+            r'with a low around (\d+)',
+            r'low around (\d+)',
+            r'low of (\d+)',
+            r'low (\d+)',
+            r'temperature around (\d+)'
+        ]
+        
+        for pattern in high_patterns:
+            match = re.search(pattern, forecast_text.lower())
+            if match:
+                temp_info.append(f"Hi{match.group(1)}°")
+                break
+                
+        for pattern in low_patterns:
+            match = re.search(pattern, forecast_text.lower())
+            if match:
+                temp_info.append(f"Lo{match.group(1)}°")
+                break
+        
+        return temp_info
+
+    def extract_wind_info(forecast_text):
+        """Extract wind direction and speed information from forecast text."""
+        
+        direction_map = {
+            'north': 'N', 'northeast': 'NE', 'east': 'E', 'southeast': 'SE',
+            'south': 'S', 'southwest': 'SW', 'west': 'W', 'northwest': 'NW',
+            'variable': 'VAR'
+        }
+
+        def get_abbr(direction_word):
+            return direction_map.get(direction_word.lower(), direction_word.title()[:1])
+
+        forecast_lower = forecast_text.lower()
+        
+        # Special handling for 'becoming' phrases
+        if 'becoming' in forecast_lower:
+            after_becoming = forecast_lower.split('becoming', 1)[1]
+            wind_patterns = [
+                r'(\w+) wind (\d+) to (\d+) mph',
+                r'wind (\w+) (\d+) to (\d+) mph',
+                r'(\w+) wind (?:around|near|up to|to) (\d+) mph',
+                r'wind (?:from the )?(\w+) (?:around|near|up to|to) (\d+) mph',
+                r'(\w+) wind (\d+) mph',
+                r'wind (\w+) (\d+) mph',
+                r'(\w+) (?:around|near|up to|to) (\d+) mph',  # direction around speed mph
+                r'(\w+)',  # just direction
+            ]
+            for pattern in wind_patterns:
+                match = re.search(pattern, after_becoming)
+                if match:
+                    if len(match.groups()) == 3:
+                        direction = get_abbr(match.group(1))
+                        speed_min = match.group(2)
+                        speed_max = match.group(3)
+                        return [f"{direction}{speed_min}-{speed_max}mph"]
+                    elif len(match.groups()) == 2:
+                        direction = get_abbr(match.group(1))
+                        speed = match.group(2)
+                        return [f"{direction}{speed}mph"]
+                    elif len(match.groups()) == 1:
+                        direction_word = match.group(1).lower()
+                        if direction_word == 'calm': return ['Calm']
+                        if direction_word == 'light': return ['Light']
+                        direction = get_abbr(direction_word)
+                        return [f"{direction}wind"]
+            if 'calm' in after_becoming: return ["Calm"]
+            if 'light' in after_becoming: return ["Light"]
+            return []
+
+        # Otherwise, extract the first matching wind pattern
+        wind_patterns = [
+            r'(\w+) wind (\d+) to (\d+) mph',
+            r'wind (\w+) (\d+) to (\d+) mph',
+            r'(\w+) wind (?:around|near|up to|to) (\d+) mph',
+            r'wind (?:from the )?(\w+) (?:around|near|up to|to) (\d+) mph',
+            r'(\w+) wind (\d+) mph',
+            r'wind (\w+) (\d+) mph',
+            r'(\w+) (?:around|near|up to|to) (\d+) mph',  # direction around speed mph
+            r'(\w+)wind',
+            r'(\w+) wind',
+        ]
+        for pattern in wind_patterns:
+            match = re.search(pattern, forecast_lower)
+            if match:
+                if len(match.groups()) == 3:
+                    direction = get_abbr(match.group(1))
+                    speed_min = match.group(2)
+                    speed_max = match.group(3)
+                    return [f"{direction}{speed_min}-{speed_max}mph"]
+                elif len(match.groups()) == 2:
+                    direction = get_abbr(match.group(1))
+                    speed = match.group(2)
+                    return [f"{direction}{speed}mph"]
+                elif len(match.groups()) == 1:
+                    direction_word = match.group(1).lower()
+                    if direction_word == 'calm': return ['Calm']
+                    if direction_word == 'light': return ['Light']
+                    direction = get_abbr(direction_word)
+                    return [f"{direction}wind"]
+                    
+        if 'calm wind' in forecast_lower or 'calm' in forecast_lower:
+            return ["Calm"]
+        elif 'light wind' in forecast_lower:
+            return ["Light"]
+            
+        return []
+
     def infer_chance(event, forecast_text):
         forecast_lower = forecast_text.lower()
         match = re.search(r'(\d+)%', forecast_text)
@@ -395,24 +518,42 @@ def summarize_forecast(text):
     # Dictionary to store events by period (consolidating day/night)
     period_events_dict = {}
     
+    event_name_map = {
+        'rain': 'Rn', 'snow': 'Snw', 'sleet': 'Slt', 'freezing rain': 'FzRn',
+        'wind': 'Wnd', 'hail': 'Hl', 'thunderstorm': 'ThSt', 'fog': 'Fg',
+        'dense fog': 'DFg', 'patchy fog': 'PFg', 'tornado': 'TOR',
+        'hurricane': 'HUR', 'blizzard': 'BLZ', 'ice storm': 'ISt',
+        'severe thunderstorm': 'SThSt', 'high wind warning': 'HiWW',
+        'flood warning': 'FldWng'
+    }
+    
     for line in lines:
         if ':' in line and any(day in line for day in ['Today', 'Tonight', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']):
             try:
                 period, forecast = line.split(':', 1)
                 forecast = forecast.strip().lower()
                 detected = []
+                
+                # Extract weather events
                 for event, keywords in event_types.items():
                     if any(kw in forecast for kw in keywords):
                         chance = infer_chance(event, forecast)
                         if chance > 0:
                             # Format event with proper capitalization and probability
-                            event_name = event.replace(' ', '').title()
+                            event_name = event_name_map.get(event, event.replace(' ', '').title()[:2])
                             if event in extreme_events:
-                                detected.append(f"🚨{event_name} ({chance}%)")
+                                detected.append(f"🚨{event_name}({chance}%)")
                             else:
-                                detected.append(f"{event_name} ({chance}%)")
+                                detected.append(f"{event_name}({chance}%)")
                 
-                if detected:
+                # Extract temperature and wind information
+                temp_info = extract_temperature_info(forecast)
+                wind_info = extract_wind_info(forecast)
+                
+                # Combine all information
+                all_info = detected + temp_info + wind_info
+                
+                if all_info:
                     # Get the base period name (without "Night")
                     base_period = period.strip()
                     if 'Night' in base_period:
@@ -425,25 +566,38 @@ def summarize_forecast(text):
                     if short_period_name in period_events_dict:
                         existing_events = period_events_dict[short_period_name]
                         # Merge events, keeping the highest probability for duplicates
-                        for new_event in detected:
-                            event_name = new_event.split('(')[0]  # Get event name without probability
-                            new_prob = int(new_event.split('(')[1].split('%')[0])
+                        for new_event in all_info:
+                            # Skip temperature and wind info for merging (they're unique)
+                            if any(temp in new_event for temp in ['Hi', 'Lo']) or any(wind in new_event for wind in ['mph', 'wind']):
+                                if not any(existing_temp in new_event for existing_temp in existing_events if any(temp in existing_temp for temp in ['Hi', 'Lo'])):
+                                    if not any(existing_wind in new_event for existing_wind in existing_events if any(wind in existing_wind for wind in ['mph', 'wind'])):
+                                        existing_events.append(new_event)
+                                continue
                             
-                            # Check if we already have this event
-                            found = False
-                            for i, existing_event in enumerate(existing_events):
-                                if existing_event.split('(')[0] == event_name:
-                                    existing_prob = int(existing_event.split('(')[1].split('%')[0])
-                                    # Keep the higher probability
-                                    if new_prob > existing_prob:
-                                        existing_events[i] = new_event
-                                    found = True
-                                    break
-                            
-                            if not found:
-                                existing_events.append(new_event)
+                            # Handle weather events with probabilities
+                            if '(' in new_event and '%' in new_event:
+                                event_name = new_event.split('(')[0]  # Get event name without probability
+                                new_prob = int(new_event.split('(')[1].split('%')[0])
+                                
+                                # Check if we already have this event
+                                found = False
+                                for i, existing_event in enumerate(existing_events):
+                                    if existing_event.split('(')[0] == event_name:
+                                        existing_prob = int(existing_event.split('(')[1].split('%')[0])
+                                        # Keep the higher probability
+                                        if new_prob > existing_prob:
+                                            existing_events[i] = new_event
+                                        found = True
+                                        break
+                                
+                                if not found:
+                                    existing_events.append(new_event)
+                            else:
+                                # For events without probabilities, just add if not already present
+                                if new_event not in existing_events:
+                                    existing_events.append(new_event)
                     else:
-                        period_events_dict[short_period_name] = detected
+                        period_events_dict[short_period_name] = all_info
                         
             except ValueError:
                 continue
@@ -454,24 +608,12 @@ def summarize_forecast(text):
         if events:
             period_events.append(f"{period}: {','.join(events)}")
 
-    # Limit to first 6 periods to keep under 200 chars
+    # Limit to first 6 periods
     period_events = period_events[:6]
     
     # Join period events into a single summary, separated by newlines
     summary = '\n'.join(period_events)
-    # Truncate to 200 chars if needed
-    if len(summary) > 200:
-        # Try to keep as many periods as possible
-        parts = []
-        total = 0
-        for pe in period_events:
-            if total + len(pe) + (1 if parts else 0) > 200:  # 1 for newline
-                break
-            parts.append(pe)
-            total += len(pe) + (1 if parts else 0)
-        summary = '\n'.join(parts)
-        if len(summary) > 200:
-            summary = summary[:197] + '...'
+
     if not summary:
         summary = "No significant weather expected."
     return summary
