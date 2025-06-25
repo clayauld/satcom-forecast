@@ -429,13 +429,13 @@ def summarize_forecast(text):
         for pattern in high_patterns:
             match = re.search(pattern, forecast_text.lower())
             if match:
-                temp_info.append(f"Hi{match.group(1)}°")
+                temp_info.append(f"H:{match.group(1)}")
                 break
                 
         for pattern in low_patterns:
             match = re.search(pattern, forecast_text.lower())
             if match:
-                temp_info.append(f"Lo{match.group(1)}°")
+                temp_info.append(f"L:{match.group(1)}")
                 break
         
         return temp_info
@@ -662,8 +662,8 @@ def summarize_forecast(text):
                         # Merge events, keeping the highest probability for duplicates
                         for new_event in all_info:
                             # Skip temperature and wind info for merging (they're unique)
-                            if any(temp in new_event for temp in ['Hi', 'Lo']) or any(wind in new_event for wind in ['mph', 'wind']):
-                                if not any(existing_temp in new_event for existing_temp in existing_events if any(temp in existing_temp for temp in ['Hi', 'Lo'])):
+                            if any(temp in new_event for temp in ['H:', 'L:']) or any(wind in new_event for wind in ['mph', 'wind']):
+                                if not any(existing_temp in new_event for existing_temp in existing_events if any(temp in existing_temp for temp in ['H:', 'L:'])):
                                     if not any(existing_wind in new_event for existing_wind in existing_events if any(wind in existing_wind for wind in ['mph', 'wind'])):
                                         existing_events.append(new_event)
                                 continue
