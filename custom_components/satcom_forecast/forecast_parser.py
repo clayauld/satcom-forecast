@@ -390,7 +390,7 @@ def format_compact_forecast(text):
 
                 # Add weather event indicators if detected
                 if detected_events:
-                    events_str = f"🚨 {', '.join(detected_events)}" if extreme_detected else ', '.join(detected_events)
+                    events_str = ', '.join(detected_events)
                     result.append(f"{day.strip()}: {events_str}{details_str} | {first_sentence}")
                 else:
                     result.append(f"{day.strip()}: {first_sentence}{details_str}")
@@ -400,7 +400,7 @@ def format_compact_forecast(text):
                 _LOGGER.debug("Failed to parse line for compact format: %s", line)
                 continue
     
-    final_result = '\n'.join(result)[:1000]
+    final_result = '\n'.join(result)[:1500]
     _LOGGER.debug("Compact forecast formatted, result length: %d characters", len(final_result))
     return final_result
 
