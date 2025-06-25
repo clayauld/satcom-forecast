@@ -25,7 +25,12 @@ A Home Assistant integration for fetching NOAA weather forecasts and sending the
 - IMAP folder validation with helpful error messages
 - Debug logging for troubleshooting
 - Comprehensive test suite
-- Enhanced weather event detection (fog, extreme events)
+- Enhanced weather event detection (rain, snow, sleet, wind, thunderstorms, fog, smoke)
+- Extreme event highlighting with warning indicators (🚨)
+- Temperature formatting with degree symbols (°)
+- Wind speed detection with significant wind filtering (15+ mph)
+- Probability inference for weather events when not explicitly stated
+- Compact format with 1500 character limit for longer forecasts
 
 ## How to Use
 
@@ -185,11 +190,31 @@ After the integration is installed, you can reconfigure all settings at any time
 
 The integration supports three forecast formats:
 
-- **Summary**: Concise 200-character summaries with pipe separators
-- **Compact**: Detailed multi-line format with weather highlights
-- **Full**: Complete NOAA forecast text
+- **Summary**: Concise time-based summaries with weather events and probabilities (1500 character limit)
+- **Compact**: Detailed multi-line format with weather highlights and temperature/wind info (1500 character limit)
+- **Full**: Complete NOAA forecast text (2000+ character limit)
 
 See [docs/format_comparison.md](docs/format_comparison.md) for detailed format comparisons.
+
+### Weather Event Detection
+
+All formats support comprehensive weather event detection:
+
+- **Precipitation**: Rain, showers, drizzle, sprinkles
+- **Winter Weather**: Snow, blizzard, flurries, sleet, freezing rain
+- **Wind**: Significant wind events (15+ mph) with direction and speed
+- **Thunderstorms**: Thunderstorms, severe thunderstorms
+- **Fog**: Fog, dense fog, patchy fog, haze, mist
+- **Smoke**: Wildfire smoke, smoke conditions
+- **Extreme Events**: Blizzard, ice storm, tornado, hurricane, severe thunderstorm, high wind warning, flood warning, dense fog, smoke
+
+### Special Features
+
+- **Warning Indicators**: Extreme events are marked with 🚨
+- **Temperature Formatting**: High/low temperatures with degree symbols (°)
+- **Wind Detection**: Only shows wind events for significant speeds (15+ mph)
+- **Probability Inference**: Provides meaningful percentages when NOAA doesn't specify them
+- **Smart Truncation**: Cuts at sentence boundaries to maintain readability
 
 ## Scanning Interval Configuration
 
@@ -222,7 +247,7 @@ Or run individual tests:
 ```bash
 cd tests
 python3 test_multi_region.py
-python3 test_fog_detection.py
+python3 test_weather_detection.py
 ```
 
 See [tests/README.md](tests/README.md) for detailed testing information.

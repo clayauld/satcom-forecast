@@ -505,8 +505,10 @@ def summarize_forecast(text):
         
         # Special handling for 'becoming' phrases
         if 'becoming' in forecast_lower:
-            after_becoming = forecast_lower.split('becoming', 1)[1]
+            after_becoming = forecast_lower.split('becoming', 1)[1].strip()
+            print('DEBUG after_becoming:', repr(after_becoming))  # DEBUG
             wind_patterns = [
+                r'(\w+)\s+(\d+) to (\d+) mph',  # direction followed by range
                 r'(\w+) wind (\d+) to (\d+) mph',
                 r'wind (\w+) (\d+) to (\d+) mph',
                 r'(\w+) wind (?:around|near|up to|to) (\d+) mph',
@@ -514,6 +516,7 @@ def summarize_forecast(text):
                 r'(\w+) wind (\d+) mph',
                 r'wind (\w+) (\d+) mph',
                 r'(\w+) (?:around|near|up to|to) (\d+) mph',  # direction around speed mph
+                r'(\d+) to (\d+) mph(?:\W|$)',  # just a range with no direction, allow trailing words
                 r'(\w+)',  # just direction
             ]
             for pattern in wind_patterns:
@@ -525,6 +528,11 @@ def summarize_forecast(text):
                         speed_max = match.group(3)
                         return [f"{direction}{speed_min}-{speed_max}mph"]
                     elif len(match.groups()) == 2:
+                        # If it's just a range with no direction
+                        if pattern == r'(\d+) to (\d+) mph':
+                            speed_min = match.group(1)
+                            speed_max = match.group(2)
+                            return [f"{speed_min}-{speed_max}mph"]
                         direction = get_abbr(match.group(1))
                         speed = match.group(2)
                         return [f"{direction}{speed}mph"]

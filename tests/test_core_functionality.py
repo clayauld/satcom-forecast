@@ -37,7 +37,7 @@ Thursday: Rain. Cloudy, with a high near 61. East wind 5 to 10 mph. Chance of pr
     print(f"\n📋 Summary Format Result:")
     print(summary)
     
-    expected_summary = "Ton:Rn(30%),L:46°,SE5-10mph | Wed:Rn(80%),H:61°,SE5-10mph,L:45°,E15mph | Thu:Rn(90%),H:61°,E5-10mph"
+    expected_summary = "Ton: Rn(30%),L:46,SE5-10mph\nWed: Rn(80%),H:61,SE5-10mph,L:45,E15mph\nThu: Rn(90%),H:61,E5-10mph"
 
     # Validate temperature and wind info
     assert summary == expected_summary
@@ -75,13 +75,12 @@ Monday: A 30 percent chance of rain. Mostly cloudy, with a high near 61.
     print(summary)
     
     expected_summary = (
-        "Ton:L:46°,SE5-10mph | "
-        "Wed:Rn(20%),H:61°,NW5mph,L:45°,SE15mph | "
-        "Thu:Rn(30%),H:61°,SE5-10mph,Wnd(40%),L:47°,E10mph | "
-        "Fri:Rn(20%),H:62°,NE5mph,L:48° | "
-        "Sat:H:64°,L:48° | "
-        "Sun:Rn(30%),H:61°,L:47° | "
-        "Mon:Rn(30%),H:61°"
+        "Ton: L:46,SE5-10mph\n"
+        "Wed: Rn(30%),H:61,NW5mph,L:45,SE15mph\n"
+        "Thu: Rn(30%),H:61,SE5-10mph,L:47,E10mph\n"
+        "Fri: Rn(30%),H:62,NE5mph,L:48\n"
+        "Sat: H:64,L:48\n"
+        "Sun: Rn(30%),H:61"
     )
     
     assert summary == expected_summary
