@@ -22,13 +22,12 @@ def test_summary_with_temp_wind():
     print("=" * 60)
     
     # Sample NOAA forecast text with temperature and wind information
-    sample_text = """NWS Forecast for: Knik Heights AK
-Tonight: Showers likely, mainly before 10pm. Mostly cloudy, with a low around 47. West wind around 5 mph becoming calm in the evening. Chance of precipitation is 60%.
-Tuesday: Scattered showers, mainly after 10am. Partly sunny, with a high near 58. Calm wind becoming west around 5 mph in the afternoon. Chance of precipitation is 30%.
-Tuesday Night: Scattered showers. Mostly cloudy, with a low around 45. West wind around 5 mph becoming calm. Chance of precipitation is 30%.
-Wednesday: Rain likely, mainly after 10am. Cloudy, with a high near 55. Southeast wind 5 to 10 mph. Chance of precipitation is 70%.
-Wednesday Night: Rain. Low around 42. East wind 10 to 15 mph. Chance of precipitation is 80%.
-Thursday: Rain and snow likely. High near 48. North wind 15 to 20 mph. Chance of precipitation is 60%."""
+    sample_text = """
+Tonight: A chance of rain. Mostly cloudy, with a low around 46. Southeast wind 5 to 10 mph. Chance of precipitation is 30%.
+Wednesday: Rain likely. Cloudy, with a high near 61. Southeast wind 5 to 10 mph. Chance of precipitation is 70%.
+Wednesday Night: Rain. Cloudy, with a low around 45. East wind around 15 mph. Chance of precipitation is 80%.
+Thursday: Rain. Cloudy, with a high near 61. East wind 5 to 10 mph. Chance of precipitation is 90%.
+"""
     
     print("📝 Sample Text:")
     print(sample_text)
@@ -38,14 +37,57 @@ Thursday: Rain and snow likely. High near 48. North wind 15 to 20 mph. Chance of
     print(f"\n📋 Summary Format Result:")
     print(summary)
     
+    expected_summary = "Ton:Rn(30%),L:46°,SE5-10mph | Wed:Rn(80%),H:61°,SE5-10mph,L:45°,E15mph | Thu:Rn(90%),H:61°,E5-10mph"
+
     # Validate temperature and wind info
-    assert 'Rn(60%)' in summary, "Weather event (Rn(60%)) not found"
-    assert 'Hi58°' in summary, "High temperature (Hi58°) not found"
-    assert 'Lo47°' in summary, "Low temperature (Lo47°) not found"
-    assert 'W5mph' in summary, "Wind info (W5mph) not found"
-    assert 'SE5-10mph' in summary, "Wind info (SE5-10mph) not found"
+    assert summary == expected_summary
     
-    print("\n✅ Temperature and wind information correctly extracted.")
+    print("   ✅ Summary contains correct weather events and percentages")
+    print("-" * 60)
+    return True
+
+def test_real_world_summary():
+    """Test the summary format with real-world forecast data that caused issues."""
+    print("🌍 Real-World Summary Test")
+    print("=" * 60)
+    
+    real_forecast_text = """
+Tonight: Mostly cloudy, with a low around 46. Light and variable wind becoming southeast 5 to 10 mph in the evening.
+Wednesday: A slight chance of showers after 4pm. Mostly cloudy, with a high near 61. Northwest wind around 5 mph.
+Wednesday Night: A 20 percent chance of showers. Mostly cloudy, with a low around 45. Southeast wind around 15 mph.
+Thursday: A 30 percent chance of rain. Mostly cloudy, with a high near 61. Southeast wind 5 to 10 mph.
+Thursday Night: A 20 percent chance of rain. Mostly cloudy, with a low around 47. East wind around 10 mph. Breezy.
+Friday: A 20 percent chance of rain. Mostly cloudy, with a high near 62. Northeast wind around 5 mph.
+Friday Night: Mostly cloudy, with a low around 48.
+Saturday: Partly sunny, with a high near 64.
+Saturday Night: Mostly cloudy, with a low around 48.
+Sunday: A 30 percent chance of rain. Mostly cloudy, with a high near 61.
+Sunday Night: A 20 percent chance of rain. Mostly cloudy, with a low around 47.
+Monday: A 30 percent chance of rain. Mostly cloudy, with a high near 61.
+"""
+    
+    print("📝 Real Forecast Text:")
+    print(real_forecast_text)
+    
+    summary = summarize_forecast(real_forecast_text)
+    
+    print(f"\n📋 Summary Format Result:")
+    print(summary)
+    
+    expected_summary = (
+        "Ton:L:46°,SE5-10mph | "
+        "Wed:Rn(20%),H:61°,NW5mph,L:45°,SE15mph | "
+        "Thu:Rn(30%),H:61°,SE5-10mph,Wnd(40%),L:47°,E10mph | "
+        "Fri:Rn(20%),H:62°,NE5mph,L:48° | "
+        "Sat:H:64°,L:48° | "
+        "Sun:Rn(30%),H:61°,L:47° | "
+        "Mon:Rn(30%),H:61°"
+    )
+    
+    assert summary == expected_summary
+    
+    print("   ✅ Real-world summary test passed")
+    print("-" * 60)
     return True
 
 async def test_core_functionality():
@@ -126,10 +168,13 @@ if __name__ == "__main__":
     # Run the temp/wind test first
     temp_wind_success = test_summary_with_temp_wind()
     
+    # Run the real-world test
+    real_world_success = test_real_world_summary()
+
     # Run the main core functionality test
     core_success = asyncio.run(test_core_functionality())
     
-    if temp_wind_success and core_success:
+    if temp_wind_success and core_success and real_world_success:
         print("\n🎉 All tests passed!")
         sys.exit(0)
     else:

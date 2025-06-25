@@ -99,6 +99,144 @@ def format_full_forecast(text):
     _LOGGER.debug("Full forecast formatted, result length: %d characters", len(result))
     return result
 
+def infer_chance(event, forecast_text):
+    forecast_lower = forecast_text.lower()
+    match = re.search(r'(\d+)%', forecast_text)
+    if match:
+        return int(match.group(1))
+    if event == 'rain':
+        if 'rain likely' in forecast_lower or 'showers likely' in forecast_lower:
+            return 70
+        elif 'scattered' in forecast_lower:
+            return 40
+        elif 'isolated' in forecast_lower:
+            return 20
+        elif 'chance' in forecast_lower:
+            # Check for "slight chance" specifically
+            if 'slight chance' in forecast_lower:
+                return 10
+            return 30
+        elif 'drizzle' in forecast_lower or 'sprinkles' in forecast_lower:
+            return 25
+        else:
+            return 50
+    elif event == 'snow':
+        if 'blizzard' in forecast_lower:
+            return 90
+        elif 'snow likely' in forecast_lower or 'heavy snow' in forecast_lower:
+            return 70
+        elif 'flurries' in forecast_lower:
+            return 30
+        elif 'chance' in forecast_lower:
+            return 30
+        else:
+            return 50
+    elif event == 'sleet' or event == 'freezing rain':
+        if 'likely' in forecast_lower:
+            return 60
+        elif 'chance' in forecast_lower:
+            return 30
+        else:
+            return 40
+    elif event == 'wind':
+        if 'high wind' in forecast_lower or 'gusts' in forecast_lower:
+            return 80
+        elif 'windy' in forecast_lower:
+            return 60
+        elif 'breezy' in forecast_lower:
+            return 40
+        else:
+            return 30
+    elif event == 'hail':
+        if 'likely' in forecast_lower:
+            return 60
+        elif 'chance' in forecast_lower:
+            return 30
+        else:
+            return 40
+    elif event == 'thunderstorm':
+        if 'severe' in forecast_lower:
+            return 80
+        elif 'likely' in forecast_lower:
+            return 60
+        elif 'chance' in forecast_lower:
+            return 30
+        else:
+            return 50
+    elif event == 'fog':
+        if 'dense fog' in forecast_lower or 'thick fog' in forecast_lower or 'heavy fog' in forecast_lower:
+            return 90
+        elif 'patchy fog' in forecast_lower:
+            return 60
+        elif 'fog' in forecast_lower or 'foggy' in forecast_lower:
+            return 70
+        elif 'haze' in forecast_lower:
+            return 40
+        elif 'mist' in forecast_lower:
+            return 30
+        else:
+            return 50
+    elif event == 'dense fog':
+        return 90
+    elif event == 'patchy fog':
+        return 60
+    elif event in ['tornado', 'hurricane', 'blizzard', 'ice storm', 'severe thunderstorm', 'high wind warning', 'flood warning']:
+        return 90
+    return 0
+
+def extract_temperature_info(forecast_text):
+    """Extracts high and low temperature, returning a dict."""
+    temps = {}
+    high_match = re.search(r'high (?:near|around) (\d+)', forecast_text, re.IGNORECASE)
+    if high_match:
+        temps['high'] = f"H:{high_match.group(1)}°"
+
+    low_match = re.search(r'low (?:around|near) (\d+)', forecast_text, re.IGNORECASE)
+    if low_match:
+        temps['low'] = f"L:{low_match.group(1)}°"
+    
+    return temps
+
+def get_wind_abbr(direction_word):
+    # Expanded abbreviations
+    mapping = {
+        "north": "N", "east": "E", "south": "S", "west": "W",
+        "northeast": "NE", "southeast": "SE", "southwest": "SW", "northwest": "NW",
+        "north northeast": "NNE", "east northeast": "ENE", "east southeast": "ESE", "south southeast": "SSE",
+        "south southwest": "SSW", "west southwest": "WSW", "west northwest": "WNW", "north northwest": "NNW"
+    }
+    return mapping.get(direction_word.lower(), direction_word)
+
+def extract_wind_info(forecast_text):
+    """Extracts wind direction and speed, supporting various formats including gusts."""
+    # Pattern for direction and speed, with optional gusts
+    patterns = [
+        r'(\b(?:north|south|east|west|northeast|southeast|southwest|northwest|north northeast|east northeast|east southeast|south southeast|south southwest|west southwest|west northwest|north northwest)\b) wind (\d+ to \d+|\d+) mph(?:, with gusts as high as (\d+) mph)?',
+        r'wind (\d+ to \d+|\d+) mph from the (\b(?:north|south|east|west|northeast|southeast|southwest|northwest|north northeast|east northeast|east southeast|south southeast|south southwest|west southwest|west northwest|north northwest)\b)',
+        r'(\b(?:north|south|east|west|northeast|southeast|southwest|northwest|north northeast|east northeast|east southeast|south southeast|south southwest|west southwest|west northwest|north northwest)\b) wind around (\d+) mph',
+        r'becoming (\b(?:north|south|east|west|northeast|southeast|southwest|northwest)\b) (\d+ to \d+|\d+) mph'
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, forecast_text, re.IGNORECASE)
+        if match:
+            groups = match.groups()
+            if "from the" in pattern:
+                direction, speed = get_wind_abbr(groups[1]), groups[0].replace(' to ', '-')
+                return f"{direction}{speed}mph"
+            if "becoming" in pattern:
+                direction, speed = get_wind_abbr(groups[0]), groups[1].replace(' to ', '-')
+                return f"{direction}{speed}mph"
+            
+            direction, speed = get_wind_abbr(groups[0]), groups[1].replace(' to ', '-')
+            gusts = groups[2] if len(groups) > 2 and groups[2] else None
+            
+            wind_str = f"{direction}{speed}mph"
+            if gusts:
+                wind_str += f" (G:{gusts}mph)"
+            return wind_str
+    return None
+
 def format_compact_forecast(text):
     """Format a compact version of the forecast with enhanced weather detection."""
     _LOGGER.debug("Formatting compact forecast")
@@ -132,88 +270,6 @@ def format_compact_forecast(text):
         'blizzard', 'ice storm', 'tornado', 'hurricane', 'severe thunderstorm', 'high wind warning', 'flood warning', 'dense fog'
     ]
     
-    def infer_chance(event, forecast_text):
-        forecast_lower = forecast_text.lower()
-        match = re.search(r'(\d+)%', forecast_text)
-        if match:
-            return int(match.group(1))
-        if event == 'rain':
-            if 'rain likely' in forecast_lower or 'showers likely' in forecast_lower:
-                return 70
-            elif 'scattered' in forecast_lower:
-                return 40
-            elif 'isolated' in forecast_lower:
-                return 20
-            elif 'chance' in forecast_lower:
-                return 30
-            elif 'drizzle' in forecast_lower or 'sprinkles' in forecast_lower:
-                return 25
-            else:
-                return 50
-        elif event == 'snow':
-            if 'blizzard' in forecast_lower:
-                return 90
-            elif 'snow likely' in forecast_lower or 'heavy snow' in forecast_lower:
-                return 70
-            elif 'flurries' in forecast_lower:
-                return 30
-            elif 'chance' in forecast_lower:
-                return 30
-            else:
-                return 50
-        elif event == 'sleet' or event == 'freezing rain':
-            if 'likely' in forecast_lower:
-                return 60
-            elif 'chance' in forecast_lower:
-                return 30
-            else:
-                return 40
-        elif event == 'wind':
-            if 'high wind' in forecast_lower or 'gusts' in forecast_lower:
-                return 80
-            elif 'windy' in forecast_lower:
-                return 60
-            elif 'breezy' in forecast_lower:
-                return 40
-            else:
-                return 30
-        elif event == 'hail':
-            if 'likely' in forecast_lower:
-                return 60
-            elif 'chance' in forecast_lower:
-                return 30
-            else:
-                return 40
-        elif event == 'thunderstorm':
-            if 'severe' in forecast_lower:
-                return 80
-            elif 'likely' in forecast_lower:
-                return 60
-            elif 'chance' in forecast_lower:
-                return 30
-            else:
-                return 50
-        elif event == 'fog':
-            if 'dense fog' in forecast_lower or 'thick fog' in forecast_lower or 'heavy fog' in forecast_lower:
-                return 90
-            elif 'patchy fog' in forecast_lower:
-                return 60
-            elif 'fog' in forecast_lower or 'foggy' in forecast_lower:
-                return 70
-            elif 'haze' in forecast_lower:
-                return 40
-            elif 'mist' in forecast_lower:
-                return 30
-            else:
-                return 50
-        elif event == 'dense fog':
-            return 90
-        elif event == 'patchy fog':
-            return 60
-        elif event in ['tornado', 'hurricane', 'blizzard', 'ice storm', 'severe thunderstorm', 'high wind warning', 'flood warning']:
-            return 90
-        return 0
-    
     for line in lines:
         if ':' in line and any(day in line for day in ['Today', 'Tonight', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']):
             try:
@@ -235,23 +291,61 @@ def format_compact_forecast(text):
                             else:
                                 detected_events.append(f"{event.title()}")
                 
-                # Simplify the forecast text (original logic)
-                forecast = forecast.replace('with a high near', 'Hi')
-                forecast = forecast.replace('with a low around', 'Lo')
-                forecast = re.sub(r'Chance of precipitation is (\d+)%', r'POP: \1%', forecast)
-                forecast = re.sub(r'Chance of precipitation (\d+)%', r'POP: \1%', forecast)
+                # Extract temperature and wind info
+                temp_info = extract_temperature_info(forecast)
+                wind_info = extract_wind_info(forecast)
+
+                # Make a clean version of the forecast for display
+                display_forecast = forecast
+
+                # Remove verbose weather details from the display version
+                temp_patterns = [
+                    r'with a high (?:near|around) \d+',
+                    r'with a low (?:around|near) \d+',
+                    r'a high (?:near|around) \d+',
+                    r'a low (?:around|near) \d+',
+                    r'high (?:near|around) \d+',
+                    r'low (?:around|near) \d+',
+                ]
+                for pattern in temp_patterns:
+                    display_forecast = re.sub(pattern, '', display_forecast, flags=re.IGNORECASE)
+
+                wind_patterns = [
+                    r'(\b(?:north|south|east|west|northeast|southeast|southwest|northwest|north northeast|east northeast|east southeast|south southeast|south southwest|west southwest|west northwest|north northwest)\b) wind (\d+ to \d+|\d+) mph(?:, with gusts as high as (\d+) mph)?',
+                    r'wind (\d+ to \d+|\d+) mph from the (\b(?:north|south|east|west|northeast|southeast|southwest|northwest|north northeast|east northeast|east southeast|south southeast|south southwest|west southwest|west northwest|north northwest)\b)',
+                    r'(\b(?:north|south|east|west|northeast|southeast|southwest|northwest|north northeast|east northeast|east southeast|south southeast|south southwest|west southwest|west northwest|north northwest)\b) wind around (\d+) mph'
+                ]
+                for pattern in wind_patterns:
+                    display_forecast = re.sub(pattern, '', display_forecast, flags=re.IGNORECASE)
+
+                # General cleanup
+                display_forecast = re.sub(r'Chance of precipitation is \d+%', '', display_forecast, flags=re.IGNORECASE)
+                display_forecast = re.sub(r'\s+', ' ', display_forecast).strip()
+                display_forecast = display_forecast.replace(' ,', ',').replace(' .', '.').strip(' ,.')
+                if display_forecast.endswith(','):
+                    display_forecast = display_forecast[:-1]
                 
-                # Take just the first sentence
-                first_sentence = forecast.split('.')[0] if '.' in forecast else forecast
+                # Take just the first sentence of the cleaned forecast
+                first_sentence = display_forecast.split('.')[0] if '.' in display_forecast else display_forecast
                 
+                # Build details string
+                details = []
+                if temp_info:
+                    if 'high' in temp_info:
+                        details.append(temp_info['high'].replace("°", ""))
+                    if 'low' in temp_info:
+                        details.append(temp_info['low'].replace("°", ""))
+                if wind_info:
+                    details.append(wind_info)
+                
+                details_str = f" ({', '.join(details)})" if details else ""
+
                 # Add weather event indicators if detected
                 if detected_events:
-                    if extreme_detected:
-                        result.append(f"{day.strip()}: 🚨 {', '.join(detected_events)} | {first_sentence}")
-                    else:
-                        result.append(f"{day.strip()}: {', '.join(detected_events)} | {first_sentence}")
+                    events_str = f"🚨 {', '.join(detected_events)}" if extreme_detected else ', '.join(detected_events)
+                    result.append(f"{day.strip()}: {events_str}{details_str} | {first_sentence}")
                 else:
-                    result.append(f"{day.strip()}: {first_sentence}")
+                    result.append(f"{day.strip()}: {first_sentence}{details_str}")
                     
                 _LOGGER.debug("Added compact forecast for %s: %s", day.strip(), first_sentence[:50] + "..." if len(first_sentence) > 50 else first_sentence)
             except ValueError:
@@ -617,3 +711,31 @@ def summarize_forecast(text):
     if not summary:
         summary = "No significant weather expected."
     return summary
+
+def get_email_body_from_subject(subject):
+    """
+    Parses an email subject to extract the email body (coordinates and format).
+    Example subjects:
+    - "61.408,-148.444"
+    - "61.408, -148.444"
+    - "61.408, -148.444 summary"
+    - "61.408, -148.444 compact"
+    - "61.408, -148.444 full"
+    """
+    _LOGGER.debug("Parsing email subject: %s", subject)
+    # Regex to find coordinates and an optional format keyword
+    # It looks for two numbers (latitude and longitude) separated by a comma,
+    # and an optional word (summary, compact, full) at the end.
+    match = re.search(r'(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*(\w+)?', subject)
+    
+    if match:
+        lat, lon, fmt = match.groups()
+        if fmt:
+            result = f"{lat},{lon} {fmt}"
+        else:
+            result = f"{lat},{lon}"
+        _LOGGER.debug("Parsed subject to: %s", result)
+        return result
+    else:
+        _LOGGER.debug("No coordinates found in subject")
+        return None
