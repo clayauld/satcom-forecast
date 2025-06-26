@@ -35,18 +35,17 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
-    - name: Run test suite
+    - name: Run pytest with coverage
       run: |
-        cd tests
-        python run_tests.py
+        pytest tests/ -v --cov=custom_components/satcom_forecast --cov-report=xml --cov-report=term-missing
     
-    - name: Upload test results
-      uses: actions/upload-artifact@v4
-      if: always()
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
       with:
-        name: test-results-${{ matrix.python-version }}
-        path: tests/test_output.txt
-        retention-days: 7
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
 
   lint:
     runs-on: ubuntu-latest
@@ -82,6 +81,11 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: 3.11
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
     
     - name: Test integration structure
       run: |

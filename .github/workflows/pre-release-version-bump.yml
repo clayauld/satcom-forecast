@@ -1,0 +1,91 @@
+name: Pre-Release Version Bump
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Extract version from release tag
+        id: version
+        run: |
+          # Remove 'v' prefix if present and extract version
+          VERSION="${GITHUB_REF#refs/tags/}"
+          VERSION="${VERSION#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION"
+
+      - name: Update pyproject.toml version
+        run: |
+          # Use sed to update the version in pyproject.toml
+          sed -i "s/^version = \".*\"/version = \"${{ steps.version.outputs.version }}\"/" pyproject.toml
+          echo "Updated pyproject.toml version to ${{ steps.version.outputs.version }}"
+
+      - name: Update manifest.json version
+        run: |
+          # Use sed to update the version in manifest.json
+          sed -i "s/\"version\": \".*\"/\"version\": \"${{ steps.version.outputs.version }}\"/" custom_components/satcom_forecast/manifest.json
+          echo "Updated manifest.json version to ${{ steps.version.outputs.version }}"
+
+      - name: Verify changes
+        run: |
+          echo "=== pyproject.toml version ==="
+          grep "version = " pyproject.toml
+          echo "=== manifest.json version ==="
+          grep '"version":' custom_components/satcom_forecast/manifest.json
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Commit and push changes
+        run: |
+          git add pyproject.toml custom_components/satcom_forecast/manifest.json
+          git commit -m "Bump version to ${{ steps.version.outputs.version }} for release ${{ github.event.release.tag_name }} [skip ci]"
+          git push origin main
+
+      - name: Update release with new assets
+        run: |
+          # Create a temporary directory for the updated files
+          mkdir -p temp_release
+          cp -r custom_components temp_release/
+          cp pyproject.toml temp_release/
+          cp README.md temp_release/
+          cp LICENSE temp_release/
+          
+          # Create a zip file with the updated version
+          cd temp_release
+          zip -r ../satcom-forecast-${{ steps.version.outputs.version }}.zip .
+          cd ..
+          
+          # Upload the updated assets to the release
+          gh release upload ${{ github.event.release.tag_name }} satcom-forecast-${{ steps.version.outputs.version }}.zip --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment on release
+        run: |
+          gh release edit ${{ github.event.release.tag_name }} \
+            --notes "${{ github.event.release.body }}
+          
+          **Note:** Version numbers have been automatically updated to ${{ steps.version.outputs.version }} in the release artifacts."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
