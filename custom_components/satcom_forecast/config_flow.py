@@ -32,7 +32,10 @@ def get_imap_folders(host, port, username, password, security="SSL"):
         available_folders = []
         for f in folders:
             # Parse folder name from IMAP LIST response
-            folder_name = f.decode().split('"')[-2] if b'"' in f else f.decode().split()[-1]
+            if b'"' in f:
+                folder_name = f.decode().split('"')[-2]
+            else:
+                folder_name = f.decode().split()[-1]
             available_folders.append(folder_name)
         
         mail.logout()
@@ -58,7 +61,9 @@ def validate_imap_folder(host, port, username, password, folder, security="SSL")
         status, data = mail.select(folder)
         if status != "OK":
             mail.logout()
-            return False, f"Could not access folder '{folder}': {data[0].decode() if data else 'Unknown error'}"
+            error_msg = (f"Could not access folder '{folder}': "
+                        f"{data[0].decode() if data else 'Unknown error'}")
+            return False, error_msg
         
         mail.logout()
         return True, None
@@ -192,11 +197,16 @@ class SatcomForecastOptionsFlow(config_entries.OptionsFlow):
                 # Test IMAP connection if credentials were provided
                 if user_input.get("imap_pass") and user_input.get("imap_user"):
                     # Get the credentials to use for validation
-                    imap_user = user_input.get("imap_user") or self.config_entry.data.get("imap_user")
-                    imap_pass = user_input.get("imap_pass") or self.config_entry.data.get("imap_pass")
-                    imap_host = user_input.get("imap_host") or self.config_entry.data.get("imap_host")
-                    imap_port = user_input.get("imap_port") or self.config_entry.data.get("imap_port")
-                    imap_security = user_input.get("imap_security") or self.config_entry.data.get("imap_security", "SSL")
+                    imap_user = (user_input.get("imap_user") or 
+                               self.config_entry.data.get("imap_user"))
+                    imap_pass = (user_input.get("imap_pass") or 
+                               self.config_entry.data.get("imap_pass"))
+                    imap_host = (user_input.get("imap_host") or 
+                               self.config_entry.data.get("imap_host"))
+                    imap_port = (user_input.get("imap_port") or 
+                               self.config_entry.data.get("imap_port"))
+                    imap_security = (user_input.get("imap_security") or 
+                                   self.config_entry.data.get("imap_security", "SSL"))
                     
                     if imap_security == "SSL":
                         mail = imaplib.IMAP4_SSL(imap_host, imap_port)
@@ -215,11 +225,16 @@ class SatcomForecastOptionsFlow(config_entries.OptionsFlow):
                 
                 if new_folder != current_folder:
                     # Get the credentials to use for validation
-                    imap_user = user_input.get("imap_user") or self.config_entry.data.get("imap_user")
-                    imap_pass = user_input.get("imap_pass") or self.config_entry.data.get("imap_pass")
-                    imap_host = user_input.get("imap_host") or self.config_entry.data.get("imap_host")
-                    imap_port = user_input.get("imap_port") or self.config_entry.data.get("imap_port")
-                    imap_security = user_input.get("imap_security") or self.config_entry.data.get("imap_security", "SSL")
+                    imap_user = (user_input.get("imap_user") or 
+                               self.config_entry.data.get("imap_user"))
+                    imap_pass = (user_input.get("imap_pass") or 
+                               self.config_entry.data.get("imap_pass"))
+                    imap_host = (user_input.get("imap_host") or 
+                               self.config_entry.data.get("imap_host"))
+                    imap_port = (user_input.get("imap_port") or 
+                               self.config_entry.data.get("imap_port"))
+                    imap_security = (user_input.get("imap_security") or 
+                                   self.config_entry.data.get("imap_security", "SSL"))
                     
                     is_valid, error_message = await self.hass.async_add_executor_job(
                         validate_imap_folder,
@@ -247,17 +262,23 @@ class SatcomForecastOptionsFlow(config_entries.OptionsFlow):
                         data[key] = value
                 
                 # Check if polling interval changed
-                old_polling = self.config_entry.data.get("polling_interval", DEFAULT_POLLING_INTERVAL)
+                old_polling = (self.config_entry.data.get("polling_interval", 
+                                                         DEFAULT_POLLING_INTERVAL))
                 new_polling = data.get("polling_interval", DEFAULT_POLLING_INTERVAL)
                 polling_changed = old_polling != new_polling
                 
-                self.hass.config_entries.async_update_entry(self.config_entry, data=data)
+                self.hass.config_entries.async_update_entry(
+                    self.config_entry, data=data
+                )
                 
                 # Reload the integration if polling interval changed
                 if polling_changed:
                     from . import async_reload_entry
                     await async_reload_entry(self.hass, self.config_entry)
-                    _LOGGER.info("Integration reloaded due to polling interval change from %d to %d minutes", old_polling, new_polling)
+                    _LOGGER.info(
+                        "Integration reloaded due to polling interval change "
+                        "from %d to %d minutes", old_polling, new_polling
+                    )
                 
                 return self.async_create_entry(title="", data={})
                 
@@ -282,24 +303,43 @@ class SatcomForecastOptionsFlow(config_entries.OptionsFlow):
         
         # Create schema with current values as defaults
         return vol.Schema({
-            vol.Required("imap_host", default=data.get("imap_host", "imap.gmail.com")): str,
+            vol.Required("imap_host", 
+                        default=data.get("imap_host", "imap.gmail.com")): str,
             vol.Required("imap_port", default=data.get("imap_port", 993)): int,
-            vol.Required("imap_security", default=data.get("imap_security", "SSL")): vol.In(["None", "STARTTLS", "SSL"]),
-            vol.Required("imap_user", default=data.get("imap_user", "")): str,
+            vol.Required("imap_security", 
+                        default=data.get("imap_security", "SSL")): vol.In(
+                ["None", "STARTTLS", "SSL"]
+            ),
+            vol.Required("imap_user", 
+                        default=data.get("imap_user", "")): str,
             vol.Optional("imap_pass"): str,
-            vol.Required("smtp_host", default=data.get("smtp_host", "smtp.gmail.com")): str,
+            vol.Required("smtp_host", 
+                        default=data.get("smtp_host", "smtp.gmail.com")): str,
             vol.Required("smtp_port", default=data.get("smtp_port", 587)): int,
-            vol.Required("smtp_user", default=data.get("smtp_user", "")): str,
+            vol.Required("smtp_user", 
+                        default=data.get("smtp_user", "")): str,
             vol.Optional("smtp_pass"): str,
-            vol.Required("imap_folder", default=data.get("imap_folder", "INBOX")): str,
-            vol.Required("forecast_format", default=data.get("forecast_format", "summary")): vol.In(["summary", "compact", "full"]),
-            vol.Required("device_type", default=data.get("device_type", "zoleo")): vol.In(["zoleo", "inreach"]),
-            vol.Optional("character_limit", default=data.get("character_limit", 0)): int,
-            vol.Optional("debug", default=data.get("debug", DEFAULT_DEBUG)): bool,
-            vol.Required("polling_interval", default=data.get("polling_interval", DEFAULT_POLLING_INTERVAL)): vol.All(
+            vol.Required("imap_folder", 
+                        default=data.get("imap_folder", "INBOX")): str,
+            vol.Required("forecast_format", 
+                        default=data.get("forecast_format", "summary")): vol.In(
+                ["summary", "compact", "full"]
+            ),
+            vol.Required("device_type", 
+                        default=data.get("device_type", "zoleo")): vol.In(
+                ["zoleo", "inreach"]
+            ),
+            vol.Optional("character_limit", 
+                        default=data.get("character_limit", 0)): int,
+            vol.Optional("debug", 
+                        default=data.get("debug", DEFAULT_DEBUG)): bool,
+            vol.Required("polling_interval", 
+                        default=data.get("polling_interval", 
+                                       DEFAULT_POLLING_INTERVAL)): vol.All(
                 vol.Coerce(int), vol.Range(min=1, max=1440)
             ),
-            vol.Required("default_days", default=data.get("default_days", DEFAULT_DAYS)): vol.All(
-                vol.Coerce(int), vol.Range(min=1, max=7)
+            vol.Required("default_days", 
+                        default=data.get("default_days", DEFAULT_DAYS)): vol.All(
+                vol.Coerce(int), vol.Range(min=0, max=7)
             ),
         })

@@ -18,7 +18,7 @@
       },
       "finalize": {
         "title": "Forecast Configuration",
-        "description": "Configure forecast settings and select the mail folder to monitor. Available folders: {available_folders}",
+        "description": "Configure forecast settings and select the mail folder to monitor. Available folders: {available_folders}\n\nNote: Default Forecast Days (0-7) - 0 means 'Forecast only today'",
         "data": {
           "imap_folder": "Mail Folder",
           "forecast_format": "Default Format",
@@ -26,7 +26,7 @@
           "character_limit": "Character Limit (0 = no limit)",
           "debug": "Enable Debug Logging",
           "polling_interval": "Scanning Interval (minutes)",
-          "default_days": "Default Forecast Days (1-7)"
+          "default_days": "Default Forecast Days (0-7)"
         }
       }
     },
@@ -42,7 +42,7 @@
     "step": {
       "init": {
         "title": "SatCom Forecast Options",
-        "description": "Configure SatCom Forecast settings",
+        "description": "Configure SatCom Forecast settings\n\nNote: Default Forecast Days (0-7) - 0 means 'Forecast only today'",
         "data": {
           "imap_host": "IMAP Host",
           "imap_port": "IMAP Port",
@@ -59,7 +59,7 @@
           "character_limit": "Character Limit (0 = no limit)",
           "debug": "Enable Debug Logging",
           "polling_interval": "Scanning Interval (minutes)",
-          "default_days": "Default Forecast Days (1-7)"
+          "default_days": "Default Forecast Days (0-7)"
         }
       }
     },

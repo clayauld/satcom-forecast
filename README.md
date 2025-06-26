@@ -381,14 +381,70 @@ If you're still experiencing issues:
 
 - [Format Comparison](docs/format_comparison.md) - Detailed comparison of forecast formats
 - [Test Suite](tests/README.md) - Testing information and examples
+- [Contributing Guide](CONTRIBUTING.md) - How to contribute to the project
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+We welcome contributions from the community! Whether you're fixing bugs, adding features, or improving documentation, your help is appreciated.
+
+### Quick Start
+
+1. **Fork the repository** on GitHub
+2. **Clone your fork** and set up the development environment
+3. **Create a feature branch** for your changes
+4. **Make your changes** following our coding standards
+5. **Run tests** to ensure everything works
+6. **Submit a pull request** with a clear description
+
+### Development Setup
+
+```bash
+# Clone your fork
+git clone https://github.com/YOUR_USERNAME/satcom-forecast.git
+cd satcom-forecast
+
+# Set up virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -e ".[dev]"
+
+# Run tests
+pytest tests/ -v
+```
+
+### What We're Looking For
+
+- **Bug fixes** - Help improve reliability and stability
+- **New features** - Enhance functionality and user experience
+- **Documentation** - Improve guides, examples, and API documentation
+- **Tests** - Add test coverage for new features or edge cases
+- **Translations** - Help make the integration available in more languages
+
+### Code Standards
+
+- Follow [PEP 8](https://www.python.org/dev/peps/pep-0008/) with Black formatting
+- Use async/await for all I/O operations
+- Add comprehensive tests for new functionality
+- Follow Home Assistant integration development guidelines
+- Use conventional commit messages
+
+### Getting Help
+
+- **Read the [Contributing Guide](CONTRIBUTING.md)** for detailed instructions
+- **Check existing issues** to see if your problem is already being worked on
+- **Use GitHub Discussions** for general questions and ideas
+- **Join the community** and engage with other contributors
+
+### Recognition
+
+Contributors are recognized in:
+- The project README
+- Release notes
+- GitHub contributors list
+
+For detailed information about contributing, including development setup, coding standards, testing, and the pull request process, please see our [Contributing Guide](CONTRIBUTING.md).
 
 ## License
 
