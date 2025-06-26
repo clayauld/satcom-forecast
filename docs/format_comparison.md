@@ -19,7 +19,7 @@ This document shows the three different forecast formats available in the SatCom
 
 ### Example Output:
 ```
-Ton:Rn(40%),L:46°,SE5-10mph | Tue:Rn(40%),H:61°,SE5-10mph,L:45°,E15mph | Wed:Rn(50%),H:61°,E5-10mph
+Tngt:Rn(40%),L:46°,SE5-10mph | Tue:Rn(40%),H:61°,SE5-10mph,L:45°,E15mph | Wed:Rn(50%),H:61°,E5-10mph
 ```
 
 ### What the user receives:
@@ -27,7 +27,7 @@ Ton:Rn(40%),L:46°,SE5-10mph | Tue:Rn(40%),H:61°,SE5-10mph,L:45°,E15mph | Wed:
 **Email:**
 ```
 Subject: NOAA Forecast Update
-Body: Ton:Rn(40%),L:46°,SE5-10mph | Tue:Rn(40%),H:61°,SE5-10mph,L:45°,E15mph | Wed:Rn(50%),H:61°,E5-10mph
+Body: Tngt:Rn(40%),L:46°,SE5-10mph | Tue:Rn(40%),H:61°,SE5-10mph,L:45°,E15mph | Wed:Rn(50%),H:61°,E5-10mph
 ```
 
 ### Key Features:
@@ -41,6 +41,7 @@ Body: Ton:Rn(40%),L:46°,SE5-10mph | Tue:Rn(40%),H:61°,SE5-10mph,L:45°,E15mph 
 - ✅ **Prioritized Events**: Shows most significant weather conditions first
 - ✅ **Temperature Information**: High/low temperatures with degree symbols (°)
 - ✅ **Wind Information**: Direction and speed for significant wind events (15+ mph)
+- ✅ **Standard Abbreviations**: Uses "Tngt" for Tonight, "Aft" for This Afternoon
 
 ### Weather Event Detection:
 - **Rain/Precipitation**: Rain, showers, drizzle, sprinkles
@@ -48,8 +49,8 @@ Body: Ton:Rn(40%),L:46°,SE5-10mph | Tue:Rn(40%),H:61°,SE5-10mph,L:45°,E15mph 
 - **Sleet/Freezing Rain**: Sleet, freezing rain, ice, icy
 - **Wind**: Windy, gusts, high wind, breezy (only for 15+ mph)
 - **Thunderstorms**: Thunderstorm, t-storm, severe thunderstorm
-- **Fog**: Fog, foggy, haze, mist, dense fog, patchy fog
-- **Smoke**: Smoke, smoky, wildfire smoke, fire smoke, smoke from fires
+- **Fog**: Fog, foggy, mist, dense fog, patchy fog
+- **Smoke**: Areas of smoke, widespread haze, wildfire smoke, heavy smoke
 - **Extreme Events**: Blizzard, ice storm, tornado, hurricane, severe thunderstorm, high wind warning, flood warning, dense fog, smoke
 
 ### Precipitation Inference Logic:
@@ -63,12 +64,16 @@ Body: Ton:Rn(40%),L:46°,SE5-10mph | Tue:Rn(40%),H:61°,SE5-10mph,L:45°,E15mph 
 - **Heavy snow**: 70%
 - **Snow flurries**: 30%
 - **Fog conditions**: 60-90% depending on type
-- **Smoke conditions**: 70-90% depending on intensity
+- **Smoke conditions**: 
+  - Areas of smoke: 65%
+  - Wildfire smoke: 75%
+  - Heavy smoke: 90%
+  - Widespread haze: 50%
 
 ### Multi-Region Examples:
-- **Fairbanks, AK:** `Ton:🚨Smoke(90%),Rn(80%),ThSt(80%),Fg(80%) | Tue:Rn(50%),Fg(50%) | Tue:Rn(50%),Fg(50%) | Wed:Rn(60%),ThSt(60%),Fg(60%) | Wed:Rn(60%),ThSt(60%)`
-- **Miami, FL:** `Ton:Rn(30%),ThSt(30%) | Tue:Rn(30%),🚨Wnd(80%),ThSt(30%) | Tue:Rn(30%),ThSt(30%) | Wed:Rn(70%),ThSt(70%) | Wed:Rn(30%),ThSt(30%)`
-- **Los Angeles, CA:** `Ton:Fg(60%),PFg(60%) | Tue:Fg(60%),PFg(60%) | Tue:Fg(60%),PFg(60%) | Wed:Fg(60%),PFg(60%) | Wed:Fg(60%),PFg(60%) | Thu:Fg(60%),PFg(60%)`
+- **Fairbanks, AK:** `Tngt:🚨Smoke(90%),Rn(80%),ThSt(80%),Fg(80%) | Tue:Rn(50%),Fg(50%) | Tue:Rn(50%),Fg(50%) | Wed:Rn(60%),ThSt(60%),Fg(60%) | Wed:Rn(60%),ThSt(60%)`
+- **Miami, FL:** `Tngt:Rn(30%),ThSt(30%) | Tue:Rn(30%),🚨Wnd(80%),ThSt(30%) | Tue:Rn(30%),ThSt(30%) | Wed:Rn(70%),ThSt(70%) | Wed:Rn(30%),ThSt(30%)`
+- **Los Angeles, CA:** `Tngt:Fg(60%),PFg(60%) | Tue:Fg(60%),PFg(60%) | Tue:Fg(60%),PFg(60%) | Wed:Fg(60%),PFg(60%) | Wed:Fg(60%),PFg(60%) | Thu:Fg(60%),PFg(60%)`
 
 ---
 
@@ -103,21 +108,24 @@ Body: (2/2) Tuesday Night: Rain (L:45, E15mph) | Scattered showers | Wednesday: 
 
 ### Key Features:
 - ✅ **Weather Event Indicators**: Shows detected weather events as prefixes with probabilities
-- ✅ **Extreme Event Highlighting**: 🚨 for extreme events
+- ✅ **Extreme Event Highlighting**: 🚨 for extreme events and smoke conditions
 - ✅ Uses pipe separators for easy reading
 - ✅ Includes temperature information (H:64°, L:45°)
 - ✅ Includes wind information (direction and speed)
 - ✅ Takes first sentence of each forecast
 - ✅ **Enhanced Detection**: Same logic as Summary format
-- ✅ **Fog Detection**: Properly identifies fog, patchy fog, haze, mist
-- ✅ **Smoke Detection**: Detects wildfire smoke and smoke conditions
+- ✅ **Fog Detection**: Properly identifies fog, patchy fog, mist
+- ✅ **Advanced Smoke Detection**: Detects areas of smoke, widespread haze, wildfire smoke, heavy smoke with distinct probability levels
 - ✅ **Wind Filtering**: Only shows wind events for significant speeds (15+ mph)
+- ✅ **Standard Abbreviations**: Uses "Tonight" and "This Afternoon" in full form
 
 ### Event Indicator Examples:
 - `Tonight: Rain(80%), Thunderstorm(80%) | [forecast text]`
 - `Wednesday: 🚨Smoke(90%), 🚨Blizzard(90%), Snow(70%) | [forecast text]`
 - `Friday: Wnd(60%) | [forecast text]` (only for 15+ mph)
 - `Tuesday: Fog(70%), Patchy Fog(60%) | [forecast text]`
+- `This Afternoon: 🚨Smoke(65%) | [forecast text]` (areas of smoke)
+- `Tonight: 🚨Smoke(75%) | [forecast text]` (wildfire smoke)
 
 ---
 

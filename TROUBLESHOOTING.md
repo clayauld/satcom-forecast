@@ -67,10 +67,16 @@ Common errors:
 
 ### 5. Test Integration Structure
 
-Run the structure test script:
+Run the modern pytest-based test suite:
 ```bash
 cd /path/to/satcom-forecast
-python3 test_integration_structure.py
+pytest tests/verify_installation.py -v
+```
+
+Or run the legacy verification script:
+```bash
+cd /path/to/satcom-forecast
+python3 tests/verify_installation.py
 ```
 
 ### 6. Verify in Home Assistant Environment
@@ -78,7 +84,7 @@ python3 test_integration_structure.py
 If you have SSH access to Home Assistant, run:
 ```bash
 cd /config
-python3 /path/to/satcom-forecast/verify_installation.py
+python3 /path/to/satcom-forecast/tests/verify_installation.py
 ```
 
 ## Common Solutions
@@ -120,6 +126,26 @@ If manual installation continues to fail:
    ln -s satcom-forecast/custom_components/satcom_forecast custom_components/
    ```
 
+## Testing Your Installation
+
+### Modern Pytest Testing
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run specific test categories
+pytest tests/test_forecast_parser.py -v
+pytest tests/test_imap_handler.py -v
+pytest tests/verify_installation.py -v
+```
+
+### Legacy Testing
+```bash
+# Run legacy test suite
+cd tests
+python3 run_tests.py
+```
+
 ## Search Terms
 
 If the integration doesn't appear, try searching for:
@@ -151,4 +177,5 @@ When reporting issues, include:
 - Installation method (Docker, OS, etc.)
 - Complete error messages from logs
 - Output from verification scripts
-- Directory structure of your installation 
+- Directory structure of your installation
+- Test results from pytest suite 

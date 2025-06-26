@@ -84,6 +84,32 @@ Restart the Home Assistant service according to your installation method.
 3. Search for "SatCom Forecast" or "Satellite Forecast"
 4. If it doesn't appear, try searching for "satcom" or "forecast"
 
+## Testing Your Installation
+
+### Modern Pytest Testing (Recommended)
+```bash
+# Install pytest if not already installed
+pip install pytest
+
+# Run the installation verification tests
+cd /path/to/satcom-forecast
+pytest tests/verify_installation.py -v
+
+# Run all tests to verify functionality
+pytest tests/ -v
+```
+
+### Legacy Testing
+```bash
+# Run the legacy verification script
+cd /path/to/satcom-forecast
+python3 tests/verify_installation.py
+
+# Run the legacy test suite
+cd tests
+python3 run_tests.py
+```
+
 ## Troubleshooting
 
 ### Integration Not Found
@@ -108,10 +134,16 @@ If the integration doesn't appear in the search:
    - Common errors include syntax errors or missing dependencies
 
 4. **Test Integration Structure**
-   Run the structure test script:
+   Run the modern pytest-based verification:
    ```bash
    cd /path/to/satcom-forecast
-   python3 test_integration_structure.py
+   pytest tests/verify_installation.py -v
+   ```
+   
+   Or run the legacy verification script:
+   ```bash
+   cd /path/to/satcom-forecast
+   python3 tests/verify_installation.py
    ```
 
 ### Common Issues
@@ -129,6 +161,15 @@ If the integration doesn't appear in the search:
 - Make sure you copied the entire folder, not just individual files
 - Verify the folder is in the correct location
 - Check file permissions
+
+#### Issue: Pytest not found
+```bash
+# Install pytest
+pip install pytest
+
+# Or use python -m pytest
+python -m pytest tests/verify_installation.py -v
+```
 
 ### Alternative Installation Methods
 
@@ -154,6 +195,7 @@ After successful installation, you should be able to:
 2. Configure the integration with your email settings
 3. See the integration listed in **Settings** > **Devices & Services**
 4. Access reconfiguration options by clicking on the integration
+5. Run tests successfully with pytest
 
 ## Support
 
@@ -162,6 +204,7 @@ If you continue to have issues:
 1. Check the [GitHub Issues](https://github.com/clayauld/satcom-forecast/issues)
 2. Review the [Home Assistant Custom Integration Documentation](https://developers.home-assistant.io/docs/creating_integration_manifest)
 3. Check your Home Assistant version compatibility
+4. Run the test suite and include results in your issue report
 
 ## File Checklist
 

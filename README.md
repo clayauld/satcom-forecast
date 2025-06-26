@@ -24,8 +24,10 @@ A Home Assistant integration for fetching NOAA weather forecasts and sending the
 - Automatic folder detection and dropdown selection
 - IMAP folder validation with helpful error messages
 - Debug logging for troubleshooting
-- Comprehensive test suite
-- Enhanced weather event detection (rain, snow, sleet, wind, thunderstorms, fog, smoke)
+- **Modern pytest-based test suite**
+- **Enhanced weather event detection** (rain, snow, sleet, wind, thunderstorms, fog, smoke)
+- **Advanced smoke detection** with probability levels (areas of smoke: 65%, wildfire smoke: 75%, heavy smoke: 90%)
+- **Standard forecast abbreviations** (Tonight: "Tngt", This Afternoon: "Aft")
 - Extreme event highlighting with warning indicators (🚨)
 - Temperature formatting with degree symbols (°)
 - Wind speed detection with significant wind filtering (15+ mph)
@@ -204,17 +206,18 @@ All formats support comprehensive weather event detection:
 - **Winter Weather**: Snow, blizzard, flurries, sleet, freezing rain
 - **Wind**: Significant wind events (15+ mph) with direction and speed
 - **Thunderstorms**: Thunderstorms, severe thunderstorms
-- **Fog**: Fog, dense fog, patchy fog, haze, mist
-- **Smoke**: Wildfire smoke, smoke conditions
+- **Fog**: Fog, dense fog, patchy fog, mist
+- **Smoke**: Areas of smoke, widespread haze, wildfire smoke, heavy smoke (with alarm emoji 🚨)
 - **Extreme Events**: Blizzard, ice storm, tornado, hurricane, severe thunderstorm, high wind warning, flood warning, dense fog, smoke
 
 ### Special Features
 
-- **Warning Indicators**: Extreme events are marked with 🚨
+- **Warning Indicators**: Extreme events and smoke conditions are marked with 🚨
 - **Temperature Formatting**: High/low temperatures with degree symbols (°)
 - **Wind Detection**: Only shows wind events for significant speeds (15+ mph)
 - **Probability Inference**: Provides meaningful percentages when NOAA doesn't specify them
 - **Smart Truncation**: Cuts at sentence boundaries to maintain readability
+- **Standard Abbreviations**: Uses standard forecast abbreviations (Tngt for Tonight, Aft for This Afternoon)
 
 ## Scanning Interval Configuration
 
@@ -235,20 +238,23 @@ The scanning interval change takes effect immediately when you save the configur
 
 ## Testing
 
-The integration includes a comprehensive test suite. To run tests:
+The integration includes a comprehensive **pytest-based test suite**. To run tests:
 
 ```bash
-cd tests
-python3 run_tests.py
+# Run all tests
+pytest tests/ -v
+
+# Run specific test file
+pytest tests/test_forecast_parser.py -v
 ```
 
-Or run individual tests:
-
-```bash
-cd tests
-python3 test_multi_region.py
-python3 test_weather_detection.py
-```
+The test suite covers:
+- Basic forecast formatting (summary, compact, full)
+- Smoke detection and probability levels
+- Weather event detection (fog, thunderstorms, wind, snow, freezing rain)
+- Temperature and wind extraction
+- Period detection and abbreviations
+- Real-world forecast scenarios
 
 See [tests/README.md](tests/README.md) for detailed testing information.
 

@@ -1,95 +1,94 @@
 # SatCom Forecast Test Suite
 
-This directory contains comprehensive tests for the SatCom Forecast integration.
+This directory contains comprehensive tests for the SatCom Forecast integration, now using **pytest** for modern, maintainable testing.
 
 ## Test Structure
 
-### Core Tests
-- **`test_integration_structure.py`** - Validates integration file structure and manifest
-- **`test_reconfiguration.py`** - Tests reconfiguration functionality and polling interval
-- **`test_core_functionality.py`** - Tests basic forecast fetching and formatting
-- **`test_multi_region.py`** - Tests forecast functionality across different geographic regions
-- **`test_weather_detection.py`** - Tests weather event detection (fog, thunderstorms, etc.)
-- **`test_summary_length.py`** - Validates summary format character limits
+### Main Test Files
+- **`test_forecast_parser.py`** - Comprehensive tests for forecast parsing, formatting, and all weather events
+- **`test_imap_handler.py`** - Tests for IMAP email handling functionality
+- **`verify_installation.py`** - Installation and integration structure validation
 
-### Test Runner
-- **`run_tests.py`** - Main test runner that executes all tests in logical order
+### Legacy Test Runner
+- **`run_tests.py`** - Legacy test runner (deprecated, use pytest instead)
 
 ## Running Tests
 
-### Run All Tests
+### Run All Tests (Recommended)
 ```bash
-cd tests
-python run_tests.py
+# From project root
+pytest tests/ -v
+
+# Run with coverage
+pytest tests/ -v --cov=custom_components/satcom_forecast
 ```
 
-### Run Individual Tests
+### Run Specific Test Files
 ```bash
-cd tests
-python test_integration_structure.py
-python test_reconfiguration.py
-python test_core_functionality.py
-python test_multi_region.py
-python test_weather_detection.py
-python test_summary_length.py
+# Run main forecast parser tests
+pytest tests/test_forecast_parser.py -v
+
+# Run IMAP handler tests
+pytest tests/test_imap_handler.py -v
+
+# Run installation verification
+pytest tests/verify_installation.py -v
 ```
 
-### Test Categories
+### Run Specific Test Classes or Methods
+```bash
+# Run specific test class
+pytest tests/test_forecast_parser.py::TestForecastParser -v
 
-#### 1. Integration Structure Test
-Validates that the integration has the correct file structure and manifest:
-- ✅ Required files exist
-- ✅ Manifest.json is complete and valid
-- ✅ Python syntax is correct
-- ✅ Directory structure is proper
+# Run specific test method
+pytest tests/test_forecast_parser.py::TestForecastParser::test_smoke_conditions -v
+```
 
-#### 2. Reconfiguration Test
-Tests the new reconfiguration functionality:
-- ✅ Polling interval configuration (1-1440 minutes)
-- ✅ Password handling logic
-- ✅ Migration from version 2 to 3
-- ✅ Schema structure validation
+## Test Coverage
 
-#### 3. Core Functionality Test
-Tests basic integration functionality:
-- ✅ NOAA forecast fetching
-- ✅ All three format types (summary, compact, full)
-- ✅ Format length validation
-- ✅ Character limit compliance
+### Forecast Parser Tests (`test_forecast_parser.py`)
 
-#### 4. Multi-Region Test
-Tests forecast functionality across different geographic regions:
-- ✅ Alaska (Fairbanks, Anchorage) - Coastal weather, fog, thunderstorms
-- ✅ Florida (Miami) - Hurricane season, wind, thunderstorms
-- ✅ Illinois (Chicago) - Spring storms, rain, wind
-- ✅ Massachusetts (Boston) - Heat waves, thunderstorms
-- ✅ California (Los Angeles) - Fog conditions
-- ✅ New York - Mixed conditions
-- ✅ Colorado (Denver) - Mountain weather
+#### Basic Functionality
+- ✅ **Basic Formats**: Tests summary, compact, and full format generation
+- ✅ **Explicit Percentages**: Validates explicit precipitation percentage handling
+- ✅ **Temperature/Wind Extraction**: Tests temperature and wind information parsing
 
-#### 5. Weather Detection Test
-Tests detection of various weather events:
-- ✅ Fog conditions (dense, patchy, general)
-- ✅ Thunderstorms and extreme weather
-- ✅ Rain and precipitation
-- ✅ Wind conditions
-- ✅ Event probability inference
+#### Weather Event Detection
+- ✅ **Smoke Conditions**: Tests smoke detection with probability levels
+  - Areas of smoke (65%)
+  - Wildfire smoke (75%)
+  - Heavy smoke (90%)
+  - Widespread haze (50%)
+- ✅ **Weather Events**: Parametrized tests for fog, thunderstorms, wind, snow, freezing rain
+- ✅ **Smoke with Precipitation**: Ensures smoke and precipitation don't share percentages
 
-#### 6. Summary Length Test
-Validates summary format character limits:
-- ✅ All summaries under 200 characters
-- ✅ Proper weather event prioritization
-- ✅ Percentage display
-- ✅ Format efficiency analysis
+#### Period Detection and Abbreviations
+- ✅ **Period Detection**: Tests all forecast periods (This Afternoon, Tonight, Today, etc.)
+- ✅ **Standard Abbreviations**: Validates "Tngt" for Tonight, "Aft" for This Afternoon
+- ✅ **Summary Formatting**: Tests real-world forecast scenarios
+
+#### Real-World Scenarios
+- ✅ **Complex Forecasts**: Tests multi-day forecasts with various weather conditions
+- ✅ **Edge Cases**: Handles edge cases in forecast parsing and formatting
+
+### IMAP Handler Tests (`test_imap_handler.py`)
+- ✅ **Email Processing**: Tests IMAP connection and email handling
+- ✅ **GPS Extraction**: Validates coordinate extraction from email bodies
+- ✅ **Format Detection**: Tests format keyword detection in emails
+
+### Installation Verification (`verify_installation.py`)
+- ✅ **File Structure**: Validates integration file structure and manifest
+- ✅ **Dependencies**: Checks required dependencies and imports
+- ✅ **Configuration**: Tests configuration flow and validation
 
 ## Test Output
 
-The test suite provides detailed output including:
-- 📍 Location and coordinates being tested
-- 📝 Sample forecast content for each format
-- 📊 Character analysis and efficiency metrics
-- ✅/❌ Pass/fail indicators
-- 🎉 Success summaries
+The pytest suite provides:
+- 📍 Detailed test results with pass/fail indicators
+- 📝 Test descriptions and docstrings
+- 📊 Coverage information (when using --cov)
+- ✅/❌ Clear pass/fail status
+- 🎯 Specific test method names and parameters
 
 ## GitHub Actions
 
@@ -99,7 +98,7 @@ Tests are automatically run on:
 - Multiple Python versions (3.9, 3.10, 3.11)
 
 The GitHub Action includes:
-- **Test Suite** - Runs all functional tests
+- **Pytest Suite** - Runs all pytest-based tests
 - **Linting** - Code quality checks (Black, Flake8)
 - **Integration Structure** - Validates file structure
 
@@ -107,8 +106,19 @@ The GitHub Action includes:
 
 ### Dependencies
 - Python 3.9+
+- `pytest` - Modern testing framework
+- `pytest-cov` - Coverage reporting (optional)
 - `aiohttp` - For API requests
 - `beautifulsoup4` - For HTML parsing
+
+### Installation
+```bash
+# Install pytest and dependencies
+pip install pytest pytest-cov
+
+# Or install from requirements
+pip install -r requirements.txt
+```
 
 ### Environment
 Tests can be run in any environment with Python 3.9+ installed. No Home Assistant environment is required for most tests.
@@ -120,41 +130,72 @@ Tests can be run in any environment with Python 3.9+ installed. No Home Assistan
 #### Test Fails with "No module named 'homeassistant'"
 - This is expected for tests run outside of Home Assistant
 - The integration will work fine inside Home Assistant
-- Only the integration structure test requires the actual files
+- Only the installation verification test requires the actual files
 
-#### Integration Structure Test Fails
+#### Pytest Not Found
+```bash
+# Install pytest
+pip install pytest
+
+# Or use python -m pytest
+python -m pytest tests/ -v
+```
+
+#### Import Errors
 - Ensure you're running from the project root directory
-- Check that all required files exist in `custom_components/satcom_forecast/`
-- Verify manifest.json has all required fields
-
-#### Weather API Tests Fail
-- Check internet connectivity
-- NOAA API may be temporarily unavailable
-- Some tests use real API calls to validate functionality
+- Check that the custom_components path is correctly set in test files
+- Verify all required dependencies are installed
 
 ### Debug Mode
-To see detailed debug output, set the debug environment variable:
+To see detailed debug output:
 ```bash
-DEBUG=1 python run_tests.py
+# Run with verbose output
+pytest tests/ -v -s
+
+# Run with debug logging
+pytest tests/ -v --log-cli-level=DEBUG
 ```
+
+## Migration from Legacy Tests
+
+The test suite has been modernized from the legacy `run_tests.py` approach:
+
+### Before (Legacy)
+```bash
+cd tests
+python run_tests.py
+```
+
+### After (Modern)
+```bash
+pytest tests/ -v
+```
+
+### Benefits of Pytest
+- ✅ **Better organization**: Tests are organized in classes and methods
+- ✅ **Parametrized tests**: Efficient testing of multiple scenarios
+- ✅ **Clear output**: Detailed test results and failure information
+- ✅ **Coverage reporting**: Built-in coverage analysis
+- ✅ **Modern tooling**: Integration with CI/CD and development tools
+- ✅ **Maintainable**: Easier to add, modify, and debug tests
 
 ## Contributing
 
 When adding new tests:
-1. Follow the existing naming convention (`test_*.py`)
-2. Include comprehensive docstrings
-3. Add the test to `run_tests.py` in the appropriate order
-4. Ensure tests can run independently
-5. Add appropriate error handling
+1. Follow pytest conventions and naming
+2. Use descriptive test method names
+3. Include comprehensive docstrings
+4. Use parametrized tests for multiple scenarios
+5. Add appropriate assertions and error handling
+6. Ensure tests can run independently
 
-## Test Coverage
+## Test Coverage Summary
 
-The test suite covers:
-- ✅ Integration structure and manifest validation
-- ✅ Configuration and reconfiguration functionality
-- ✅ Core forecast fetching and formatting
-- ✅ Multi-region weather conditions
-- ✅ Weather event detection
-- ✅ Character limits and format validation
-- ✅ Migration and backward compatibility
-- ✅ Polling interval configuration 
+The modern test suite covers:
+- ✅ **Forecast Parsing**: All format types and edge cases
+- ✅ **Weather Events**: Comprehensive event detection including smoke
+- ✅ **Period Detection**: All forecast periods and abbreviations
+- ✅ **Real-world Scenarios**: Complex multi-day forecasts
+- ✅ **IMAP Handling**: Email processing and GPS extraction
+- ✅ **Installation**: File structure and integration validation
+- ✅ **Modern Testing**: Pytest-based, maintainable test suite 
