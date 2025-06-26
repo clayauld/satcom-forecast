@@ -156,7 +156,7 @@ class SatcomForecastConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Coerce(int), vol.Range(min=1, max=1440)
             ),
             vol.Required("default_days", default=DEFAULT_DAYS): vol.All(
-                vol.Coerce(int), vol.Range(min=1, max=7)
+                vol.Coerce(int), vol.Range(min=0, max=7)
             ),
         })
 

@@ -808,7 +808,7 @@ def summarize_forecast(text, days=None):
     }
     
     for line in lines:
-        if ':' in line and any(day in line for day in ['This Afternoon', 'Today', 'Tonight', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']):
+        if ':' in line and any(day in line for day in ['This Afternoon', 'Today', 'Tonight', 'Overnight', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']):
             try:
                 period, forecast = line.split(':', 1)
                 forecast = forecast.strip().lower()
@@ -923,7 +923,16 @@ def get_email_body_from_subject(subject):
         return None
 
 def parse_forecast_periods(html_content: str, days_limit: int = 7) -> List[Dict[str, Any]]:
-    """Parse forecast periods from HTML content with days limit."""
+    """Parse forecast periods from HTML content with days limit.
+    
+    Args:
+        html_content: HTML content from NOAA forecast page
+        days_limit: Number of days to include:
+            - 0: Only current day (day 0)
+            - 1: Current day + next full day (day 0 + day 1)
+            - 2: Current day + next 2 full days (day 0 + day 1 + day 2)
+            - etc.
+    """
     _LOGGER.debug(f"Parsing forecast periods with days_limit={days_limit}")
     
     # Find all <table> tags
@@ -961,18 +970,16 @@ def parse_forecast_periods(html_content: str, days_limit: int = 7) -> List[Dict[
     periods = []
     current_day = None
     days_counted = 0
-    in_tonight_period = False
+    include_current_day = True  # Always include current day unless days_limit is 0
     
     for i, (day_name, period_content) in enumerate(period_matches):
         day_name = day_name.strip()
         
         # Determine which day this period belongs to
         period_day = None
-        if day_name in ['Overnight', 'Tonight']:
-            period_day = 'Tonight'
-            in_tonight_period = True
-        elif day_name in ['This Afternoon', 'Today']:
-            period_day = 'Today'
+        # All current-day periods should be treated as day 0
+        if day_name in ['Overnight', 'Tonight', 'This Afternoon', 'Today']:
+            period_day = 'Today'  # Use 'Today' as the common identifier for day 0
         elif day_name in ['Monday', 'Monday Night']:
             period_day = 'Monday'
         elif day_name in ['Tuesday', 'Tuesday Night']:
@@ -991,21 +998,29 @@ def parse_forecast_periods(html_content: str, days_limit: int = 7) -> List[Dict[
         # Check if this is a new day
         if period_day != current_day:
             if current_day is not None:  # Not the first period
-                # Only count days if we're not in the tonight/overnight period
-                if current_day != 'Tonight':
+                # Only count days if we're moving from current day to a future day
+                if current_day == 'Today' and period_day != 'Today':
+                    days_counted += 1
+                    _LOGGER.debug(f"Completed current day, starting day {days_counted}: {period_day}")
+                    
+                    # Check if we've exceeded the days limit after completing a day
+                    if days_limit is not None and days_counted > days_limit:
+                        _LOGGER.debug(f"Reached days limit ({days_limit}), stopping after completing day {days_counted}")
+                        break
+                elif current_day != 'Today':
                     days_counted += 1
                     _LOGGER.debug(f"Completed day {days_counted}: {current_day}")
                     
                     # Check if we've exceeded the days limit after completing a day
-                    if days_limit is not None and days_counted >= days_limit:
+                    if days_limit is not None and days_counted > days_limit:
                         _LOGGER.debug(f"Reached days limit ({days_limit}), stopping after completing day {days_counted}")
                         break
                 else:
-                    _LOGGER.debug(f"Completed tonight/overnight period (day 0)")
+                    _LOGGER.debug("Completed current day period")
             
             current_day = period_day
-            if period_day == 'Tonight':
-                _LOGGER.debug(f"Starting tonight/overnight period (day 0)")
+            if period_day == 'Today':
+                _LOGGER.debug("Starting current day period (day 0)")
             else:
                 _LOGGER.debug(f"Starting new day: {period_day}")
         
@@ -1014,17 +1029,28 @@ def parse_forecast_periods(html_content: str, days_limit: int = 7) -> List[Dict[
         period_content = re.sub(r'\n+', '\n', period_content)  # Normalize line breaks
         
         # Determine which day number to display
-        if period_day == 'Tonight':
+        if period_day == 'Today':
             day_number = 0
         else:
             day_number = days_counted + 1
         
-        _LOGGER.debug(f"Period {i+1}: {day_name} (day {day_number}) - Content length: {len(period_content)}")
+        # Check if we should include this period based on days_limit
+        should_include = False
+        if period_day == 'Today':
+            # Include current day if days_limit is 0 or greater
+            should_include = days_limit is None or days_limit >= 0
+        else:
+            # Include future days if we haven't exceeded the limit
+            should_include = days_limit is None or days_counted <= days_limit
         
-        periods.append({
-            'day': day_name,
-            'content': period_content
-        })
+        if should_include:
+            _LOGGER.debug(f"Period {i+1}: {day_name} (day {day_number}) - Content length: {len(period_content)}")
+            periods.append({
+                'day': day_name,
+                'content': period_content
+            })
+        else:
+            _LOGGER.debug(f"Skipping period {i+1}: {day_name} (day {day_number}) - exceeds days_limit")
     
     _LOGGER.debug(f"Parsed {len(periods)} periods covering {days_counted} days with days_limit={days_limit}")
     return periods

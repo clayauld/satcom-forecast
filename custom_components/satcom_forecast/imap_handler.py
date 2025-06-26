@@ -138,23 +138,34 @@ def check_imap_for_gps(host, port, username, password, folder="INBOX", security=
 def extract_days_override(body):
     """Extract days override from message body.
     
-    Looks for patterns like "5days", "5 days", "3day", "3 day" etc.
-    Returns the number of days (1-7) if found, otherwise None.
+    Looks for patterns like "5days", "5 days", "3day", "3 day", "0days", "current", "today" etc.
+    Returns the number of days (0-7) if found, otherwise None.
+    
+    Special values:
+    - 0, "current", "today" = only current day (day 0)
+    - 1 = current day + next full day (day 0 + day 1)
+    - 2 = current day + next 2 full days (day 0 + day 1 + day 2)
+    - etc.
     """
-    # Pattern to match: number 1-7 followed by optional space and "day" or "days"
-    # Examples: "5days", "5 days", "3day", "3 day", "7days", "7 days", "1days", "1day"
-    # Excludes negative numbers like "-1days" and numbers outside 1-7
-    pattern = r'(?<![\d-])([1-7])\s*(?:day|days)\b'
+    # First check for special keywords
+    if re.search(r'\b(current|today)\b', body, re.IGNORECASE):
+        _LOGGER.debug("Found special keyword 'current' or 'today', returning 0 days")
+        return 0
+    
+    # Pattern to match: number 0-7 followed by optional space and "day" or "days"
+    # Examples: "5days", "5 days", "3day", "3 day", "0days", "0 day", "7days", "7 days"
+    # Excludes negative numbers like "-1days" and numbers outside 0-7
+    pattern = r'(?<![\d-])([0-7])\s*(?:day|days)\b'
     match = re.search(pattern, body, re.IGNORECASE)
     
     if match:
         days = int(match.group(1))
-        # Validate range 1-7 (should always be true with this regex, but double-check)
-        if 1 <= days <= 7:
+        # Validate range 0-7
+        if 0 <= days <= 7:
             _LOGGER.debug("Found days override: %d days", days)
             return days
         else:
-            _LOGGER.debug("Days override out of range (1-7): %d", days)
+            _LOGGER.debug("Days override out of range (0-7): %d", days)
             return None
     
     _LOGGER.debug("No days override found in message")
