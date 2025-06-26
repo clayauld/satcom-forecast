@@ -11,8 +11,15 @@ PART_NUMBERING_OVERHEAD = 8  # "(1/3) " format
 
 def split_message(text, device_type="zoleo", custom_limit=None):
     """Split a message into parts based on device type and character limits, ensuring no part ever exceeds the limit (including part numbering)."""
+    # Reserve space for part numbering (e.g., "(1/10) ")
+    # We'll use up to 7 chars for part numbering: "(99/99) "
+    max_numbering_length = 7
+    min_safe_limit = (
+        max_numbering_length + 10
+    )  # Minimum safe limit to avoid infinite loops
+
     # Determine character limit
-    if custom_limit is not None:
+    if custom_limit is not None and custom_limit >= min_safe_limit:
         limit = custom_limit
     elif device_type == "zoleo":
         limit = 200
@@ -21,9 +28,6 @@ def split_message(text, device_type="zoleo", custom_limit=None):
     else:
         limit = 200  # Default to ZOLEO limit
 
-    # Reserve space for part numbering (e.g., "(1/10) ")
-    # We'll use up to 7 chars for part numbering: "(99/99) "
-    max_numbering_length = 7
     effective_limit = limit - max_numbering_length
 
     # Determine format and split accordingly
@@ -34,6 +38,10 @@ def split_message(text, device_type="zoleo", custom_limit=None):
         # Compact or full format - split at line breaks
         lines = text.split("\n")
         parts = split_multiline_text(lines, effective_limit)
+
+    # Handle empty text case
+    if not parts:
+        return [""]
 
     # Add part numbering if needed, and ensure no part exceeds the hard limit
     if len(parts) > 1:
@@ -191,6 +199,12 @@ def split_long_line_aggressively(line, effective_limit):
     """Split a long line aggressively across multiple parts to maximize utilization."""
     parts = []
     remaining_line = line
+
+    # Safety check: ensure effective_limit is positive
+    if effective_limit <= 0:
+        # If effective_limit is not positive, just return the line as-is
+        # This prevents infinite loops but may result in parts exceeding the intended limit
+        return [line]
 
     while remaining_line:
         # Find the best word boundary within the effective limit
