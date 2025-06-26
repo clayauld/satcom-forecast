@@ -136,7 +136,7 @@ jobs:
         if: steps.version_check.outputs.skip_bump != 'true'
         run: |
           # Check if release is draft and publish it if needed
-          RELEASE_STATUS=$(gh release view ${{ github.event.release.tag_name }} --json draft --jq '.draft')
+          RELEASE_STATUS=$(gh release view ${{ github.event.release.tag_name }} --json isDraft --jq '.isDraft')
           if [ "$RELEASE_STATUS" = "true" ]; then
             echo "Release is in draft status. Publishing now..."
             gh release edit ${{ github.event.release.tag_name }} --draft=false
