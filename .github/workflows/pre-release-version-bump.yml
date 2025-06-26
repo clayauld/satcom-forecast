@@ -33,19 +33,48 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Extracted version: $VERSION"
 
+      - name: Check current versions in files
+        id: current_versions
+        run: |
+          # Extract current version from pyproject.toml
+          CURRENT_PYPROJECT=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "current_pyproject=$CURRENT_PYPROJECT" >> $GITHUB_OUTPUT
+          
+          # Extract current version from manifest.json
+          CURRENT_MANIFEST=$(grep '"version":' custom_components/satcom_forecast/manifest.json | sed 's/.*"version": "\(.*\)".*/\1/')
+          echo "current_manifest=$CURRENT_MANIFEST" >> $GITHUB_OUTPUT
+          
+          echo "Current pyproject.toml version: $CURRENT_PYPROJECT"
+          echo "Current manifest.json version: $CURRENT_MANIFEST"
+          echo "Release tag version: ${{ steps.version.outputs.version }}"
+
+      - name: Check if version bump is needed
+        id: version_check
+        run: |
+          if [ "${{ steps.current_versions.outputs.current_pyproject }}" = "${{ steps.version.outputs.version }}" ] && [ "${{ steps.current_versions.outputs.current_manifest }}" = "${{ steps.version.outputs.version }}" ]; then
+            echo "Versions already match release tag. Skipping version bump."
+            echo "skip_bump=true" >> $GITHUB_OUTPUT
+          else
+            echo "Version bump needed. Proceeding with updates."
+            echo "skip_bump=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Update pyproject.toml version
+        if: steps.version_check.outputs.skip_bump != 'true'
         run: |
           # Use sed to update the version in pyproject.toml
           sed -i "s/^version = \".*\"/version = \"${{ steps.version.outputs.version }}\"/" pyproject.toml
           echo "Updated pyproject.toml version to ${{ steps.version.outputs.version }}"
 
       - name: Update manifest.json version
+        if: steps.version_check.outputs.skip_bump != 'true'
         run: |
           # Use sed to update the version in manifest.json
           sed -i "s/\"version\": \".*\"/\"version\": \"${{ steps.version.outputs.version }}\"/" custom_components/satcom_forecast/manifest.json
           echo "Updated manifest.json version to ${{ steps.version.outputs.version }}"
 
       - name: Verify changes
+        if: steps.version_check.outputs.skip_bump != 'true'
         run: |
           echo "=== pyproject.toml version ==="
           grep "version = " pyproject.toml
@@ -53,23 +82,38 @@ jobs:
           grep '"version":' custom_components/satcom_forecast/manifest.json
 
       - name: Configure Git
+        if: steps.version_check.outputs.skip_bump != 'true'
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
       - name: Ensure main branch is checked out
+        if: steps.version_check.outputs.skip_bump != 'true'
         run: |
           git fetch origin main
           git checkout main
 
       - name: Commit and push changes
+        if: steps.version_check.outputs.skip_bump != 'true'
         run: |
           # Add and commit the changes
           git add pyproject.toml custom_components/satcom_forecast/manifest.json
           git commit -m "Bump version to ${{ steps.version.outputs.version }} for release ${{ github.event.release.tag_name }} [skip ci]"
           git push origin main
 
+      - name: Update git tag to match new version
+        if: steps.version_check.outputs.skip_bump != 'true'
+        run: |
+          # Delete the old tag (if it exists)
+          git tag -d ${{ github.event.release.tag_name }} || true
+          git push origin :refs/tags/${{ github.event.release.tag_name }} || true
+          
+          # Create new tag with the updated version
+          git tag ${{ github.event.release.tag_name }}
+          git push origin ${{ github.event.release.tag_name }}
+
       - name: Update release with new assets
+        if: steps.version_check.outputs.skip_bump != 'true'
         run: |
           # Create a temporary directory for the updated files
           mkdir -p temp_release
@@ -89,10 +133,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Comment on release
+        if: steps.version_check.outputs.skip_bump != 'true'
         run: |
           gh release edit ${{ github.event.release.tag_name }} \
             --notes "${{ github.event.release.body }}
           
           **Note:** Version numbers have been automatically updated to ${{ steps.version.outputs.version }} in the release artifacts."
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Skip message
+        if: steps.version_check.outputs.skip_bump == 'true'
+        run: |
+          echo "✅ No version bump needed - files already match release tag ${{ github.event.release.tag_name }}"
+          echo "Skipping version update and asset creation." 
