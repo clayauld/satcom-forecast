@@ -132,13 +132,38 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Comment on release
+      - name: Ensure release is published
         if: steps.version_check.outputs.skip_bump != 'true'
         run: |
-          gh release edit ${{ github.event.release.tag_name }} \
-            --notes "${{ github.event.release.body }}
+          # Check if release is draft and publish it if needed
+          RELEASE_STATUS=$(gh release view ${{ github.event.release.tag_name }} --json draft --jq '.draft')
+          if [ "$RELEASE_STATUS" = "true" ]; then
+            echo "Release is in draft status. Publishing now..."
+            gh release edit ${{ github.event.release.tag_name }} --draft=false
+          else
+            echo "Release is already published."
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add version update note to release
+        if: steps.version_check.outputs.skip_bump != 'true'
+        run: |
+          # Get current release notes
+          CURRENT_NOTES=$(gh release view ${{ github.event.release.tag_name }} --json body --jq '.body')
           
-          **Note:** Version numbers have been automatically updated to ${{ steps.version.outputs.version }} in the release artifacts."
+          # Check if version update note already exists
+          if echo "$CURRENT_NOTES" | grep -q "Version numbers have been automatically updated"; then
+            echo "Version update note already exists in release notes."
+          else
+            # Add version update note to existing notes
+            UPDATED_NOTES="$CURRENT_NOTES
+
+**Note:** Version numbers have been automatically updated to ${{ steps.version.outputs.version }} in the release artifacts."
+            
+            # Update release notes
+            gh release edit ${{ github.event.release.tag_name }} --notes "$UPDATED_NOTES"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
