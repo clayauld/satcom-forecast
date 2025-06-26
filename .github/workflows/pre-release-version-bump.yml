@@ -156,9 +156,9 @@ jobs:
           if echo "$CURRENT_NOTES" | grep -q "Version numbers have been automatically updated"; then
             echo "Version update note already exists in release notes."
           else
-            # Add version update note to existing notes
+            # Add version update note to existing notes using printf for proper newlines
             VERSION_NOTE="**Note:** Version numbers have been automatically updated to ${{ steps.version.outputs.version }} in the release artifacts."
-            UPDATED_NOTES=$(echo -e "${CURRENT_NOTES}\n\n${VERSION_NOTE}")
+            UPDATED_NOTES=$(printf "%s\n\n%s" "$CURRENT_NOTES" "$VERSION_NOTE")
             
             # Update release notes
             gh release edit ${{ github.event.release.tag_name }} --notes "$UPDATED_NOTES"
