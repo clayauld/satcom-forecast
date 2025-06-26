@@ -2,11 +2,24 @@ import aiohttp
 from bs4 import BeautifulSoup
 import logging
 import os
+import re
+
+# Try relative import first, fall back to absolute import for testing
+try:
+    from .forecast_parser import parse_forecast_periods
+except ImportError:
+    from forecast_parser import parse_forecast_periods
 
 _LOGGER = logging.getLogger(__name__)
 
-async def fetch_forecast(lat, lon):
-    """Fetch NOAA forecast for given coordinates using aiohttp."""
+async def fetch_forecast(lat, lon, days=None):
+    """Fetch NOAA forecast for given coordinates using aiohttp.
+    
+    Args:
+        lat: Latitude coordinate
+        lon: Longitude coordinate
+        days: Number of days to include in forecast (1-7, None for all available)
+    """
     url = (
         f"https://forecast.weather.gov/MapClick.php"
         f"?lat={lat}&lon={lon}&unit=0&lg=english&FcstType=text&TextType=1"
@@ -20,6 +33,7 @@ async def fetch_forecast(lat, lon):
 
     _LOGGER.debug("Fetching forecast for coordinates: %s, %s", lat, lon)
     _LOGGER.debug("NOAA URL: %s", url)
+    _LOGGER.debug("Days parameter: %s (None = all available)", days)
 
     try:
         async with aiohttp.ClientSession() as session:
@@ -56,34 +70,22 @@ async def fetch_forecast(lat, lon):
         else:
             _LOGGER.debug("No location info found")
         
-        # Get the forecast periods from the table
-        tables = forecast_div.find_all("table")
-        _LOGGER.debug("Found %d tables in forecast div", len(tables))
+        # Get the forecast periods using the new parser
+        forecast_html = str(forecast_div)
+        periods = parse_forecast_periods(forecast_html, days)
         
-        if len(tables) >= 2:  # Should have at least 2 tables
-            forecast_table = tables[1]  # Second table contains the forecast
-            rows = forecast_table.find_all("tr")
-            _LOGGER.debug("Found %d rows in forecast table", len(rows))
-            
-            for i, row in enumerate(rows):
-                cells = row.find_all("td")
-                _LOGGER.debug("Row %d has %d cells", i+1, len(cells))
-                
-                for j, cell in enumerate(cells):
-                    text = cell.get_text(strip=True)
-                    if text and not text.startswith("Visit your local") and not text.startswith("22 Miles"):
-                        forecast_text += text + "\n"
-                        _LOGGER.debug("Added cell text (row %d, cell %d): %s", i+1, j+1, text[:50] + "..." if len(text) > 50 else text)
+        if periods:
+            _LOGGER.debug("Successfully parsed %d forecast periods", len(periods))
+            for period in periods:
+                forecast_text += f"{period['day']}: {period['content']}\n"
         else:
-            _LOGGER.debug("Not enough tables found for forecast extraction")
-
-        if not forecast_text.strip():
-            _LOGGER.warning("No forecast text extracted from NOAA response")
+            _LOGGER.warning("No forecast periods parsed from HTML")
             return "Unable to extract forecast data from NOAA response."
 
         # Clean up the text
         forecast_text = forecast_text.strip()
         _LOGGER.debug("Final forecast text length: %d characters", len(forecast_text))
+        _LOGGER.debug("Final forecast text preview: %s", forecast_text[:200] + "..." if len(forecast_text) > 200 else forecast_text)
         
         # Optional: log raw output for debugging
         log_path = os.path.join(os.path.dirname(__file__), "forecast_raw_output.txt")

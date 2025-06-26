@@ -1,17 +1,50 @@
 import re
 import logging
+from typing import List, Dict, Any
 
 _LOGGER = logging.getLogger(__name__)
 
-def format_forecast(forecast_text, mode='summary'):
-    _LOGGER.debug("Formatting forecast with mode: %s, input length: %d characters", mode, len(forecast_text))
+# Define weather event types and their keywords at module level
+event_types = {
+    'rain': ['rain', 'showers', 'precipitation', 'drizzle', 'sprinkles'],
+    'snow': ['snow', 'blizzard', 'flurries', 'snowfall'],
+    'sleet': ['sleet'],
+    'freezing rain': ['freezing rain', 'ice', 'icy'],
+    'wind': ['windy', 'gusts', 'high wind', 'breezy'],
+    'hail': ['hail'],
+    'thunderstorm': ['thunderstorm', 'thunderstorms', 't-storm', 'tstorms'],
+    'smoke': ['smoke', 'smoky', 'wildfire smoke', 'fire smoke', 'smoke from fires', 'smoke conditions', 'smoke warning', 'areas of smoke', 'widespread haze'],
+    'fog': ['fog', 'foggy', 'mist'],
+    'dense fog': ['dense fog', 'thick fog', 'heavy fog'],
+    'patchy fog': ['patchy fog'],
+    'tornado': ['tornado'],
+    'hurricane': ['hurricane', 'tropical storm'],
+    'blizzard': ['blizzard'],
+    'ice storm': ['ice storm'],
+    'severe thunderstorm': ['severe thunderstorm', 'severe t-storm', 'severe tstorm'],
+    'high wind warning': ['high wind warning'],
+    'flood warning': ['flood warning', 'flash flood warning']
+}
+
+# Define event name mapping at module level
+event_name_map = {
+    'rain': 'Rn', 'snow': 'Snw', 'sleet': 'Slt', 'freezing rain': 'FzRn',
+    'wind': 'Wnd', 'hail': 'Hl', 'thunderstorm': 'ThSt', 'smoke': 'Smk', 'fog': 'Fg',
+    'dense fog': 'DFg', 'patchy fog': 'PFg', 'tornado': 'TOR',
+    'hurricane': 'HUR', 'blizzard': 'BLZ', 'ice storm': 'ISt',
+    'severe thunderstorm': 'SThSt', 'high wind warning': 'HiWW',
+    'flood warning': 'FldWng'
+}
+
+def format_forecast(forecast_text, mode='summary', days=None):
+    _LOGGER.debug("Formatting forecast with mode: %s, days: %s, input length: %d characters", mode, days, len(forecast_text))
     
     if mode == 'full':
         result = format_full_forecast(forecast_text)
     elif mode == 'compact':
         result = format_compact_forecast(forecast_text)
     elif mode == 'summary':
-        result = summarize_forecast(forecast_text)
+        result = summarize_forecast(forecast_text, days)
     else:
         result = forecast_text[:1000]
         _LOGGER.debug("Unknown mode '%s', using truncated original", mode)
@@ -36,13 +69,13 @@ def clean_forecast_text(text):
             
         # Handle the case where periods are concatenated
         if ':' in line:
-            # Split by common period patterns
-            parts = re.split(r'(Today:|Tonight:|Monday:|Monday Night:|Tuesday:|Tuesday Night:|Wednesday:|Wednesday Night:|Thursday:|Thursday Night:|Friday:|Friday Night:|Saturday:|Saturday Night:|Sunday:)', line)
+            # Split by common period patterns - added "This Afternoon"
+            parts = re.split(r'(This Afternoon:|Today:|Tonight:|Overnight:|Monday:|Monday Night:|Tuesday:|Tuesday Night:|Wednesday:|Wednesday Night:|Thursday:|Thursday Night:|Friday:|Friday Night:|Saturday:|Saturday Night:|Sunday:)', line)
             
             current_period = ""
             for part in parts:
                 part = part.strip()
-                if part.endswith(':') and any(day in part for day in ['Today', 'Tonight', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']):
+                if part.endswith(':') and any(day in part for day in ['This Afternoon', 'Today', 'Tonight', 'Overnight', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']):
                     current_period = part
                 elif part and current_period:
                     # Don't add extra space if the part already starts with a space
@@ -75,7 +108,7 @@ def format_full_forecast(text):
     
     for line in lines:
         line = line.strip()
-        if ':' in line and any(day in line for day in ['Today', 'Tonight', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']):
+        if ':' in line and any(day in line for day in ['This Afternoon', 'Today', 'Tonight', 'Overnight', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']):
             # Normalize spaces in the line
             line = normalize_spaces(line)
             formatted_lines.append(line)
@@ -100,10 +133,57 @@ def format_full_forecast(text):
     return result
 
 def infer_chance(event, forecast_text):
+    """Infer probability percentage for weather events, prioritizing explicit percentages when available."""
     forecast_lower = forecast_text.lower()
-    match = re.search(r'(\d+)%', forecast_text)
-    if match:
-        return int(match.group(1))
+    
+    # First check for explicit percentages in the entire forecast text
+    # Look for "Chance of precipitation is X%" pattern first - ONLY for rain events
+    precip_chance_match = re.search(r'chance of precipitation is (\d+)%', forecast_lower)
+    if precip_chance_match and event == 'rain':
+        return int(precip_chance_match.group(1))
+    
+    # For non-rain events, look for percentages that are specifically associated with that event
+    if event != 'rain':
+        # Look for event-specific percentage patterns
+        event_keywords = event_types.get(event, [])
+        for keyword in event_keywords:
+            # Look for patterns like "chance of smoke", "smoke chance", etc.
+            event_chance_patterns = [
+                rf'chance of {keyword}[^.]*(\d+)%',
+                rf'{keyword} chance[^.]*(\d+)%',
+                rf'(\d+)% chance of {keyword}',
+                rf'(\d+)% {keyword}',
+            ]
+            
+            for pattern in event_chance_patterns:
+                match = re.search(pattern, forecast_lower)
+                if match:
+                    return int(match.group(1))
+    
+    # Look for other explicit percentage patterns - but be more careful about context
+    percent_patterns = [
+        r'(\d+)\s*percent[^.]*',  # "20 percent" format
+        r'(\d+)%[^.]*',           # "20%" format
+    ]
+    
+    for pattern in percent_patterns:
+        matches = re.findall(pattern, forecast_text, re.IGNORECASE)
+        for match in matches:
+            percent_val = int(match)
+            # Check if this percentage is associated with the current event
+            # Look for the percentage in context with weather keywords
+            context_start = max(0, forecast_text.lower().find(match) - 100)
+            context_end = min(len(forecast_text), forecast_text.lower().find(match) + 100)
+            context = forecast_text[context_start:context_end].lower()
+            
+            # Check if the event keywords are in the same context as the percentage
+            event_keywords = event_types.get(event, [])
+            if any(kw in context for kw in event_keywords):
+                # Additional check: make sure this percentage isn't from precipitation
+                if 'precipitation' not in context or event == 'rain':
+                    return percent_val
+    
+    # Then infer based on keywords
     if event == 'rain':
         if 'rain likely' in forecast_lower or 'showers likely' in forecast_lower:
             return 70
@@ -112,9 +192,6 @@ def infer_chance(event, forecast_text):
         elif 'isolated' in forecast_lower:
             return 20
         elif 'chance' in forecast_lower:
-            # Check for "slight chance" specifically
-            if 'slight chance' in forecast_lower:
-                return 10
             return 30
         elif 'drizzle' in forecast_lower or 'sprinkles' in forecast_lower:
             return 25
@@ -170,8 +247,6 @@ def infer_chance(event, forecast_text):
             return 60
         elif 'fog' in forecast_lower or 'foggy' in forecast_lower:
             return 70
-        elif 'haze' in forecast_lower:
-            return 40
         elif 'mist' in forecast_lower:
             return 30
         else:
@@ -179,12 +254,12 @@ def infer_chance(event, forecast_text):
     elif event == 'smoke':
         if 'heavy smoke' in forecast_lower or 'thick smoke' in forecast_lower or 'dense smoke' in forecast_lower:
             return 90
-        elif 'smoke' in forecast_lower or 'smoky' in forecast_lower:
-            return 80
         elif 'wildfire smoke' in forecast_lower or 'fire smoke' in forecast_lower:
-            return 85
+            return 75
+        elif 'smoke' in forecast_lower or 'smoky' in forecast_lower:
+            return 65
         else:
-            return 70
+            return 50
     elif event == 'dense fog':
         return 90
     elif event == 'patchy fog':
@@ -240,7 +315,7 @@ def extract_temperature_info(forecast_text):
     
     return temps
 
-def get_wind_abbr(direction_word):
+def get_abbr(direction_word):
     # Expanded abbreviations
     mapping = {
         "north": "N", "east": "E", "south": "S", "west": "W",
@@ -265,13 +340,13 @@ def extract_wind_info(forecast_text):
         if match:
             groups = match.groups()
             if "from the" in pattern:
-                direction, speed = get_wind_abbr(groups[1]), groups[0].replace(' to ', '-')
+                direction, speed = get_abbr(groups[1]), groups[0].replace(' to ', '-')
                 return f"{direction}{speed}mph"
             if "becoming" in pattern:
-                direction, speed = get_wind_abbr(groups[0]), groups[1].replace(' to ', '-')
+                direction, speed = get_abbr(groups[0]), groups[1].replace(' to ', '-')
                 return f"{direction}{speed}mph"
             
-            direction, speed = get_wind_abbr(groups[0]), groups[1].replace(' to ', '-')
+            direction, speed = get_abbr(groups[0]), groups[1].replace(' to ', '-')
             gusts = groups[2] if len(groups) > 2 and groups[2] else None
             
             wind_str = f"{direction}{speed}mph"
@@ -287,37 +362,18 @@ def format_compact_forecast(text):
     lines = cleaned_text.strip().splitlines()
     result = []
     
-    # Define event types and their keywords (same as summary)
-    event_types = {
-        'rain': ['rain', 'showers', 'precipitation', 'drizzle', 'sprinkles'],
-        'snow': ['snow', 'blizzard', 'flurries', 'snowfall'],
-        'sleet': ['sleet'],
-        'freezing rain': ['freezing rain', 'ice', 'icy'],
-        'wind': ['windy', 'gusts', 'high wind', 'breezy'],
-        'hail': ['hail'],
-        'thunderstorm': ['thunderstorm', 'thunderstorms', 't-storm', 'tstorms'],
-        'smoke': ['smoke', 'smoky', 'wildfire smoke', 'fire smoke', 'smoke from fires'],
-        'fog': ['fog', 'foggy', 'haze', 'mist'],
-        'dense fog': ['dense fog', 'thick fog', 'heavy fog'],
-        'patchy fog': ['patchy fog'],
-        'tornado': ['tornado'],
-        'hurricane': ['hurricane', 'tropical storm'],
-        'blizzard': ['blizzard'],
-        'ice storm': ['ice storm'],
-        'severe thunderstorm': ['severe thunderstorm', 'severe t-storm', 'severe tstorm'],
-        'high wind warning': ['high wind warning'],
-        'flood warning': ['flood warning', 'flash flood warning']
-    }
-    
     # List of extreme event keys
     extreme_events = [
         'blizzard', 'ice storm', 'tornado', 'hurricane', 'severe thunderstorm', 'high wind warning', 'flood warning', 'dense fog', 'smoke'
     ]
     
     for line in lines:
-        if ':' in line and any(day in line for day in ['Today', 'Tonight', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']):
+        if ':' in line and any(day in line for day in ['This Afternoon', 'Today', 'Tonight', 'Overnight', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']):
             try:
                 day, forecast = line.split(':', 1)
+                day = day.strip()
+                if day == 'This Afternoon':
+                    day = 'Afternoon'
                 forecast = forecast.strip()
                 
                 # Detect significant weather events
@@ -326,11 +382,10 @@ def format_compact_forecast(text):
                 extreme_detected = False
                 
                 for event, keywords in event_types.items():
-                    if any(kw in forecast for kw in keywords):
+                    if any(kw in forecast_lower for kw in keywords):
                         # For wind events, only add if speeds are significant
                         if event == 'wind' and not check_significant_wind(forecast):
                             continue
-                            
                         chance = infer_chance(event, forecast)
                         if chance > 0:
                             if event in extreme_events:
@@ -390,8 +445,13 @@ def format_compact_forecast(text):
 
                 # Add weather event indicators if detected
                 if detected_events:
-                    events_str = ', '.join(detected_events)
-                    result.append(f"{day.strip()}: {events_str}{details_str} | {first_sentence}")
+                    smoke_events = [ev for ev in detected_events if ev.startswith('🚨Smoke(')]
+                    if smoke_events:
+                        events_str = ', '.join(smoke_events)
+                        result.append(f"{day.strip()}: {events_str}{details_str} | Smoke")
+                    else:
+                        events_str = ', '.join(detected_events)
+                        result.append(f"{day.strip()}: {events_str}{details_str} | {first_sentence}")
                 else:
                     result.append(f"{day.strip()}: {first_sentence}{details_str}")
                     
@@ -404,12 +464,17 @@ def format_compact_forecast(text):
     _LOGGER.debug("Compact forecast formatted, result length: %d characters", len(final_result))
     return final_result
 
-def summarize_forecast(text):
-    """Create a summary showing when significant weather events are expected, by period."""
+def summarize_forecast(text, days=None):
+    """Summarize forecast text with weather events, temperatures, and wind info.
+    
+    Args:
+        text: Raw forecast text
+        days: Number of days to include (None for all available)
+    """
     _LOGGER.debug("Creating forecast summary")
     cleaned_text = clean_forecast_text(text)
     lines = cleaned_text.strip().splitlines()
-
+    
     # Define event types and their keywords
     event_types = {
         'rain': ['rain', 'showers', 'precipitation', 'drizzle', 'sprinkles'],
@@ -419,8 +484,8 @@ def summarize_forecast(text):
         'wind': ['windy', 'gusts', 'high wind', 'breezy'],
         'hail': ['hail'],
         'thunderstorm': ['thunderstorm', 'thunderstorms', 't-storm', 'tstorms'],
-        'smoke': ['smoke', 'smoky', 'wildfire smoke', 'fire smoke', 'smoke from fires'],
-        'fog': ['fog', 'foggy', 'haze', 'mist'],
+        'smoke': ['smoke', 'smoky', 'wildfire smoke', 'fire smoke', 'smoke from fires', 'smoke conditions', 'smoke warning', 'areas of smoke', 'widespread haze'],
+        'fog': ['fog', 'foggy', 'mist'],
         'dense fog': ['dense fog', 'thick fog', 'heavy fog'],
         'patchy fog': ['patchy fog'],
         'tornado': ['tornado'],
@@ -435,24 +500,34 @@ def summarize_forecast(text):
     extreme_events = [
         'blizzard', 'ice storm', 'tornado', 'hurricane', 'severe thunderstorm', 'high wind warning', 'flood warning', 'dense fog', 'smoke'
     ]
-
     def short_period(period):
-        # Shorten period names for brevity
-        mapping = {
-            'Tonight': 'Ton', 'Today': 'Tod',
-            'Monday': 'Mon', 'Monday Night': 'MonN',
-            'Tuesday': 'Tue', 'Tuesday Night': 'TueN',
-            'Wednesday': 'Wed', 'Wednesday Night': 'WedN',
-            'Thursday': 'Thu', 'Thursday Night': 'ThuN',
-            'Friday': 'Fri', 'Friday Night': 'FriN',
-            'Saturday': 'Sat', 'Saturday Night': 'SatN',
-            'Sunday': 'Sun', 'Sunday Night': 'SunN',
-        }
-        for k, v in mapping.items():
-            if period.strip().startswith(k):
-                return v
-        return period.strip()[:6]
-
+        """Shorten period names for brevity"""
+        period = period.strip()
+        if period == 'This Afternoon':
+            return 'Aft'
+        elif period == 'Today':
+            return 'Tdy'
+        elif period == 'Tonight':
+            return 'Tngt'
+        elif period == 'Overnight':
+            return 'ON' # Overnight abbreviation, standard for forecasts
+        elif period == 'Monday':
+            return 'Mon'
+        elif period == 'Tuesday':
+            return 'Tue'
+        elif period == 'Wednesday':
+            return 'Wed'
+        elif period == 'Thursday':
+            return 'Thu'
+        elif period == 'Friday':
+            return 'Fri'
+        elif period == 'Saturday':
+            return 'Sat'
+        elif period == 'Sunday':
+            return 'Sun'
+        else:
+            return period[:3]
+    
     def extract_temperature_info(forecast_text):
         """Extract high and low temperature information from forecast text."""
         temp_info = []
@@ -488,10 +563,10 @@ def summarize_forecast(text):
                 break
         
         return temp_info
-
+    
     def extract_wind_info(forecast_text):
         """Extract wind direction and speed information from forecast text."""
-        
+               
         direction_map = {
             'north': 'N', 'northeast': 'NE', 'east': 'E', 'southeast': 'SE',
             'south': 'S', 'southwest': 'SW', 'west': 'W', 'northwest': 'NW',
@@ -500,7 +575,7 @@ def summarize_forecast(text):
 
         def get_abbr(direction_word):
             return direction_map.get(direction_word.lower(), direction_word.title()[:1])
-
+            
         forecast_lower = forecast_text.lower()
         
         # Special handling for 'becoming' phrases
@@ -583,12 +658,59 @@ def summarize_forecast(text):
             return ["Light"]
             
         return []
-
+    
     def infer_chance(event, forecast_text):
+        """Infer probability percentage for weather events, prioritizing explicit percentages when available."""
         forecast_lower = forecast_text.lower()
-        match = re.search(r'(\d+)%', forecast_text)
-        if match:
-            return int(match.group(1))
+        
+        # First check for explicit percentages in the entire forecast text
+        # Look for "Chance of precipitation is X%" pattern first - ONLY for rain events
+        precip_chance_match = re.search(r'chance of precipitation is (\d+)%', forecast_lower)
+        if precip_chance_match and event == 'rain':
+            return int(precip_chance_match.group(1))
+        
+        # For non-rain events, look for percentages that are specifically associated with that event
+        if event != 'rain':
+            # Look for event-specific percentage patterns
+            event_keywords = event_types.get(event, [])
+            for keyword in event_keywords:
+                # Look for patterns like "chance of smoke", "smoke chance", etc.
+                event_chance_patterns = [
+                    rf'chance of {keyword}[^.]*(\d+)%',
+                    rf'{keyword} chance[^.]*(\d+)%',
+                    rf'(\d+)% chance of {keyword}',
+                    rf'(\d+)% {keyword}',
+                ]
+                
+                for pattern in event_chance_patterns:
+                    match = re.search(pattern, forecast_lower)
+                    if match:
+                        return int(match.group(1))
+        
+        # Look for other explicit percentage patterns - but be more careful about context
+        percent_patterns = [
+            r'(\d+)\s*percent[^.]*',  # "20 percent" format
+            r'(\d+)%[^.]*',           # "20%" format
+        ]
+        
+        for pattern in percent_patterns:
+            matches = re.findall(pattern, forecast_text, re.IGNORECASE)
+            for match in matches:
+                percent_val = int(match)
+                # Check if this percentage is associated with the current event
+                # Look for the percentage in context with weather keywords
+                context_start = max(0, forecast_text.lower().find(match) - 100)
+                context_end = min(len(forecast_text), forecast_text.lower().find(match) + 100)
+                context = forecast_text[context_start:context_end].lower()
+                
+                # Check if the event keywords are in the same context as the percentage
+                event_keywords = event_types.get(event, [])
+                if any(kw in context for kw in event_keywords):
+                    # Additional check: make sure this percentage isn't from precipitation
+                    if 'precipitation' not in context or event == 'rain':
+                        return percent_val
+        
+        # Then infer based on keywords
         if event == 'rain':
             if 'rain likely' in forecast_lower or 'showers likely' in forecast_lower:
                 return 70
@@ -652,8 +774,6 @@ def summarize_forecast(text):
                 return 60
             elif 'fog' in forecast_lower or 'foggy' in forecast_lower:
                 return 70
-            elif 'haze' in forecast_lower:
-                return 40
             elif 'mist' in forecast_lower:
                 return 30
             else:
@@ -661,12 +781,12 @@ def summarize_forecast(text):
         elif event == 'smoke':
             if 'heavy smoke' in forecast_lower or 'thick smoke' in forecast_lower or 'dense smoke' in forecast_lower:
                 return 90
-            elif 'smoke' in forecast_lower or 'smoky' in forecast_lower:
-                return 80
             elif 'wildfire smoke' in forecast_lower or 'fire smoke' in forecast_lower:
-                return 85
+                return 75
+            elif 'smoke' in forecast_lower or 'smoky' in forecast_lower:
+                return 65
             else:
-                return 70
+                return 50
         elif event == 'dense fog':
             return 90
         elif event == 'patchy fog':
@@ -688,7 +808,7 @@ def summarize_forecast(text):
     }
     
     for line in lines:
-        if ':' in line and any(day in line for day in ['Today', 'Tonight', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']):
+        if ':' in line and any(day in line for day in ['This Afternoon', 'Today', 'Tonight', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']):
             try:
                 period, forecast = line.split(':', 1)
                 forecast = forecast.strip().lower()
@@ -703,7 +823,7 @@ def summarize_forecast(text):
                             
                         chance = infer_chance(event, forecast)
                         if chance > 0:
-                            # Format event with proper capitalization and probability
+                        # Format event with proper capitalization and probability
                             event_name = event_name_map.get(event, event.replace(' ', '').title()[:2])
                             if event in extreme_events:
                                 detected.append(f"🚨{event_name}({chance}%)")
@@ -731,16 +851,9 @@ def summarize_forecast(text):
                         existing_events = period_events_dict[short_period_name]
                         # Merge events, keeping the highest probability for duplicates
                         for new_event in all_info:
-                            # Skip temperature and wind info for merging (they're unique)
-                            if any(temp in new_event for temp in ['H:', 'L:']) or any(wind in new_event for wind in ['mph', 'wind']):
-                                if not any(existing_temp in new_event for existing_temp in existing_events if any(temp in existing_temp for temp in ['H:', 'L:'])):
-                                    if not any(existing_wind in new_event for existing_wind in existing_events if any(wind in existing_wind for wind in ['mph', 'wind'])):
-                                        existing_events.append(new_event)
-                                continue
-                            
-                            # Handle weather events with probabilities
-                            if '(' in new_event and '%' in new_event:
-                                event_name = new_event.split('(')[0]  # Get event name without probability
+                            if '(' in new_event and ')' in new_event:
+                                # Event with probability
+                                event_name = new_event.split('(')[0]
                                 new_prob = int(new_event.split('(')[1].split('%')[0])
                                 
                                 # Check if we already have this event
@@ -772,14 +885,13 @@ def summarize_forecast(text):
         if events:
             period_events.append(f"{period}: {','.join(events)}")
 
-    # Limit to first 6 periods
-    period_events = period_events[:6]
-    
     # Join period events into a single summary, separated by newlines
     summary = '\n'.join(period_events)
 
     if not summary:
         summary = "No significant weather expected."
+    
+    _LOGGER.debug(f"Summary created with {len(period_events)} periods, days limit was {days}")
     return summary
 
 def get_email_body_from_subject(subject):
@@ -809,3 +921,110 @@ def get_email_body_from_subject(subject):
     else:
         _LOGGER.debug("No coordinates found in subject")
         return None
+
+def parse_forecast_periods(html_content: str, days_limit: int = 7) -> List[Dict[str, Any]]:
+    """Parse forecast periods from HTML content with days limit."""
+    _LOGGER.debug(f"Parsing forecast periods with days_limit={days_limit}")
+    
+    # Find all <table> tags
+    tables = re.findall(r'<table[\s\S]*?>[\s\S]*?<\/table>', html_content, re.IGNORECASE)
+    if len(tables) < 2:
+        _LOGGER.error("Could not find second forecast table")
+        print("\n--- DEBUG: Forecast div HTML (first 2000 chars) ---")
+        print(html_content[:2000])
+        print("--- END DEBUG ---\n")
+        return []
+    
+    table_content = tables[1]
+    _LOGGER.debug(f"Found second forecast table, content length: {len(table_content)}")
+    
+    # Find the cell containing the forecast periods
+    cell_match = re.search(r'<td[^>]*>(.*?)</td>', table_content, re.DOTALL)
+    if not cell_match:
+        _LOGGER.error("Could not find forecast cell")
+        print("\n--- DEBUG: Forecast table HTML (first 2000 chars) ---")
+        print(table_content[:2000])
+        print("--- END DEBUG ---\n")
+        return []
+    
+    cell_content = cell_match.group(1)
+    _LOGGER.debug(f"Found forecast cell, content length: {len(cell_content)}")
+    
+    # Use regex to extract forecast periods directly
+    # Pattern: <b>DayName: </b> followed by content until next <b>DayName: </b> or end
+    # Updated to include "Overnight" as a valid period
+    period_pattern = r'<b>([^:]+):\s*</b>(.*?)(?=<b>[^:]+:\s*</b>|$)'
+    period_matches = re.findall(period_pattern, cell_content, re.DOTALL)
+    
+    _LOGGER.debug(f"Found {len(period_matches)} period matches")
+    
+    periods = []
+    current_day = None
+    days_counted = 0
+    in_tonight_period = False
+    
+    for i, (day_name, period_content) in enumerate(period_matches):
+        day_name = day_name.strip()
+        
+        # Determine which day this period belongs to
+        period_day = None
+        if day_name in ['Overnight', 'Tonight']:
+            period_day = 'Tonight'
+            in_tonight_period = True
+        elif day_name in ['This Afternoon', 'Today']:
+            period_day = 'Today'
+        elif day_name in ['Monday', 'Monday Night']:
+            period_day = 'Monday'
+        elif day_name in ['Tuesday', 'Tuesday Night']:
+            period_day = 'Tuesday'
+        elif day_name in ['Wednesday', 'Wednesday Night']:
+            period_day = 'Wednesday'
+        elif day_name in ['Thursday', 'Thursday Night']:
+            period_day = 'Thursday'
+        elif day_name in ['Friday', 'Friday Night']:
+            period_day = 'Friday'
+        elif day_name in ['Saturday', 'Saturday Night']:
+            period_day = 'Saturday'
+        elif day_name in ['Sunday', 'Sunday Night']:
+            period_day = 'Sunday'
+        
+        # Check if this is a new day
+        if period_day != current_day:
+            if current_day is not None:  # Not the first period
+                # Only count days if we're not in the tonight/overnight period
+                if current_day != 'Tonight':
+                    days_counted += 1
+                    _LOGGER.debug(f"Completed day {days_counted}: {current_day}")
+                    
+                    # Check if we've exceeded the days limit after completing a day
+                    if days_limit is not None and days_counted >= days_limit:
+                        _LOGGER.debug(f"Reached days limit ({days_limit}), stopping after completing day {days_counted}")
+                        break
+                else:
+                    _LOGGER.debug(f"Completed tonight/overnight period (day 0)")
+            
+            current_day = period_day
+            if period_day == 'Tonight':
+                _LOGGER.debug(f"Starting tonight/overnight period (day 0)")
+            else:
+                _LOGGER.debug(f"Starting new day: {period_day}")
+        
+        # Clean up the period content
+        period_content = re.sub(r'<br\s*/?>', '\n', period_content).strip()
+        period_content = re.sub(r'\n+', '\n', period_content)  # Normalize line breaks
+        
+        # Determine which day number to display
+        if period_day == 'Tonight':
+            day_number = 0
+        else:
+            day_number = days_counted + 1
+        
+        _LOGGER.debug(f"Period {i+1}: {day_name} (day {day_number}) - Content length: {len(period_content)}")
+        
+        periods.append({
+            'day': day_name,
+            'content': period_content
+        })
+    
+    _LOGGER.debug(f"Parsed {len(periods)} periods covering {days_counted} days with days_limit={days_limit}")
+    return periods
