@@ -157,7 +157,7 @@ jobs:
             echo "Version update note already exists in release notes."
           else
             # Add version update note to existing notes
-            UPDATED_NOTES="$CURRENT_NOTES
+            UPDATED_NOTES="${CURRENT_NOTES}
 
 **Note:** Version numbers have been automatically updated to ${{ steps.version.outputs.version }} in the release artifacts."
             
