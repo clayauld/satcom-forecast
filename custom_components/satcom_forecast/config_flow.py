@@ -102,15 +102,15 @@ class SatcomForecastConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["imap_host"] = str(e)
 
         fields = vol.Schema({
-            vol.Required("imap_host", default="imap.gmail.com", description="IMAP Host"): str,
-            vol.Required("imap_port", default=993, description="IMAP Port"): int,
-            vol.Required("imap_security", default="SSL", description="IMAP Security"): vol.In(["None", "STARTTLS", "SSL"]),
-            vol.Required("imap_user", description="Username"): str,
-            vol.Required("imap_pass", description="Password"): str,
-            vol.Required("smtp_host", default="smtp.gmail.com", description="SMTP Host"): str,
-            vol.Required("smtp_port", default=587, description="SMTP Port"): int,
-            vol.Required("smtp_user", description="SMTP Username"): str,
-            vol.Required("smtp_pass", description="SMTP Password"): str,
+            vol.Required("imap_host", default="imap.gmail.com"): str,
+            vol.Required("imap_port", default=993): int,
+            vol.Required("imap_security", default="SSL"): vol.In(["None", "STARTTLS", "SSL"]),
+            vol.Required("imap_user"): str,
+            vol.Required("imap_pass"): str,
+            vol.Required("smtp_host", default="smtp.gmail.com"): str,
+            vol.Required("smtp_port", default=587): int,
+            vol.Required("smtp_user"): str,
+            vol.Required("smtp_pass"): str,
         })
 
         return self.async_show_form(
@@ -147,15 +147,15 @@ class SatcomForecastConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         folder_options = {folder: folder for folder in self._available_folders}
         
         fields = vol.Schema({
-            vol.Required("imap_folder", default="INBOX", description="Mail Folder"): vol.In(folder_options),
-            vol.Required("forecast_format", default="summary", description="Forecast Format"): vol.In(["summary", "compact", "full"]),
-            vol.Required("device_type", default="zoleo", description="Device Type"): vol.In(["zoleo", "inreach"]),
-            vol.Optional("character_limit", default=0, description="Character Limit (0 = no limit)"): int,
-            vol.Optional("debug", default=DEFAULT_DEBUG, description="Enable Debug Logging"): bool,
-            vol.Required("polling_interval", default=DEFAULT_POLLING_INTERVAL, description="Scanning Interval (minutes)"): vol.All(
+            vol.Required("imap_folder", default="INBOX"): vol.In(folder_options),
+            vol.Required("forecast_format", default="summary"): vol.In(["summary", "compact", "full"]),
+            vol.Required("device_type", default="zoleo"): vol.In(["zoleo", "inreach"]),
+            vol.Optional("character_limit", default=0): int,
+            vol.Optional("debug", default=DEFAULT_DEBUG): bool,
+            vol.Required("polling_interval", default=DEFAULT_POLLING_INTERVAL): vol.All(
                 vol.Coerce(int), vol.Range(min=1, max=1440)
             ),
-            vol.Required("default_days", default=DEFAULT_DAYS, description="Default Forecast Days (1-7)"): vol.All(
+            vol.Required("default_days", default=DEFAULT_DAYS): vol.All(
                 vol.Coerce(int), vol.Range(min=1, max=7)
             ),
         })
@@ -282,24 +282,24 @@ class SatcomForecastOptionsFlow(config_entries.OptionsFlow):
         
         # Create schema with current values as defaults
         return vol.Schema({
-            vol.Required("imap_host", default=data.get("imap_host", "imap.gmail.com"), description="IMAP Host"): str,
-            vol.Required("imap_port", default=data.get("imap_port", 993), description="IMAP Port"): int,
-            vol.Required("imap_security", default=data.get("imap_security", "SSL"), description="IMAP Security"): vol.In(["None", "STARTTLS", "SSL"]),
-            vol.Required("imap_user", default=data.get("imap_user", ""), description="Username"): str,
-            vol.Optional("imap_pass", description="Password (leave blank to keep current)"): str,
-            vol.Required("smtp_host", default=data.get("smtp_host", "smtp.gmail.com"), description="SMTP Host"): str,
-            vol.Required("smtp_port", default=data.get("smtp_port", 587), description="SMTP Port"): int,
-            vol.Required("smtp_user", default=data.get("smtp_user", ""), description="SMTP Username"): str,
-            vol.Optional("smtp_pass", description="SMTP Password (leave blank to keep current)"): str,
-            vol.Required("imap_folder", default=data.get("imap_folder", "INBOX"), description="Mail Folder"): str,
-            vol.Required("forecast_format", default=data.get("forecast_format", "summary"), description="Forecast Format"): vol.In(["summary", "compact", "full"]),
-            vol.Required("device_type", default=data.get("device_type", "zoleo"), description="Device Type"): vol.In(["zoleo", "inreach"]),
-            vol.Optional("character_limit", default=data.get("character_limit", 0), description="Character Limit (0 = no limit)"): int,
-            vol.Optional("debug", default=data.get("debug", DEFAULT_DEBUG), description="Enable Debug Logging"): bool,
-            vol.Required("polling_interval", default=data.get("polling_interval", DEFAULT_POLLING_INTERVAL), description="Scanning Interval (minutes)"): vol.All(
+            vol.Required("imap_host", default=data.get("imap_host", "imap.gmail.com")): str,
+            vol.Required("imap_port", default=data.get("imap_port", 993)): int,
+            vol.Required("imap_security", default=data.get("imap_security", "SSL")): vol.In(["None", "STARTTLS", "SSL"]),
+            vol.Required("imap_user", default=data.get("imap_user", "")): str,
+            vol.Optional("imap_pass"): str,
+            vol.Required("smtp_host", default=data.get("smtp_host", "smtp.gmail.com")): str,
+            vol.Required("smtp_port", default=data.get("smtp_port", 587)): int,
+            vol.Required("smtp_user", default=data.get("smtp_user", "")): str,
+            vol.Optional("smtp_pass"): str,
+            vol.Required("imap_folder", default=data.get("imap_folder", "INBOX")): str,
+            vol.Required("forecast_format", default=data.get("forecast_format", "summary")): vol.In(["summary", "compact", "full"]),
+            vol.Required("device_type", default=data.get("device_type", "zoleo")): vol.In(["zoleo", "inreach"]),
+            vol.Optional("character_limit", default=data.get("character_limit", 0)): int,
+            vol.Optional("debug", default=data.get("debug", DEFAULT_DEBUG)): bool,
+            vol.Required("polling_interval", default=data.get("polling_interval", DEFAULT_POLLING_INTERVAL)): vol.All(
                 vol.Coerce(int), vol.Range(min=1, max=1440)
             ),
-            vol.Required("default_days", default=data.get("default_days", DEFAULT_DAYS), description="Default Forecast Days (1-7)"): vol.All(
+            vol.Required("default_days", default=data.get("default_days", DEFAULT_DAYS)): vol.All(
                 vol.Coerce(int), vol.Range(min=1, max=7)
             ),
         })
