@@ -1,23 +1,53 @@
+from __future__ import annotations
+
 import logging
 from datetime import timedelta, datetime
-from typing import Optional
-try:
-    # Home Assistant runtime import
-    from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-except ImportError:  # pragma: no cover
-    # Type-checking / standalone execution stub so that the module can be
-    # imported without Home Assistant installed (e.g. during CI tests).
-    class DataUpdateCoordinator:  # type: ignore
-        """Minimal stub with the attributes we actually use."""
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
-        def __init__(self, hass=None, logger=None, name: Optional[str] = None, update_interval=None):
-            self.hass = hass
-            self.logger = logger
-            self.name = name
-            self.update_interval = update_interval
+# ---------------------------------------------------------------------------
+# Home-Assistant helper import
+# ---------------------------------------------------------------------------
 
-        async def async_config_entry_first_refresh(self):
-            return None
+# During normal execution inside Home-Assistant we can import the real
+# `DataUpdateCoordinator`.  When the integration is imported in a standalone
+# environment (unit-tests, CI, static-analysis) the import is missing.  We guard
+# against that and provide a *typed* fallback stub so that `mypy` does not
+# complain about unresolved symbols.
+
+if TYPE_CHECKING:
+    # Only needed for static analysis; HA is not installed in the test image.
+    from homeassistant.core import HomeAssistant  # pragma: no cover
+    from homeassistant.helpers.update_coordinator import (  # pragma: no cover
+        DataUpdateCoordinator as _HADataUpdateCoordinator,
+    )
+
+    DataUpdateCoordinatorBase = _HADataUpdateCoordinator  # alias for typing
+else:  # Runtime import with graceful fallback
+    try:
+        from homeassistant.helpers.update_coordinator import DataUpdateCoordinator as DataUpdateCoordinatorBase  # type: ignore
+    except ImportError:  # pragma: no cover
+
+        class DataUpdateCoordinatorBase:  # type: ignore
+            """Lightweight stub used when Home-Assistant is absent."""
+
+            def __init__(
+                self,
+                hass: Optional[Any] = None,
+                logger: Optional[logging.Logger] = None,
+                name: Optional[str] = None,
+                update_interval: Optional[timedelta] = None,
+            ) -> None:
+                self.hass = hass
+                self.logger = logger
+                self.name = name
+                self.update_interval = update_interval
+
+            async def async_config_entry_first_refresh(self) -> None:  # noqa: D401
+                return None
+
+
+# Re-export under the public name expected by the rest of the module.
+DataUpdateCoordinator = DataUpdateCoordinatorBase  # type: ignore[var-annotated]
 
 from .imap_handler import check_imap_for_gps
 from .forecast_parser import format_forecast
@@ -30,7 +60,11 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class SatcomForecastCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass, config):
+    """Periodically polls an IMAP inbox for GPS requests and dispatches NOAA
+    forecasts back to the requesting sender.
+    """
+
+    def __init__(self, hass: Any, config: Dict[str, Any]) -> None:  # noqa: D401
         # Get polling interval from config, default to 5 minutes
         polling_interval = config.get("polling_interval", DEFAULT_POLLING_INTERVAL)
         super().__init__(
@@ -39,15 +73,17 @@ class SatcomForecastCoordinator(DataUpdateCoordinator):
             name="satcom_forecast",
             update_interval=timedelta(minutes=polling_interval),
         )
-        self.config = config
-        self._data = {
+        self.config: Dict[str, Any] = config
+
+        # Coordinator data that will be exposed to HA entities
+        self._data: Dict[str, Any] = {
             "last_forecast_time": None,
             "last_sender": None,
             "gps_received_count": 0,
             "last_forecast": None,
             "last_coordinates": None,
         }
-        self.data = self._data.copy()
+        self.data: Dict[str, Any] = self._data.copy()
         _LOGGER.debug(
             "SatcomForecastCoordinator initialized with config: %s",
             {
@@ -57,7 +93,7 @@ class SatcomForecastCoordinator(DataUpdateCoordinator):
         )
         _LOGGER.info("Polling interval set to %d minutes", polling_interval)
 
-    async def _async_update_data(self):
+    async def _async_update_data(self) -> Dict[str, Any]:
         """Update coordinator data and process any new GPS requests."""
         _LOGGER.debug("Starting coordinator update cycle")
 
