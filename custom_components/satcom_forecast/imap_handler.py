@@ -1,16 +1,25 @@
-import imaplib
+from __future__ import annotations
+
 import asyncio
 import email
-import re
+import imaplib
 import logging
+import re
+from email.message import Message
 from email.utils import parseaddr
+from typing import Any, Dict, List, Optional, Union, cast
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def check_imap_for_gps(
-    host, port, username, password, folder="INBOX", security="SSL"
-):
+    host: str,
+    port: int,
+    username: str,
+    password: str,
+    folder: str = "INBOX",
+    security: str = "SSL",
+) -> List[Dict[str, Any]]:
     _LOGGER.debug(
         "Checking IMAP for GPS coordinates - Host: %s, Port: %s, User: %s, Folder: %s, Security: %s",
         host,
@@ -38,9 +47,17 @@ async def check_imap_for_gps(
         return []
 
 
-def _check_imap_sync(host, port, username, password, folder="INBOX", security="SSL"):
-    """Synchronous IMAP checking function to be run in thread pool."""
-    mail = None
+def _check_imap_sync(
+    host: str,
+    port: int,
+    username: str,
+    password: str,
+    folder: str = "INBOX",
+    security: str = "SSL",
+) -> List[Dict[str, Any]]:
+    """Blocking IMAP interaction executed in a background thread."""
+
+    mail: Optional[Union[imaplib.IMAP4, imaplib.IMAP4_SSL]] = None
     try:
         # Establish connection based on security type
         if security == "SSL":
@@ -69,17 +86,22 @@ def _check_imap_sync(host, port, username, password, folder="INBOX", security="S
         try:
             status, folders = mail.list()
             if status == "OK":
-                _LOGGER.debug(
-                    "Available folders: %s",
-                    [
-                        (
-                            f.decode().split('"')[-2]
-                            if b'"' in f
-                            else f.decode().split()[-1]
-                        )
-                        for f in folders
-                    ],
-                )
+                decoded_folders: List[str] = []
+                for raw in folders or []:
+                    folder_bytes = cast(Union[bytes, Any], raw)
+                    if isinstance(folder_bytes, bytes):
+                        decoded = folder_bytes.decode(errors="ignore")
+                    else:
+                        decoded = str(folder_bytes)
+
+                    name = (
+                        decoded.split("\"")[-2]
+                        if "\"" in decoded
+                        else decoded.split()[-1]
+                    )
+                    decoded_folders.append(name)
+
+                _LOGGER.debug("Available folders: %s", decoded_folders)
             else:
                 _LOGGER.debug("Could not list folders: %s", status)
         except Exception as e:
@@ -105,7 +127,7 @@ def _check_imap_sync(host, port, username, password, folder="INBOX", security="S
                 _LOGGER.error("Search error details: %s", messages)
             return []
 
-        message_count = len(messages[0].split()) if messages[0] else 0
+        message_count = len(messages[0].split()) if messages and messages[0] else 0
         _LOGGER.debug("Found %d unread messages", message_count)
 
         result = []
@@ -117,8 +139,18 @@ def _check_imap_sync(host, port, username, password, folder="INBOX", security="S
                 _LOGGER.debug("Failed to fetch message %s: %s", num, typ)
                 continue
 
-            msg = email.message_from_bytes(data[0][1])
-            from_email = parseaddr(msg["From"])[1]
+            if not data or not isinstance(data[0], tuple):
+                _LOGGER.debug("Unexpected fetch data format for msg %s: %s", num, data)
+                continue
+
+            payload = data[0][1]
+            if not isinstance(payload, (bytes, bytearray)):
+                _LOGGER.debug("Skipping non-bytes payload for msg %s", num)
+                continue
+
+            msg: Message = email.message_from_bytes(payload)
+            sender_header = msg.get("From", "")
+            from_email = parseaddr(sender_header)[1] if sender_header else "unknown"
             _LOGGER.debug("Processing message from: %s", from_email)
 
             body = ""
@@ -188,7 +220,7 @@ def _check_imap_sync(host, port, username, password, folder="INBOX", security="S
                 _LOGGER.debug("Error during IMAP logout: %s", str(e))
 
 
-def extract_days_override(body):
+def extract_days_override(body: str) -> Optional[int]:
     """Extract days override from message body.
 
     Looks for patterns like "5days", "5 days", "3day", "3 day", "0days", "current", "today" etc.
@@ -225,7 +257,7 @@ def extract_days_override(body):
     return None
 
 
-def _safe_decode_payload(payload):
+def _safe_decode_payload(payload: Any) -> str:
     """Return the e-mail *payload* as text regardless of its underlying type.
 
     ``email.message.Message.get_payload(decode=True)`` may return *bytes*,
