@@ -3,6 +3,7 @@ import asyncio
 import email
 import re
 import logging
+from email.utils import parseaddr
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -117,7 +118,7 @@ def _check_imap_sync(host, port, username, password, folder="INBOX", security="S
                 continue
 
             msg = email.message_from_bytes(data[0][1])
-            from_email = email.utils.parseaddr(msg["From"])[1]
+            from_email = parseaddr(msg["From"])[1]
             _LOGGER.debug("Processing message from: %s", from_email)
 
             body = ""
@@ -125,11 +126,11 @@ def _check_imap_sync(host, port, username, password, folder="INBOX", security="S
                 _LOGGER.debug("Message is multipart, extracting text/plain content")
                 for part in msg.walk():
                     if part.get_content_type() == "text/plain":
-                        body = part.get_payload(decode=True).decode(errors="ignore")
+                        body = _safe_decode_payload(part.get_payload(decode=True))
                         break
             else:
                 _LOGGER.debug("Message is single part, extracting payload")
-                body = msg.get_payload(decode=True).decode(errors="ignore")
+                body = _safe_decode_payload(msg.get_payload(decode=True))
 
             _LOGGER.debug("Message body length: %d characters", len(body))
 
@@ -222,3 +223,31 @@ def extract_days_override(body):
 
     _LOGGER.debug("No days override found in message")
     return None
+
+
+def _safe_decode_payload(payload):
+    """Return the e-mail *payload* as text regardless of its underlying type.
+
+    ``email.message.Message.get_payload(decode=True)`` may return *bytes*,
+    *str*, or even ``None``.  Trying to call ``.decode`` unconditionally on the
+    result can therefore raise *AttributeError* when the payload is already a
+    string.  This helper normalises the value so that the caller always
+    receives a plain ``str``.
+    """
+
+    if payload is None:
+        return ""
+
+    # If we already have a string, return it unchanged.
+    if isinstance(payload, str):
+        return payload
+
+    # Fallback: assume bytes-like – try UTF-8 first and ignore errors.
+    try:
+        return payload.decode("utf-8", errors="ignore")
+    except Exception:  # pragma: no cover – extremely rare encodings
+        try:
+            return payload.decode(errors="ignore")  # Use system default
+        except Exception:
+            # As a last resort, repr() keeps us from crashing the loop.
+            return repr(payload)
