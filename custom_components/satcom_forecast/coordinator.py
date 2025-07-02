@@ -3,7 +3,7 @@ from datetime import timedelta, datetime
 from typing import Optional
 try:
     # Home Assistant runtime import
-    from homeassistant.helpers.update_coordinator import DataUpdateCoordinator  # type: ignore
+    from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 except ImportError:  # pragma: no cover
     # Type-checking / standalone execution stub so that the module can be
     # imported without Home Assistant installed (e.g. during CI tests).
