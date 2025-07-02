@@ -3,17 +3,19 @@ import re
 
 _LOGGER = logging.getLogger(__name__)
 
-# Device character limits (accounting for part numbering overhead)
+# Constants for device limits and part numbering overhead
 ZOLEO_LIMIT = 200
 INREACH_LIMIT = 160
-PART_NUMBERING_OVERHEAD = 8  # "(1/3) " format
+
+# The longest possible part numbering prefix is "(99/99) " which is 8 characters.
+PART_NUMBERING_OVERHEAD = 8
 
 
 def split_message(text, device_type="zoleo", custom_limit=None):
     """Split a message into parts based on device type and character limits, ensuring no part ever exceeds the limit (including part numbering)."""
     # Reserve space for part numbering (e.g., "(1/10) ")
-    # We'll use up to 7 chars for part numbering: "(99/99) "
-    max_numbering_length = 7
+    # We'll use up to 8 chars for part numbering: "(99/99) "
+    max_numbering_length = PART_NUMBERING_OVERHEAD
     min_safe_limit = (
         max_numbering_length + 10
     )  # Minimum safe limit to avoid infinite loops

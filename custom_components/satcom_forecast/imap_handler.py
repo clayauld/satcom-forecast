@@ -163,6 +163,12 @@ def _check_imap_sync(host, port, username, password, folder="INBOX", security="S
                     }
                 )
                 _LOGGER.debug("Added GPS request to processing queue")
+                # Mark the message as seen to avoid reprocessing it in future polling cycles
+                try:
+                    mail.store(num, '+FLAGS', '\\Seen')
+                    _LOGGER.debug("Marked message %s as seen", num)
+                except Exception as e:
+                    _LOGGER.debug("Failed to mark message %s as seen: %s", num, str(e))
             else:
                 _LOGGER.debug("No coordinates found in message from %s", from_email)
 

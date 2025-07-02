@@ -109,14 +109,22 @@ class SatcomForecastCoordinator(DataUpdateCoordinator):
                         len(forecast),
                     )
 
-                    # Split message if needed for device constraints
-                    device_config = {
-                        "device_type": self.config.get("device_type", "zoleo"),
-                        "character_limit": self.config.get("character_limit", 0),
-                    }
-                    _LOGGER.debug("Device config: %s", device_config)
+                    # Determine target device type and optional custom character limit
+                    device_type = self.config.get("device_type", "zoleo")
+                    character_limit = self.config.get("character_limit")
 
-                    message_parts = split_message(forecast, device_config)
+                    _LOGGER.debug(
+                        "Using split_message with device_type='%s', character_limit=%s",
+                        device_type,
+                        character_limit,
+                    )
+
+                    # Pass parameters explicitly to avoid type mismatches
+                    message_parts = split_message(
+                        forecast,
+                        device_type=device_type,
+                        custom_limit=character_limit if character_limit else None,
+                    )
                     _LOGGER.debug("Message split into %d parts", len(message_parts))
 
                     # Send each part of the forecast
