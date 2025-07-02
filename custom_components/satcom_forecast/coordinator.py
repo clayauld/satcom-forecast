@@ -111,7 +111,18 @@ class SatcomForecastCoordinator(DataUpdateCoordinator):
 
                     # Determine target device type and optional custom character limit
                     device_type = self.config.get("device_type", "zoleo")
-                    character_limit = self.config.get("character_limit")
+                    # Character limit may come from YAML/ConfigEntry as a string;
+                    # attempt to cast to int and fall back to None if it fails.
+                    character_limit_raw = self.config.get("character_limit")
+                    try:
+                        character_limit = int(character_limit_raw) if character_limit_raw is not None else None
+                    except (TypeError, ValueError):
+                        _LOGGER.warning(
+                            "Invalid character_limit value '%s' (type %s); falling back to default",  # noqa: E501
+                            character_limit_raw,
+                            type(character_limit_raw).__name__,
+                        )
+                        character_limit = None
 
                     _LOGGER.debug(
                         "Using split_message with device_type='%s', character_limit=%s",

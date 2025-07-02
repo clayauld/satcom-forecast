@@ -61,8 +61,8 @@ def split_message(text, device_type="zoleo", custom_limit=None):
                     if numbered[len(prefix) + j] in [" ", "\n"]:
                         split_at = j
                         break
-                first = numbered[: len(prefix) + split_at].rstrip()
-                rest = numbered[len(prefix) + split_at :].lstrip()
+                first = numbered[:len(prefix) + split_at].rstrip()
+                rest = numbered[len(prefix) + split_at:].lstrip()
                 numbered_parts.append(first)
                 # Prepare next prefix (increment part number)
                 i += 1
@@ -134,7 +134,7 @@ def split_multiline_text(lines, effective_limit):
             current_length += line_length + separator_length
         else:
             # Check if current part meets minimum target utilization
-            remaining_lines = len([l for l in lines[i:] if l.strip()])
+            remaining_lines = len([line_item for line_item in lines[i:] if line_item.strip()])
             if current_part and current_length < min_target and remaining_lines > 0:
                 # Try to split the line to fill the current part better
                 remaining_space = effective_limit - current_length
@@ -264,7 +264,7 @@ def split_line_to_fill_space(line, available_space):
         return None  # Not beneficial to split
 
     first_part = " ".join(current_part)
-    remaining_part = line[len(first_part) :].strip()
+    remaining_part = line[len(first_part):].strip()
 
     # Final safety check: ensure we don't exceed available space
     if len(first_part) > available_space:

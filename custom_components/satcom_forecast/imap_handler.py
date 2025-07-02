@@ -3,7 +3,6 @@ import asyncio
 import email
 import re
 import logging
-from email.header import decode_header
 
 _LOGGER = logging.getLogger(__name__)
 
