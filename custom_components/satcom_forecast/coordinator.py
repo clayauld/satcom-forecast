@@ -1,6 +1,24 @@
 import logging
 from datetime import timedelta, datetime
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from typing import Optional
+try:
+    # Home Assistant runtime import
+    from homeassistant.helpers.update_coordinator import DataUpdateCoordinator  # type: ignore
+except ImportError:  # pragma: no cover
+    # Type-checking / standalone execution stub so that the module can be
+    # imported without Home Assistant installed (e.g. during CI tests).
+    class DataUpdateCoordinator:  # type: ignore
+        """Minimal stub with the attributes we actually use."""
+
+        def __init__(self, hass=None, logger=None, name: Optional[str] = None, update_interval=None):
+            self.hass = hass
+            self.logger = logger
+            self.name = name
+            self.update_interval = update_interval
+
+        async def async_config_entry_first_refresh(self):
+            return None
+
 from .imap_handler import check_imap_for_gps
 from .forecast_parser import format_forecast
 from .notifier import send_forecast_email
