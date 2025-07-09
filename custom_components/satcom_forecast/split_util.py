@@ -3,17 +3,19 @@ import re
 
 _LOGGER = logging.getLogger(__name__)
 
-# Device character limits (accounting for part numbering overhead)
+# Constants for device limits and part numbering overhead
 ZOLEO_LIMIT = 200
 INREACH_LIMIT = 160
-PART_NUMBERING_OVERHEAD = 8  # "(1/3) " format
+
+# The longest possible part numbering prefix is "(99/99) " which is 8 characters.
+PART_NUMBERING_OVERHEAD = 8
 
 
 def split_message(text, device_type="zoleo", custom_limit=None):
     """Split a message into parts based on device type and character limits, ensuring no part ever exceeds the limit (including part numbering)."""
     # Reserve space for part numbering (e.g., "(1/10) ")
-    # We'll use up to 7 chars for part numbering: "(99/99) "
-    max_numbering_length = 7
+    # We'll use up to 8 chars for part numbering: "(99/99) "
+    max_numbering_length = PART_NUMBERING_OVERHEAD
     min_safe_limit = (
         max_numbering_length + 10
     )  # Minimum safe limit to avoid infinite loops
@@ -59,8 +61,8 @@ def split_message(text, device_type="zoleo", custom_limit=None):
                     if numbered[len(prefix) + j] in [" ", "\n"]:
                         split_at = j
                         break
-                first = numbered[: len(prefix) + split_at].rstrip()
-                rest = numbered[len(prefix) + split_at :].lstrip()
+                first = numbered[:len(prefix) + split_at].rstrip()
+                rest = numbered[len(prefix) + split_at:].lstrip()
                 numbered_parts.append(first)
                 # Prepare next prefix (increment part number)
                 i += 1
@@ -132,7 +134,7 @@ def split_multiline_text(lines, effective_limit):
             current_length += line_length + separator_length
         else:
             # Check if current part meets minimum target utilization
-            remaining_lines = len([l for l in lines[i:] if l.strip()])
+            remaining_lines = len([line_item for line_item in lines[i:] if line_item.strip()])
             if current_part and current_length < min_target and remaining_lines > 0:
                 # Try to split the line to fill the current part better
                 remaining_space = effective_limit - current_length
@@ -262,7 +264,7 @@ def split_line_to_fill_space(line, available_space):
         return None  # Not beneficial to split
 
     first_part = " ".join(current_part)
-    remaining_part = line[len(first_part) :].strip()
+    remaining_part = line[len(first_part):].strip()
 
     # Final safety check: ensure we don't exceed available space
     if len(first_part) > available_space:
