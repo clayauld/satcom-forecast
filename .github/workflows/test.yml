@@ -70,19 +70,3 @@ jobs:
     - name: Run Flake8 (code quality check)
       run: |
         flake8 custom_components/satcom_forecast/ --max-line-length=88 --extend-ignore=E203,W503
-
-  integration-structure:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11.x'
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
