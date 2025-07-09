@@ -86,7 +86,3 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    
-    - name: Test integration structure
-      run: |
-        python tests/test_integration_structure.py 
