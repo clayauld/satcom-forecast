@@ -1,16 +1,16 @@
 {
   "domain": "satcom_forecast",
   "name": "Satellite Communicator Weather Forecast",
-  "version": "0.0.5",
+  "codeowners": ["@clayauld"],
   "config_flow": true,
+  "dependencies": [],
   "documentation": "https://github.com/clayauld/satcom-forecast",
+  "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/clayauld/satcom-forecast/issues",
   "requirements": [
     "aiohttp>=3.8.0",
     "beautifulsoup4>=4.11.0",
     "aiofiles>=23.0.0"
   ],
-  "dependencies": [],
-  "codeowners": ["@clayauld"],
-  "iot_class": "cloud_polling"
+  "version": "0.0.5"
 }
