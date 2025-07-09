@@ -159,3 +159,4 @@ tests/*.log
 
 # Custom components
 custom_components/satcom_forecast/forecast_raw_output.txt
+satcom-forecast.code-workspace
