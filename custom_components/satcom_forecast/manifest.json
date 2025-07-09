@@ -12,6 +12,5 @@
   ],
   "dependencies": [],
   "codeowners": ["@clayauld"],
-  "iot_class": "cloud_polling",
-  "icon": "mdi:weather-cloudy"
+  "iot_class": "cloud_polling"
 }
