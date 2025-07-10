@@ -95,8 +95,8 @@ def _check_imap_sync(
                         decoded = str(folder_bytes)
 
                     name = (
-                        decoded.split("\"")[-2]
-                        if "\"" in decoded
+                        decoded.split('"')[-2]
+                        if '"' in decoded
                         else decoded.split()[-1]
                     )
                     decoded_folders.append(name)
@@ -197,7 +197,7 @@ def _check_imap_sync(
                 _LOGGER.debug("Added GPS request to processing queue")
                 # Mark the message as seen to avoid reprocessing it in future polling cycles
                 try:
-                    mail.store(num, '+FLAGS', '\\Seen')
+                    mail.store(num, "+FLAGS", "\\Seen")
                     _LOGGER.debug("Marked message %s as seen", num)
                 except Exception as e:
                     _LOGGER.debug("Failed to mark message %s as seen: %s", num, str(e))

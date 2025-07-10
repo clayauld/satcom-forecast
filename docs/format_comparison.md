@@ -3,18 +3,18 @@
 This document shows the three different forecast formats available in the SatCom Forecast integration, with examples and use cases.
 
 ## 📍 Test Locations
-**Primary Test:** 61.408, -148.444 (22 Miles ESE Butte, AK)  
-**Multi-Region Test:** Fairbanks AK, Anchorage AK, Miami FL, Chicago IL, Boston MA, Los Angeles CA  
-**Date:** June 2025  
+**Primary Test:** 61.408, -148.444 (22 Miles ESE Butte, AK)
+**Multi-Region Test:** Fairbanks AK, Anchorage AK, Miami FL, Chicago IL, Boston MA, Los Angeles CA
+**Date:** June 2025
 **Weather:** Various conditions including rain, thunderstorms, fog, wind, smoke, and extreme events
 
 ---
 
 ## 🌧️ SUMMARY Format
 
-**Purpose:** Time-based weather summary showing when significant events occur with probabilities  
-**Best for:** Users who need actionable weather information for planning  
-**Length:** 80-150 characters  
+**Purpose:** Time-based weather summary showing when significant events occur with probabilities
+**Best for:** Users who need actionable weather information for planning
+**Length:** 80-150 characters
 **Parts:** 1 email (ZOLEO device)
 
 ### Example Output:
@@ -64,7 +64,7 @@ Body: Tngt:Rn(40%),L:46°,SE5-10mph | Tue:Rn(40%),H:61°,SE5-10mph,L:45°,E15mph
 - **Heavy snow**: 70%
 - **Snow flurries**: 30%
 - **Fog conditions**: 60-90% depending on type
-- **Smoke conditions**: 
+- **Smoke conditions**:
   - Areas of smoke: 65%
   - Wildfire smoke: 75%
   - Heavy smoke: 90%
@@ -79,9 +79,9 @@ Body: Tngt:Rn(40%),L:46°,SE5-10mph | Tue:Rn(40%),H:61°,SE5-10mph,L:45°,E15mph
 
 ## 📋 COMPACT Format
 
-**Purpose:** Brief weather summary with event indicators for each time period  
-**Best for:** Users who want a quick overview with weather event highlights  
-**Length:** 400-1500 characters  
+**Purpose:** Brief weather summary with event indicators for each time period
+**Best for:** Users who want a quick overview with weather event highlights
+**Length:** 400-1500 characters
 **Parts:** 2-5 emails (ZOLEO device)
 
 ### Example Output:
@@ -131,9 +131,9 @@ Body: (2/2) Tuesday Night: Rain (L:45, E15mph) | Scattered showers | Wednesday: 
 
 ## 📄 FULL Format
 
-**Purpose:** Complete detailed forecast information  
-**Best for:** Users who want comprehensive weather details  
-**Length:** 1100-2000+ characters  
+**Purpose:** Complete detailed forecast information
+**Best for:** Users who want comprehensive weather details
+**Length:** 1100-2000+ characters
 **Parts:** 6+ emails (ZOLEO device)
 
 ### Example Output:
@@ -211,7 +211,7 @@ Sunday: Rain likely. Cloudy, with a high near 52.
 Users can request specific formats by including the format name in their email:
 
 - `61.408, -148.444 summary` → Summary format
-- `61.408, -148.444 compact` → Compact format  
+- `61.408, -148.444 compact` → Compact format
 - `61.408, -148.444 full` → Full format
 - `61.408, -148.444` → Default format (summary)
 
@@ -268,4 +268,4 @@ The system has been tested across diverse weather conditions:
 - **Massachusetts (Boston)**: Summer heat wave with rain, thunderstorms
 - **California (Los Angeles)**: Spring conditions with fog, patchy fog
 
-This provides much more actionable information for users planning outdoor activities across all seasons and weather conditions, with the Summary format now being the most efficient for single-message delivery. 
+This provides much more actionable information for users planning outdoor activities across all seasons and weather conditions, with the Summary format now being the most efficient for single-message delivery.

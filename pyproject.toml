@@ -98,4 +98,4 @@ addopts = [
     "--cov-report=term-missing",
     "--cov-report=html",
 ]
-asyncio_mode = "auto" 
+asyncio_mode = "auto"

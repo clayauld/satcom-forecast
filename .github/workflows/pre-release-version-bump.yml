@@ -10,7 +10,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -39,11 +39,11 @@ jobs:
           # Extract current version from pyproject.toml
           CURRENT_PYPROJECT=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
           echo "current_pyproject=$CURRENT_PYPROJECT" >> $GITHUB_OUTPUT
-          
+
           # Extract current version from manifest.json
           CURRENT_MANIFEST=$(grep '"version":' custom_components/satcom_forecast/manifest.json | sed 's/.*"version": "\(.*\)".*/\1/')
           echo "current_manifest=$CURRENT_MANIFEST" >> $GITHUB_OUTPUT
-          
+
           echo "Current pyproject.toml version: $CURRENT_PYPROJECT"
           echo "Current manifest.json version: $CURRENT_MANIFEST"
           echo "Release tag version: ${{ steps.version.outputs.version }}"
@@ -107,7 +107,7 @@ jobs:
           # Delete the old tag (if it exists)
           git tag -d ${{ github.event.release.tag_name }} || true
           git push origin :refs/tags/${{ github.event.release.tag_name }} || true
-          
+
           # Create new tag with the updated version
           git tag ${{ github.event.release.tag_name }}
           git push origin ${{ github.event.release.tag_name }}
@@ -121,12 +121,12 @@ jobs:
           cp pyproject.toml temp_release/
           cp README.md temp_release/
           cp LICENSE temp_release/
-          
+
           # Create a zip file with the updated version
           cd temp_release
           zip -r ../satcom-forecast-${{ steps.version.outputs.version }}.zip .
           cd ..
-          
+
           # Upload the updated assets to the release
           gh release upload ${{ github.event.release.tag_name }} satcom-forecast-${{ steps.version.outputs.version }}.zip --clobber
         env:
@@ -151,7 +151,7 @@ jobs:
         run: |
           # Get current release notes
           CURRENT_NOTES=$(gh release view ${{ github.event.release.tag_name }} --json body --jq '.body')
-          
+
           # Check if version update note already exists
           if echo "$CURRENT_NOTES" | grep -q "Version numbers have been automatically updated"; then
             echo "Version update note already exists in release notes."
@@ -159,7 +159,7 @@ jobs:
             # Add version update note to existing notes using printf for proper newlines
             VERSION_NOTE="**Note:** Version numbers have been automatically updated to ${{ steps.version.outputs.version }} in the release artifacts."
             UPDATED_NOTES=$(printf "%s\n\n%s" "$CURRENT_NOTES" "$VERSION_NOTE")
-            
+
             # Update release notes
             gh release edit ${{ github.event.release.tag_name }} --notes "$UPDATED_NOTES"
           fi
@@ -170,4 +170,4 @@ jobs:
         if: steps.version_check.outputs.skip_bump == 'true'
         run: |
           echo "✅ No version bump needed - files already match release tag ${{ github.event.release.tag_name }}"
-          echo "Skipping version update and asset creation." 
+          echo "Skipping version update and asset creation."

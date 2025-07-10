@@ -1,9 +1,9 @@
-import aiohttp
-from bs4 import BeautifulSoup
 import logging
 import os
-import re
+
 import aiofiles
+import aiohttp
+from bs4 import BeautifulSoup
 
 # Try relative import first, fall back to absolute import for testing
 try:

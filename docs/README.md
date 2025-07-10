@@ -23,4 +23,4 @@ The `format_comparison.md` file provides a comprehensive overview of:
 - **Probability Inference**: Smart percentage assignment when NOAA doesn't specify
 - **Extreme Event Highlighting**: 🚨 indicators for dangerous conditions
 
-Each format is designed for different use cases and display requirements, with the Summary format optimized for satellite communication constraints. 
+Each format is designed for different use cases and display requirements, with the Summary format optimized for satellite communication constraints.

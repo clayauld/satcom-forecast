@@ -1,6 +1,6 @@
-import re
 import logging
-from typing import List, Dict, Any
+import re
+from typing import Any, Dict, List, Optional, Union
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -59,7 +59,9 @@ event_name_map = {
 }
 
 
-def format_forecast(forecast_text, mode="summary", days=None):
+def format_forecast(
+    forecast_text: str, mode: str = "summary", days: Optional[int] = None
+) -> str:
     _LOGGER.debug(
         "Formatting forecast with mode: %s, days: %s, input length: %d characters",
         mode,
@@ -83,7 +85,7 @@ def format_forecast(forecast_text, mode="summary", days=None):
     return result
 
 
-def clean_forecast_text(text):
+def clean_forecast_text(text: str) -> str:
     """Clean and format the raw forecast text."""
     _LOGGER.debug("Cleaning forecast text, input length: %d characters", len(text))
 
@@ -141,7 +143,7 @@ def clean_forecast_text(text):
     return result
 
 
-def normalize_spaces(text):
+def normalize_spaces(text: str) -> str:
     """Normalize spaces in text - replace multiple spaces with single spaces."""
     # Replace multiple spaces with single spaces
     text = re.sub(r" +", " ", text)
@@ -150,7 +152,7 @@ def normalize_spaces(text):
     return text
 
 
-def format_full_forecast(text):
+def format_full_forecast(text: str) -> str:
     """Format the full forecast with proper line breaks and better character utilization."""
     _LOGGER.debug("Formatting full forecast")
     cleaned_text = clean_forecast_text(text)
@@ -199,7 +201,7 @@ def format_full_forecast(text):
     return result
 
 
-def infer_chance(event, forecast_text):
+def infer_chance(event: str, forecast_text: str) -> int:
     """Infer probability percentage for weather events, prioritizing explicit percentages when available."""
     forecast_lower = forecast_text.lower()
 
@@ -356,7 +358,7 @@ def infer_chance(event, forecast_text):
     return 0
 
 
-def check_significant_wind(forecast_text):
+def check_significant_wind(forecast_text: str) -> bool:
     """Check if wind speeds are significant (15+ mph) to warrant a wind event."""
     forecast_lower = forecast_text.lower()
 
@@ -391,7 +393,7 @@ def check_significant_wind(forecast_text):
     return False
 
 
-def extract_temperature_info(forecast_text):
+def extract_temperature_info(forecast_text: str) -> Dict[str, str]:
     """Extracts high and low temperature, returning a dict."""
     temps = {}
     high_match = re.search(r"high (?:near|around) (\d+)", forecast_text, re.IGNORECASE)
@@ -405,7 +407,7 @@ def extract_temperature_info(forecast_text):
     return temps
 
 
-def get_abbr(direction_word):
+def get_abbr(direction_word: str) -> str:
     # Expanded abbreviations
     mapping = {
         "north": "N",
@@ -428,7 +430,7 @@ def get_abbr(direction_word):
     return mapping.get(direction_word.lower(), direction_word)
 
 
-def extract_wind_info(forecast_text):
+def extract_wind_info(forecast_text: str) -> Optional[str]:
     """Extracts wind direction and speed, supporting various formats including gusts."""
     # Pattern for direction and speed, with optional gusts
     patterns = [
@@ -459,7 +461,7 @@ def extract_wind_info(forecast_text):
     return None
 
 
-def format_compact_forecast(text):
+def format_compact_forecast(text: str) -> str:
     """Format a compact version of the forecast with enhanced weather detection."""
     _LOGGER.debug("Formatting compact forecast")
     cleaned_text = clean_forecast_text(text)
@@ -506,7 +508,6 @@ def format_compact_forecast(text):
                 # Detect significant weather events
                 forecast_lower = forecast.lower()
                 detected_events = []
-                extreme_detected = False
 
                 for event, keywords in event_types.items():
                     if any(kw in forecast_lower for kw in keywords):
@@ -517,7 +518,6 @@ def format_compact_forecast(text):
                         if chance > 0:
                             if event in extreme_events:
                                 detected_events.append(f"🚨{event.title()}({chance}%)")
-                                extreme_detected = True
                             else:
                                 detected_events.append(f"{event.title()}({chance}%)")
 
@@ -1225,7 +1225,6 @@ def parse_forecast_periods(
     periods = []
     current_day = None
     days_counted = 0
-    include_current_day = True  # Always include current day unless days_limit is 0
 
     for i, (day_name, period_content) in enumerate(period_matches):
         day_name = day_name.strip()
