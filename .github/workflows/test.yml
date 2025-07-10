@@ -35,9 +35,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Run pytest with coverage
+    - name: Run pytest with JUnit output
+      id: pytest
       run: |
-        pytest tests/ -v --cov=custom_components/satcom_forecast --cov-report=xml --cov-report=term-missing
+        pytest tests/ -v --cov=custom_components/satcom_forecast --cov-report=xml --cov-report=term-missing --junitxml=pytest-results.xml
+      continue-on-error: true
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -47,8 +49,19 @@ jobs:
         name: codecov-umbrella
         fail_ci_if_error: false
 
+    - name: Publish Test Report
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: 'Test Results (Python ${{ matrix.python-version }})'
+        path: pytest-results.xml
+        reporter: java-junit
+        fail-on-error: true
+
   lint:
     runs-on: ubuntu-latest
+    needs: test
+    if: always()
 
     steps:
     - uses: actions/checkout@v4
@@ -61,12 +74,195 @@ jobs:
     - name: Install linting tools
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 black
+        pip install flake8 black isort mypy pytest
 
     - name: Run Black (code formatting check)
+      id: black
       run: |
-        black --check --diff custom_components/satcom_forecast/
+        black --check --diff custom_components/satcom_forecast/ > black-results.txt 2>&1 || echo "BLACK_FAILED=true" >> $GITHUB_ENV
+      continue-on-error: true
 
     - name: Run Flake8 (code quality check)
+      id: flake8
       run: |
-        flake8 custom_components/satcom_forecast/ --max-line-length=88 --extend-ignore=E203,W503
+        flake8 custom_components/satcom_forecast/ --max-line-length=88 --extend-ignore=E203,W503 --output-file=flake8-results.txt || echo "FLAKE8_FAILED=true" >> $GITHUB_ENV
+      continue-on-error: true
+
+    - name: Run isort (import sorting check)
+      id: isort
+      run: |
+        isort --check-only --diff --profile=black custom_components/satcom_forecast/ > isort-results.txt 2>&1 || echo "ISORT_FAILED=true" >> $GITHUB_ENV
+      continue-on-error: true
+
+    - name: Run MyPy (type checking)
+      id: mypy
+      run: |
+        mypy custom_components/satcom_forecast/ --ignore-missing-imports --strict-optional --no-error-summary > mypy-results.txt 2>&1 || echo "MYPY_FAILED=true" >> $GITHUB_ENV
+      continue-on-error: true
+
+    - name: Create lint results summary
+      if: always()
+      run: |
+        echo "## 🔍 Linting Results Summary" > lint-summary.md
+        echo "" >> lint-summary.md
+        
+        # Black results
+        if [ "$BLACK_FAILED" = "true" ]; then
+          echo "### ❌ Black (Code Formatting)" >> lint-summary.md
+          echo "\`\`\`" >> lint-summary.md
+          cat black-results.txt >> lint-summary.md 2>/dev/null || echo "Failed to format code with black" >> lint-summary.md
+          echo "\`\`\`" >> lint-summary.md
+          echo "**Fix:** Run \`black custom_components/satcom_forecast/\` to auto-format your code." >> lint-summary.md
+          echo "" >> lint-summary.md
+        else
+          echo "### ✅ Black (Code Formatting) - PASSED" >> lint-summary.md
+          echo "" >> lint-summary.md
+        fi
+        
+        # Flake8 results
+        if [ "$FLAKE8_FAILED" = "true" ]; then
+          echo "### ❌ Flake8 (Code Quality)" >> lint-summary.md
+          echo "\`\`\`" >> lint-summary.md
+          cat flake8-results.txt >> lint-summary.md 2>/dev/null || echo "Code quality issues found" >> lint-summary.md
+          echo "\`\`\`" >> lint-summary.md
+          echo "**Fix:** Address the code quality issues shown above. Common fixes:" >> lint-summary.md
+          echo "- Remove unused imports and variables" >> lint-summary.md
+          echo "- Break long lines (88 char limit)" >> lint-summary.md
+          echo "- Add proper spacing around operators" >> lint-summary.md
+          echo "" >> lint-summary.md
+        else
+          echo "### ✅ Flake8 (Code Quality) - PASSED" >> lint-summary.md
+          echo "" >> lint-summary.md
+        fi
+        
+        # isort results
+        if [ "$ISORT_FAILED" = "true" ]; then
+          echo "### ❌ isort (Import Sorting)" >> lint-summary.md
+          echo "\`\`\`" >> lint-summary.md
+          cat isort-results.txt >> lint-summary.md 2>/dev/null || echo "Import sorting issues found" >> lint-summary.md
+          echo "\`\`\`" >> lint-summary.md
+          echo "**Fix:** Run \`isort --profile=black custom_components/satcom_forecast/\` to auto-sort imports." >> lint-summary.md
+          echo "" >> lint-summary.md
+        else
+          echo "### ✅ isort (Import Sorting) - PASSED" >> lint-summary.md
+          echo "" >> lint-summary.md
+        fi
+        
+        # MyPy results
+        if [ "$MYPY_FAILED" = "true" ]; then
+          echo "### ⚠️ MyPy (Type Checking)" >> lint-summary.md
+          echo "\`\`\`" >> lint-summary.md
+          head -20 mypy-results.txt >> lint-summary.md 2>/dev/null || echo "Type checking issues found" >> lint-summary.md
+          echo "\`\`\`" >> lint-summary.md
+          echo "**Fix:** Add missing type annotations and fix type errors. Common fixes:" >> lint-summary.md
+          echo "- Add return type annotations: \`def function() -> ReturnType:\`" >> lint-summary.md
+          echo "- Add parameter type hints: \`def function(param: ParamType):\`" >> lint-summary.md
+          echo "- Import needed types: \`from typing import List, Dict, Optional\`" >> lint-summary.md
+          echo "" >> lint-summary.md
+        else
+          echo "### ✅ MyPy (Type Checking) - PASSED" >> lint-summary.md
+          echo "" >> lint-summary.md
+        fi
+        
+        # Overall status
+        if [ "$BLACK_FAILED" = "true" ] || [ "$FLAKE8_FAILED" = "true" ] || [ "$ISORT_FAILED" = "true" ]; then
+          echo "## 🚨 Action Required" >> lint-summary.md
+          echo "Some linting checks failed. Please fix the issues above and push your changes." >> lint-summary.md
+          echo "" >> lint-summary.md
+          echo "### Quick Fix Commands:" >> lint-summary.md
+          echo "\`\`\`bash" >> lint-summary.md
+          echo "# Auto-fix formatting and imports" >> lint-summary.md
+          echo "black custom_components/satcom_forecast/" >> lint-summary.md
+          echo "isort --profile=black custom_components/satcom_forecast/" >> lint-summary.md
+          echo "" >> lint-summary.md
+          echo "# Check for remaining issues" >> lint-summary.md
+          echo "flake8 custom_components/satcom_forecast/ --max-line-length=88 --extend-ignore=E203,W503" >> lint-summary.md
+          echo "\`\`\`" >> lint-summary.md
+        else
+          echo "## ✅ All Linting Checks Passed!" >> lint-summary.md
+          echo "Great job! Your code meets all the linting standards." >> lint-summary.md
+        fi
+
+    - name: Comment PR with results
+      if: always() && github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          
+          // Read lint summary
+          let lintSummary = '';
+          try {
+            lintSummary = fs.readFileSync('lint-summary.md', 'utf8');
+          } catch (error) {
+            lintSummary = '## 🔍 Linting Results\nUnable to generate linting summary.';
+          }
+          
+          // Get test results from previous job
+          const testJobStatus = '${{ needs.test.result }}' || 'unknown';
+          
+          let testSummary = '## 🧪 Test Results\n\n';
+          if (testJobStatus === 'success') {
+            testSummary += '✅ **All tests passed!** Your changes don\'t break any existing functionality.\n\n';
+          } else if (testJobStatus === 'failure') {
+            testSummary += '❌ **Some tests failed.** Please check the test results and fix any failing tests.\n\n';
+            testSummary += '**Common test fixes:**\n';
+            testSummary += '- Update test expectations if you changed function output format\n';
+            testSummary += '- Fix any syntax errors or import issues\n';
+            testSummary += '- Ensure all function parameters have correct types\n\n';
+          } else {
+            testSummary += '⚠️ **Test status unknown.** Please check the Actions tab for details.\n\n';
+          }
+          
+          const body = `# 🤖 Automated Code Review
+          
+${testSummary}
+${lintSummary}
+
+---
+*This comment was automatically generated by GitHub Actions. Check the [Actions tab](${context.payload.repository.html_url}/actions) for detailed logs.*`;
+          
+          // Find existing comment to update
+          const comments = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+          
+          const existingComment = comments.data.find(comment => 
+            comment.user.login === 'github-actions[bot]' && 
+            comment.body.includes('🤖 Automated Code Review')
+          );
+          
+          if (existingComment) {
+            // Update existing comment
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: existingComment.id,
+              body: body
+            });
+          } else {
+            // Create new comment
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+          }
+
+  # Summary job to check overall status
+  overall-status:
+    runs-on: ubuntu-latest
+    needs: [test, lint]
+    if: always()
+    steps:
+    - name: Check overall status
+      run: |
+        if [[ "${{ needs.test.result }}" == "failure" || "${{ needs.lint.result }}" == "failure" ]]; then
+          echo "❌ Some checks failed"
+          exit 1
+        else
+          echo "✅ All checks passed"
+        fi

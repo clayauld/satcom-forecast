@@ -1,0 +1,255 @@
+name: PR Analysis & Reporting
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  analysis:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch full history for better analysis
+        
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install coverage[toml] pytest-cov pytest-html pytest-json-report
+        
+    - name: Run comprehensive tests
+      id: tests
+      run: |
+        # Run tests with multiple output formats
+        pytest tests/ \
+          --cov=custom_components/satcom_forecast \
+          --cov-report=xml \
+          --cov-report=html \
+          --cov-report=term-missing \
+          --cov-report=json \
+          --junitxml=junit.xml \
+          --html=test-report.html \
+          --self-contained-html \
+          --json-report \
+          --json-report-file=test-report.json \
+          -v
+      continue-on-error: true
+      
+    - name: Parse test results
+      id: parse-results
+      run: |
+        python3 << 'EOF'
+        import json
+        import xml.etree.ElementTree as ET
+        import os
+        
+        # Parse pytest JSON report
+        try:
+            with open('test-report.json', 'r') as f:
+                test_data = json.load(f)
+                
+            total_tests = test_data['summary']['total']
+            passed = test_data['summary'].get('passed', 0)
+            failed = test_data['summary'].get('failed', 0)
+            skipped = test_data['summary'].get('skipped', 0)
+            errors = test_data['summary'].get('error', 0)
+            
+            # Calculate success rate
+            success_rate = (passed / total_tests * 100) if total_tests > 0 else 0
+            
+            # Write to environment file
+            with open(os.environ['GITHUB_ENV'], 'a') as f:
+                f.write(f"TOTAL_TESTS={total_tests}\n")
+                f.write(f"PASSED_TESTS={passed}\n")
+                f.write(f"FAILED_TESTS={failed}\n")
+                f.write(f"SKIPPED_TESTS={skipped}\n")
+                f.write(f"ERROR_TESTS={errors}\n")
+                f.write(f"SUCCESS_RATE={success_rate:.1f}\n")
+            
+        except Exception as e:
+            print(f"Error parsing test results: {e}")
+            with open(os.environ['GITHUB_ENV'], 'a') as f:
+                f.write("TOTAL_TESTS=0\n")
+                f.write("PASSED_TESTS=0\n")
+                f.write("FAILED_TESTS=0\n")
+                f.write("SKIPPED_TESTS=0\n")
+                f.write("ERROR_TESTS=0\n")
+                f.write("SUCCESS_RATE=0\n")
+        EOF
+      
+    - name: Parse coverage results
+      id: parse-coverage
+      run: |
+        python3 << 'EOF'
+        import json
+        import os
+        
+        try:
+            with open('coverage.json', 'r') as f:
+                cov_data = json.load(f)
+                
+            total_coverage = cov_data['totals']['percent_covered']
+            total_lines = cov_data['totals']['num_statements']
+            covered_lines = cov_data['totals']['covered_lines']
+            missing_lines = cov_data['totals']['missing_lines']
+            
+            # Write coverage metrics to environment file
+            with open(os.environ['GITHUB_ENV'], 'a') as f:
+                f.write(f"TOTAL_COVERAGE={total_coverage:.1f}\n")
+                f.write(f"TOTAL_LINES={total_lines}\n")
+                f.write(f"COVERED_LINES={covered_lines}\n")
+                f.write(f"MISSING_LINES={missing_lines}\n")
+            
+            # Get file-level coverage for key files
+            files_summary = []
+            for filename, file_data in cov_data['files'].items():
+                if 'custom_components/satcom_forecast' in filename:
+                    file_cov = file_data['summary']['percent_covered']
+                    files_summary.append(f"- `{filename.split('/')[-1]}`: {file_cov:.1f}%")
+            
+            files_summary_str = '\n'.join(files_summary[:10])  # Top 10 files
+            
+            # Write file summary to environment file
+            with open(os.environ['GITHUB_ENV'], 'a') as f:
+                f.write(f"FILES_SUMMARY<<EOF\n{files_summary_str}\nEOF\n")
+                
+        except Exception as e:
+            print(f"Error parsing coverage: {e}")
+            with open(os.environ['GITHUB_ENV'], 'a') as f:
+                f.write("TOTAL_COVERAGE=0\n")
+                f.write("TOTAL_LINES=0\n")
+                f.write("COVERED_LINES=0\n")
+                f.write("MISSING_LINES=0\n")
+                f.write("FILES_SUMMARY=Coverage data not available\n")
+        EOF
+      
+    - name: Generate analysis report
+      run: |
+        cat > analysis-report.md << 'EOF'
+        # 📊 Pull Request Analysis Report
+        
+        ## 🧪 Test Results
+        
+        | Metric | Value |
+        |--------|--------|
+        | **Total Tests** | ${{ env.TOTAL_TESTS }} |
+        | **✅ Passed** | ${{ env.PASSED_TESTS }} |
+        | **❌ Failed** | ${{ env.FAILED_TESTS }} |
+        | **⏭️ Skipped** | ${{ env.SKIPPED_TESTS }} |
+        | **💥 Errors** | ${{ env.ERROR_TESTS }} |
+        | **📈 Success Rate** | ${{ env.SUCCESS_RATE }}% |
+        
+        ## 📋 Coverage Report
+        
+        | Metric | Value |
+        |--------|--------|
+        | **Overall Coverage** | ${{ env.TOTAL_COVERAGE }}% |
+        | **Total Lines** | ${{ env.TOTAL_LINES }} |
+        | **Covered Lines** | ${{ env.COVERED_LINES }} |
+        | **Missing Lines** | ${{ env.MISSING_LINES }} |
+        
+        ### 📁 File Coverage Breakdown
+        ${{ env.FILES_SUMMARY }}
+        
+        ## 🎯 Recommendations
+        
+        EOF
+        
+        # Add recommendations based on results
+        if (( $(echo "${{ env.SUCCESS_RATE }} < 100" | bc -l) )); then
+          echo "### ⚠️ Test Issues Detected" >> analysis-report.md
+          echo "- Some tests are failing. Please review the test output above." >> analysis-report.md
+          echo "- Check for any changes that might have broken existing functionality." >> analysis-report.md
+          echo "- Update test expectations if you intentionally changed behavior." >> analysis-report.md
+          echo "" >> analysis-report.md
+        fi
+        
+        if (( $(echo "${{ env.TOTAL_COVERAGE }} < 80" | bc -l) )); then
+          echo "### 📉 Coverage Below Recommended Threshold" >> analysis-report.md
+          echo "- Current coverage is ${{ env.TOTAL_COVERAGE }}%, recommend >80%." >> analysis-report.md
+          echo "- Consider adding tests for new functionality." >> analysis-report.md
+          echo "- Focus on testing edge cases and error conditions." >> analysis-report.md
+          echo "" >> analysis-report.md
+        fi
+        
+        if (( $(echo "${{ env.TOTAL_COVERAGE }} >= 90" | bc -l) )); then
+          echo "### 🎉 Excellent Coverage!" >> analysis-report.md
+          echo "- Your code has excellent test coverage (${{ env.TOTAL_COVERAGE }}%)." >> analysis-report.md
+          echo "- Keep up the great work maintaining high code quality!" >> analysis-report.md
+          echo "" >> analysis-report.md
+        fi
+        
+        echo "---" >> analysis-report.md
+        echo "*📊 Analysis generated by GitHub Actions • [View detailed test report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})*" >> analysis-report.md
+        
+    - name: Upload test artifacts
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: |
+          test-report.html
+          test-report.json
+          junit.xml
+          coverage.xml
+          coverage.json
+          htmlcov/
+          
+    - name: Comment PR with analysis
+      if: always()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          
+          // Read the analysis report
+          let analysisReport = '';
+          try {
+            analysisReport = fs.readFileSync('analysis-report.md', 'utf8');
+          } catch (error) {
+            analysisReport = '# 📊 Pull Request Analysis Report\n\nUnable to generate analysis report.';
+          }
+          
+          // Find existing analysis comment
+          const comments = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+          
+          const existingComment = comments.data.find(comment => 
+            comment.user.login === 'github-actions[bot]' && 
+            comment.body.includes('📊 Pull Request Analysis Report')
+          );
+          
+          if (existingComment) {
+            // Update existing comment
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: existingComment.id,
+              body: analysisReport
+            });
+          } else {
+            // Create new comment
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: analysisReport
+            });
+          }
