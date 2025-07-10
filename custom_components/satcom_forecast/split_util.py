@@ -1,5 +1,6 @@
 import logging
 import re
+from typing import List, Optional, Tuple
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -11,7 +12,9 @@ INREACH_LIMIT = 160
 PART_NUMBERING_OVERHEAD = 8
 
 
-def split_message(text, device_type="zoleo", custom_limit=None):
+def split_message(
+    text: str, device_type: str = "zoleo", custom_limit: Optional[int] = None
+) -> List[str]:
     """Split a message into parts based on device type and character limits, ensuring no part ever exceeds the limit (including part numbering)."""
     # Reserve space for part numbering (e.g., "(1/10) ")
     # We'll use up to 8 chars for part numbering: "(99/99) "
@@ -61,8 +64,8 @@ def split_message(text, device_type="zoleo", custom_limit=None):
                     if numbered[len(prefix) + j] in [" ", "\n"]:
                         split_at = j
                         break
-                first = numbered[:len(prefix) + split_at].rstrip()
-                rest = numbered[len(prefix) + split_at:].lstrip()
+                first = numbered[: len(prefix) + split_at].rstrip()
+                rest = numbered[len(prefix) + split_at :].lstrip()
                 numbered_parts.append(first)
                 # Prepare next prefix (increment part number)
                 i += 1
@@ -88,7 +91,9 @@ def split_message(text, device_type="zoleo", custom_limit=None):
     return parts
 
 
-def smart_split_text(text, effective_limit, config=None):
+def smart_split_text(
+    text: str, effective_limit: int, config: Optional[dict] = None
+) -> List[str]:
     """Intelligently split text to maximize character utilization."""
     parts = []
 
@@ -110,10 +115,10 @@ def smart_split_text(text, effective_limit, config=None):
     return parts
 
 
-def split_multiline_text(lines, effective_limit):
+def split_multiline_text(lines: List[str], effective_limit: int) -> List[str]:
     """Split multi-line text (compact/full format) more aggressively to fill character limits."""
     parts = []
-    current_part = []
+    current_part: List[str] = []
     current_length = 0
 
     # Calculate minimum target utilization (85% of limit)
@@ -134,7 +139,9 @@ def split_multiline_text(lines, effective_limit):
             current_length += line_length + separator_length
         else:
             # Check if current part meets minimum target utilization
-            remaining_lines = len([line_item for line_item in lines[i:] if line_item.strip()])
+            remaining_lines = len(
+                [line_item for line_item in lines[i:] if line_item.strip()]
+            )
             if current_part and current_length < min_target and remaining_lines > 0:
                 # Try to split the line to fill the current part better
                 remaining_space = effective_limit - current_length
@@ -197,7 +204,7 @@ def split_multiline_text(lines, effective_limit):
     return parts
 
 
-def split_long_line_aggressively(line, effective_limit):
+def split_long_line_aggressively(line: str, effective_limit: int) -> List[str]:
     """Split a long line aggressively across multiple parts to maximize utilization."""
     parts = []
     remaining_line = line
@@ -237,7 +244,9 @@ def split_long_line_aggressively(line, effective_limit):
     return parts
 
 
-def split_line_to_fill_space(line, available_space):
+def split_line_to_fill_space(
+    line: str, available_space: int
+) -> Optional[Tuple[str, str]]:
     """Split a line to fill available space, returning (first_part, remaining_part) or None if not beneficial."""
     if len(line) <= available_space:
         return None  # Line fits completely, no need to split
@@ -264,7 +273,7 @@ def split_line_to_fill_space(line, available_space):
         return None  # Not beneficial to split
 
     first_part = " ".join(current_part)
-    remaining_part = line[len(first_part):].strip()
+    remaining_part = line[len(first_part) :].strip()
 
     # Final safety check: ensure we don't exceed available space
     if len(first_part) > available_space:
@@ -273,7 +282,7 @@ def split_line_to_fill_space(line, available_space):
     return (first_part, remaining_part)
 
 
-def split_single_line_text(text, effective_limit):
+def split_single_line_text(text: str, effective_limit: int) -> List[str]:
     """Split single line text efficiently."""
     if len(text) <= effective_limit:
         return [text]
@@ -302,7 +311,7 @@ def split_single_line_text(text, effective_limit):
     return parts
 
 
-def find_best_break_point(text, limit):
+def find_best_break_point(text: str, limit: int) -> int:
     """Find the best point to break text without cutting words."""
     if len(text) <= limit:
         return len(text)
@@ -330,13 +339,13 @@ def find_best_break_point(text, limit):
     return 0  # No good break point found
 
 
-def split_summary_format(text, effective_limit):
+def split_summary_format(text: str, effective_limit: int) -> List[str]:
     """Split summary format text more aggressively at pipe separators and word boundaries."""
     # Split at pipe separators first
     segments = text.split(" | ")
 
     parts = []
-    current_part = []
+    current_part: List[str] = []
     current_length = 0
 
     # Calculate minimum target utilization (85% of limit)

@@ -193,19 +193,19 @@ from unittest.mock import Mock, patch
 
 class TestForecastParser:
     """Test forecast parsing functionality."""
-    
+
     def test_basic_format_parsing(self):
         """Test basic forecast format parsing."""
         # Arrange
         forecast_data = {...}
-        
+
         # Act
         result = parse_forecast(forecast_data)
-        
+
         # Assert
         assert result is not None
         assert "summary" in result
-    
+
     @pytest.mark.parametrize("weather_event,expected", [
         ("rain", "Rain"),
         ("snow", "Snow"),
@@ -391,4 +391,4 @@ Contributors will be recognized in:
 - Release notes
 - GitHub contributors list
 
-Thank you for contributing to SatCom Forecast! 🚀 
+Thank you for contributing to SatCom Forecast! 🚀

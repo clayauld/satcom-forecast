@@ -1,7 +1,7 @@
-import smtplib
 import asyncio
-from email.message import EmailMessage
 import logging
+import smtplib
+from email.message import EmailMessage
 
 _LOGGER = logging.getLogger(__name__)
 

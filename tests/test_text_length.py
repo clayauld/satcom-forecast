@@ -1,5 +1,7 @@
-import sys
 import os
+import sys
+from typing import Any
+
 import pytest
 
 sys.path.insert(
@@ -19,7 +21,7 @@ Thursday: Rain likely. Cloudy, with a high near 49. Southeast wind 10 to 15 mph.
 class TestTextLength:
     """Test text length functionality and character limits."""
 
-    def test_basic_text_lengths(self):
+    def test_basic_text_lengths(self) -> None:
         """Test that formatted text has reasonable lengths."""
         summary_text = format_forecast(TEST_FORECAST, mode="summary")
         compact_text = format_forecast(TEST_FORECAST, mode="compact")
@@ -34,7 +36,7 @@ class TestTextLength:
         assert len(compact_text) > 50
         assert len(full_text) > 100
 
-    def test_device_character_limits(self):
+    def test_device_character_limits(self) -> None:
         """Test that text splitting respects device character limits."""
         summary_text = format_forecast(TEST_FORECAST, mode="summary")
 
@@ -50,7 +52,7 @@ class TestTextLength:
                 len(part) <= 160
             ), f"InReach part exceeds 160 chars: {len(part)} chars"
 
-    def test_custom_character_limits(self):
+    def test_custom_character_limits(self) -> None:
         """Test custom character limit overrides."""
         summary_text = format_forecast(TEST_FORECAST, mode="summary")
 
@@ -177,7 +179,7 @@ class TestTextLength:
             ("unknown", 200),  # Should default to ZOLEO
         ],
     )
-    def test_device_type_defaults(self, device_type, expected_limit):
+    def test_device_type_defaults(self, device_type: str, expected_limit: int) -> None:
         """Test that device types have correct default limits."""
         summary_text = format_forecast(TEST_FORECAST, mode="summary")
 

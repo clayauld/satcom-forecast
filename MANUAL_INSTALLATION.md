@@ -139,7 +139,7 @@ If the integration doesn't appear in the search:
    cd /path/to/satcom-forecast
    pytest tests/verify_installation.py -v
    ```
-   
+
    Or run the legacy verification script:
    ```bash
    cd /path/to/satcom-forecast
@@ -216,4 +216,4 @@ Before restarting Home Assistant, verify these files exist:
 - [ ] `/config/custom_components/satcom_forecast/const.py`
 - [ ] `/config/custom_components/satcom_forecast/translations/en.json`
 - [ ] `/config/custom_components/satcom_forecast/coordinator.py`
-- [ ] `/config/custom_components/satcom_forecast/sensor.py` 
+- [ ] `/config/custom_components/satcom_forecast/sensor.py`

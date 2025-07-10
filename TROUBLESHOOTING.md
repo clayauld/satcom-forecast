@@ -178,4 +178,4 @@ When reporting issues, include:
 - Complete error messages from logs
 - Output from verification scripts
 - Directory structure of your installation
-- Test results from pytest suite 
+- Test results from pytest suite

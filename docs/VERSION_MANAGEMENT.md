@@ -22,7 +22,7 @@ The project includes automated GitHub Actions workflows that update version numb
 
 1. **GitHub Actions Workflow**: Automatically runs when you create a release
 2. **Trigger**: Release creation event (either published or draft)
-3. **Files Updated**: 
+3. **Files Updated**:
    - `pyproject.toml` (line 7)
    - `custom_components/satcom_forecast/manifest.json` (line 4)
 4. **Assets**: Creates and uploads release assets with correct version numbers
@@ -145,4 +145,4 @@ The current version is maintained in two files:
 4. **Review the generated PR** before merging (draft workflow)
 5. **Check release assets** to ensure correct version numbers
 6. **Keep release notes** descriptive and helpful for users
-7. **Test the workflow** with a draft release first 
+7. **Test the workflow** with a draft release first

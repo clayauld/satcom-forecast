@@ -1,8 +1,15 @@
 from __future__ import annotations
 
 import logging
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, Dict, Optional
+
+from .const import DEFAULT_POLLING_INTERVAL
+from .forecast_fetcher import fetch_forecast
+from .forecast_parser import format_forecast
+from .imap_handler import check_imap_for_gps
+from .notifier import send_forecast_email
+from .split_util import split_message
 
 # ---------------------------------------------------------------------------
 # Home-Assistant helper import
@@ -16,15 +23,16 @@ from typing import TYPE_CHECKING, Any, Dict, Optional
 
 if TYPE_CHECKING:
     # Only needed for static analysis; HA is not installed in the test image.
-    from homeassistant.core import HomeAssistant  # pragma: no cover
-    from homeassistant.helpers.update_coordinator import (  # pragma: no cover
-        DataUpdateCoordinator as _HADataUpdateCoordinator,
+    from homeassistant.helpers.update_coordinator import (
+        DataUpdateCoordinator as _HADataUpdateCoordinator,  # pragma: no cover
     )
 
     DataUpdateCoordinatorBase = _HADataUpdateCoordinator  # alias for typing
 else:  # Runtime import with graceful fallback
     try:
-        from homeassistant.helpers.update_coordinator import DataUpdateCoordinator as DataUpdateCoordinatorBase  # type: ignore
+        from homeassistant.helpers.update_coordinator import (
+            DataUpdateCoordinator as DataUpdateCoordinatorBase,  # type: ignore
+        )
     except ImportError:  # pragma: no cover
 
         class DataUpdateCoordinatorBase:  # type: ignore
@@ -48,13 +56,6 @@ else:  # Runtime import with graceful fallback
 
 # Re-export under the public name expected by the rest of the module.
 DataUpdateCoordinator = DataUpdateCoordinatorBase  # type: ignore[var-annotated]
-
-from .imap_handler import check_imap_for_gps
-from .forecast_parser import format_forecast
-from .notifier import send_forecast_email
-from .forecast_fetcher import fetch_forecast
-from .split_util import split_message
-from .const import DEFAULT_POLLING_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -169,7 +170,11 @@ class SatcomForecastCoordinator(DataUpdateCoordinator):
                     # attempt to cast to int and fall back to None if it fails.
                     character_limit_raw = self.config.get("character_limit")
                     try:
-                        character_limit = int(character_limit_raw) if character_limit_raw is not None else None
+                        character_limit = (
+                            int(character_limit_raw)
+                            if character_limit_raw is not None
+                            else None
+                        )
                     except (TypeError, ValueError):
                         _LOGGER.warning(
                             "Invalid character_limit value '%s' (type %s); falling back to default",  # noqa: E501
