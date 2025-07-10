@@ -770,7 +770,6 @@ def summarize_forecast(text, days=None):
         # Special handling for 'becoming' phrases
         if "becoming" in forecast_lower:
             after_becoming = forecast_lower.split("becoming", 1)[1].strip()
-            print("DEBUG after_becoming:", repr(after_becoming))  # DEBUG
             wind_patterns = [
                 r"(\w+)\s+(\d+) to (\d+) mph",  # direction followed by range
                 r"(\w+) wind (\d+) to (\d+) mph",
@@ -1131,9 +1130,8 @@ def summarize_forecast(text, days=None):
         if events:
             period_events.append(f"{period}:{','.join(events)}")
 
-    # Join period events with pipe separators for better character utilization
-    # This allows more content to fit in the 200 character limit
-    summary = " | ".join(period_events)
+    # Join period events with newlines for better readability
+    summary = "\n".join(period_events)
 
     if not summary:
         summary = "No significant weather expected."

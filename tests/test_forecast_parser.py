@@ -35,7 +35,7 @@ class TestForecastParser:
         full_result = format_forecast(TEST_FORECAST, mode="full")
 
         assert "Afternoon: Rain(40%)" in compact_result
-        assert "Tngt: Rn(80%)" in summary_result
+        assert "Tngt:Rn(80%)" in summary_result
         assert "This Afternoon: A chance of showers" in full_result
 
     def test_smoke_conditions(self) -> None:
@@ -171,10 +171,10 @@ Wednesday Night: Rain. Cloudy, with a low around 45. East wind around 15 mph. Ch
 Thursday: Rain. Cloudy, with a high near 61. East wind 5 to 10 mph. Chance of precipitation is 90%.
 """
         summary = summarize_forecast(sample_text)
-        expected_summary = "Tngt: Rn(30%),L:46,SE5-10mph\nWed: Rn(80%),H:61,SE5-10mph,L:45,E15mph\nThu: Rn(90%),H:61,E5-10mph"
+        expected_summary = "Tngt:Rn(30%),L:46°,SE5-10mph\nWed:Rn(80%),H:61°,SE5-10mph,L:45°,E15mph\nThu:Rn(90%),H:61°,E5-10mph"
         assert summary == expected_summary
 
-    def test_real_world_summary(self):
+    def test_real_world_summary(self) -> None:
         """Test a real-world forecast scenario."""
         real_forecast_text = """
 Tonight: Mostly cloudy, with a low around 46. Light and variable wind becoming southeast 5 to 10 mph in the evening.
@@ -191,13 +191,5 @@ Sunday Night: A 20 percent chance of rain. Mostly cloudy, with a low around 47.
 Monday: A 30 percent chance of rain. Mostly cloudy, with a high near 61.
 """
         summary = summarize_forecast(real_forecast_text)
-        expected_summary = (
-            "Tngt: L:46,SE5-10mph\n"
-            "Wed: Rn(30%),H:61,NW5mph,L:45,SE15mph\n"
-            "Thu: Rn(30%),H:61,SE5-10mph,L:47,E10mph\n"
-            "Fri: Rn(20%),H:62,NE5mph,L:48\n"
-            "Sat: H:64,L:48\n"
-            "Sun: Rn(30%),H:61\n"
-            "Mon: Rn(30%),H:61"
-        )
+        expected_summary = "Tngt:L:46°,SE5-10mph\nWed:Rn(30%),H:61°,NW5mph,L:45°,SE15mph\nThu:Rn(30%),H:61°,SE5-10mph,L:47°,E10mph\nFri:Rn(20%),H:62°,NE5mph,L:48°\nSat:H:64°,L:48°\nSun:Rn(30%),H:61°\nMon:Rn(30%),H:61°"
         assert summary == expected_summary
