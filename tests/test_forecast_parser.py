@@ -34,7 +34,7 @@ class TestForecastParser:
         full_result = format_forecast(TEST_FORECAST, mode="full")
 
         assert "Afternoon: Rain(40%)" in compact_result
-        assert "Tngt:Rn(80%)" in summary_result
+        assert "Tngt: Rn(80%)" in summary_result  # Updated to include space after colon
         assert "This Afternoon: A chance of showers" in full_result
 
     def test_smoke_conditions(self) -> None:
@@ -49,9 +49,9 @@ Tonight: Widespread haze. Low around 41. Southeast wind around 15 mph."""
         result_areas = format_forecast(areas_smoke_forecast, mode="compact")
 
         assert "🚨Smoke(50%)" in result_haze
-        assert "| Smoke" in result_haze
+        assert "- Smoke" in result_haze  # Updated to use dash instead of pipe
         assert "🚨Smoke(65%)" in result_areas
-        assert "| Smoke" in result_areas
+        assert "- Smoke" in result_areas  # Updated to use dash instead of pipe
 
     def test_explicit_percentages(self) -> None:
         """Test explicit percentage handling."""
@@ -75,7 +75,7 @@ Tonight: Showers, mainly before 1am, then rain after 1am. Areas of smoke. Mostly
         summary_result = format_forecast(test_text, mode="summary")
 
         assert "🚨Smoke(65%)" in compact_result
-        assert "| Smoke" in compact_result
+        assert "- Smoke" in compact_result  # Updated to use dash instead of pipe
         assert "Rn(40%)" in summary_result
         assert "Rn(80%)" in summary_result
         assert "🚨Smk(65%)" in summary_result
@@ -170,7 +170,7 @@ Wednesday Night: Rain. Cloudy, with a low around 45. East wind around 15 mph. Ch
 Thursday: Rain. Cloudy, with a high near 61. East wind 5 to 10 mph. Chance of precipitation is 90%.
 """
         summary = summarize_forecast(sample_text)
-        expected_summary = "Tngt:Rn(30%),L:46°,SE5-10mph\nWed:Rn(80%),H:61°,SE5-10mph,L:45°,E15mph\nThu:Rn(90%),H:61°,E5-10mph"
+        expected_summary = "Tngt: Rn(30%),L:46°,SE5-10mph\nWed: Rn(80%),H:61°,SE5-10mph,L:45°,E15mph\nThu: Rn(90%),H:61°,E5-10mph"  # Updated to include spaces after colons
         assert summary == expected_summary
 
     def test_real_world_summary(self) -> None:
@@ -190,5 +190,5 @@ Sunday Night: A 20 percent chance of rain. Mostly cloudy, with a low around 47.
 Monday: A 30 percent chance of rain. Mostly cloudy, with a high near 61.
 """
         summary = summarize_forecast(real_forecast_text)
-        expected_summary = "Tngt:L:46°,SE5-10mph\nWed:Rn(30%),H:61°,NW5mph,L:45°,SE15mph\nThu:Rn(30%),H:61°,SE5-10mph,L:47°,E10mph\nFri:Rn(20%),H:62°,NE5mph,L:48°\nSat:H:64°,L:48°\nSun:Rn(30%),H:61°\nMon:Rn(30%),H:61°"
+        expected_summary = "Tngt: L:46°,SE5-10mph\nWed: Rn(30%),H:61°,NW5mph,L:45°,SE15mph\nThu: Rn(30%),H:61°,SE5-10mph,L:47°,E10mph\nFri: Rn(20%),H:62°,NE5mph,L:48°\nSat: H:64°,L:48°\nSun: Rn(30%),H:61°\nMon: Rn(30%),H:61°"  # Updated to include spaces after colons
         assert summary == expected_summary
