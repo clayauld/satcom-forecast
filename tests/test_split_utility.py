@@ -8,13 +8,20 @@ import re
 # Add the custom_components directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "custom_components"))
 
-# Import the functions we need directly from the modules
+# Import functions directly from module files to avoid Home Assistant dependencies
 try:
-    from satcom_forecast.split_util import split_message, split_multiline_text
+    # Import directly from the module files
+    sys.path.insert(
+        0,
+        os.path.join(
+            os.path.dirname(__file__), "..", "custom_components", "satcom_forecast"
+        ),
+    )
+    from split_util import split_message, split_multiline_text
 
     HAS_HA = True
 except ImportError:
-    # If Home Assistant is not available, skip these tests
+    # If modules are not available, skip these tests
     HAS_HA = False
 
 

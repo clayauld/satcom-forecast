@@ -8,14 +8,21 @@ import re
 # Add the custom_components directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "custom_components"))
 
-# Import the functions we need directly from the modules
+# Import functions directly from module files to avoid Home Assistant dependencies
 try:
-    from satcom_forecast.forecast_parser import format_compact_forecast
-    from satcom_forecast.split_util import split_message
+    # Import directly from the module files
+    sys.path.insert(
+        0,
+        os.path.join(
+            os.path.dirname(__file__), "..", "custom_components", "satcom_forecast"
+        ),
+    )
+    from forecast_parser import format_compact_forecast
+    from split_util import split_message
 
     HAS_HA = True
 except ImportError:
-    # If Home Assistant is not available, skip these tests
+    # If modules are not available, skip these tests
     HAS_HA = False
 
 
@@ -136,8 +143,16 @@ Wednesday: Partly sunny, with a high near 63. East wind 5 mph."""
 
             # Each day line should be complete (start with day name and colon)
             for line in day_lines:
+                # Account for part numbering like "(1/2) " at the start
+                if line.startswith("(") and ")" in line:
+                    # Remove part numbering for the regex check
+                    line_without_numbering = (
+                        line.split(") ", 1)[1] if ") " in line else line
+                    )
+                else:
+                    line_without_numbering = line
                 assert re.match(
-                    r"^[A-Za-z ]+:", line
+                    r"^[A-Za-z ]+:", line_without_numbering
                 ), f"Day line should be complete: {line}"
 
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")

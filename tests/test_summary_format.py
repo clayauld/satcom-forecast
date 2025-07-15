@@ -7,13 +7,20 @@ import os
 # Add the custom_components directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "custom_components"))
 
-# Import the functions we need directly from the modules
+# Import functions directly from module files to avoid Home Assistant dependencies
 try:
-    from satcom_forecast.forecast_parser import summarize_forecast
+    # Import directly from the module files
+    sys.path.insert(
+        0,
+        os.path.join(
+            os.path.dirname(__file__), "..", "custom_components", "satcom_forecast"
+        ),
+    )
+    from forecast_parser import summarize_forecast
 
     HAS_HA = True
 except ImportError:
-    # If Home Assistant is not available, skip these tests
+    # If modules are not available, skip these tests
     HAS_HA = False
 
 
@@ -47,7 +54,7 @@ Wednesday: Partly sunny, with a high near 63. East wind 5 mph."""
 
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")
     def test_summary_format_day_separation(self):
-        """Test that summary format properly separates days with pipe separators."""
+        """Test that summary format properly separates days with newlines."""
         sample_forecast = """Tonight: Rain showers likely, mainly before 7am. Low around 52. Southeast wind 5 mph. Chance of precipitation is 80%.
 Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 mph. Chance of precipitation is 60%.
 Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph."""
@@ -55,11 +62,13 @@ Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph."""
         # Format the summary forecast
         summary_result = summarize_forecast(sample_forecast)
 
-        # Should contain pipe separators
-        assert " | " in summary_result, "Summary format should contain pipe separators"
+        # Should contain newlines between days (not pipe separators)
+        assert (
+            "\n" in summary_result
+        ), "Summary format should contain newlines between days"
 
-        # Split by pipe separators
-        parts = summary_result.split(" | ")
+        # Split by newlines
+        parts = summary_result.split("\n")
 
         # Should have multiple parts (one for each day)
         assert len(parts) >= 2, f"Expected at least 2 parts, got {len(parts)}"
@@ -73,6 +82,13 @@ Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph."""
             "Friday",
             "Saturday",
             "Sunday",
+            "Tngt",
+            "Tue",
+            "Wed",
+            "Thu",
+            "Fri",
+            "Sat",
+            "Sun",
         ]
         for part in parts:
             has_day = any(day in part for day in day_names)
@@ -87,10 +103,10 @@ Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 
         # Format the summary forecast
         summary_result = summarize_forecast(sample_forecast)
 
-        # Should contain weather event information
+        # Should contain weather event information (abbreviated)
         assert (
-            "Rain" in summary_result
-        ), "Summary should contain weather event information"
+            "Rn(" in summary_result
+        ), "Summary should contain abbreviated weather event information"
 
         # Should contain temperature information
         assert (
@@ -99,18 +115,20 @@ Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 
 
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")
     def test_summary_format_no_newlines(self):
-        """Test that summary format doesn't contain newlines (uses pipe separators instead)."""
+        """Test that summary format uses newlines for separation."""
         sample_forecast = """Tonight: Rain showers likely, mainly before 7am. Low around 52. Southeast wind 5 mph. Chance of precipitation is 80%.
 Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 mph. Chance of precipitation is 60%."""
 
         # Format the summary forecast
         summary_result = summarize_forecast(sample_forecast)
 
-        # Should not contain newlines (summary format uses pipe separators)
-        assert "\n" not in summary_result, "Summary format should not contain newlines"
+        # Should contain newlines (summary format uses newlines for separation)
+        assert "\n" in summary_result, "Summary format should contain newlines"
 
-        # Should contain pipe separators
-        assert " | " in summary_result, "Summary format should contain pipe separators"
+        # Should not contain pipe separators
+        assert (
+            " | " not in summary_result
+        ), "Summary format should not contain pipe separators"
 
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")
     def test_summary_format_splitting_detection(self):
@@ -122,7 +140,7 @@ Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 
         summary_result = summarize_forecast(sample_forecast)
 
         # Import split_message for testing
-        from satcom_forecast.split_util import split_message
+        from split_util import split_message
 
         # Split the message
         parts = split_message(summary_result, device_type="zoleo")
