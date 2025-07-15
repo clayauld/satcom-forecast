@@ -38,9 +38,15 @@ def split_message(
     # Determine format and split accordingly
     if " | " in text:
         # Summary format - split at pipe separators
+        _LOGGER.debug(
+            "Detected summary format (pipe separators), using split_summary_format"
+        )
         parts = split_summary_format(text, effective_limit)
     else:
         # Compact or full format - split at line breaks
+        _LOGGER.debug(
+            "Detected compact/full format (newlines), using split_multiline_text"
+        )
         lines = text.split("\n")
         parts = split_multiline_text(lines, effective_limit)
 
@@ -129,11 +135,30 @@ def split_multiline_text(lines: List[str], effective_limit: int) -> List[str]:
         if not line:
             continue
 
+        # Check if this line starts with a day label (for compact forecasts)
+        is_day_line = re.match(r"^[A-Za-z ]+:", line)
+
         # Check if adding this line would exceed limit
         line_length = len(line)
         separator_length = 1 if current_part else 0  # Newline separator
 
-        if current_length + line_length + separator_length <= effective_limit:
+        # For day lines, check if we can add it to current part or need to start new part
+        if is_day_line:
+            # If current part is empty, start with this day
+            if not current_part:
+                current_part = [line]
+                current_length = line_length
+            # If adding this day would exceed limit, start new part
+            elif current_length + line_length + separator_length > effective_limit:
+                # Start a new part for this day
+                parts.append("\n".join(current_part))
+                current_part = [line]
+                current_length = line_length
+            else:
+                # Add this day to current part
+                current_part.append(line)
+                current_length += line_length + separator_length
+        elif current_length + line_length + separator_length <= effective_limit:
             # Add to current part
             current_part.append(line)
             current_length += line_length + separator_length
@@ -169,38 +194,15 @@ def split_multiline_text(lines: List[str], effective_limit: int) -> List[str]:
                 current_part = []
                 current_length = 0
             else:
-                # Check if splitting this line would fill the current part better
-                remaining_space = effective_limit - current_length
-                if (
-                    remaining_space > effective_limit * 0.15
-                ):  # If more than 15% of limit is unused
-                    # Try to split the line to fill the remaining space
-                    split_result = split_line_to_fill_space(line, remaining_space)
-                    if split_result:
-                        first_part, remaining_part = split_result
-                        # Verify we don't exceed the limit
-                        if current_length + len(first_part) <= effective_limit:
-                            current_part.append(first_part)
-                            parts.append("\n".join(current_part))
-                            current_part = [remaining_part]
-                            current_length = len(remaining_part)
-                        else:
-                            # Would exceed limit, start new part
-                            current_part = [line]
-                            current_length = line_length
-                    else:
-                        # Couldn't split effectively, start new part
-                        current_part = [line]
-                        current_length = line_length
-                else:
-                    # Start new part with this line
-                    current_part = [line]
-                    current_length = line_length
+                # Start new part with this line
+                current_part = [line]
+                current_length = line_length
 
     # Add remaining content
     if current_part:
         parts.append("\n".join(current_part))
 
+    _LOGGER.debug("split_multiline_text returning %d parts: %r", len(parts), parts)
     return parts
 
 

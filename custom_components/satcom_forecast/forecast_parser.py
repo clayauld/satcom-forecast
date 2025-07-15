@@ -89,6 +89,32 @@ def clean_forecast_text(text: str) -> str:
     """Clean and format the raw forecast text."""
     _LOGGER.debug("Cleaning forecast text, input length: %d characters", len(text))
 
+    # Ensure every period label starts on a new line (except at the start)
+    period_labels = [
+        "This Afternoon:",
+        "Today:",
+        "Tonight:",
+        "Overnight:",
+        "Monday:",
+        "Monday Night:",
+        "Tuesday:",
+        "Tuesday Night:",
+        "Wednesday:",
+        "Wednesday Night:",
+        "Thursday:",
+        "Thursday Night:",
+        "Friday:",
+        "Friday Night:",
+        "Saturday:",
+        "Saturday Night:",
+        "Sunday:",
+        "Sunday Night:",
+    ]
+    # Insert newline before each period label (except at the start of the text)
+    for label in period_labels:
+        # Replace any occurrence of the label (not at the start) with newline + label
+        text = re.sub(r"(?<!^)(?<!\n)\s*" + re.escape(label), r"\n" + label, text)
+
     # Split by periods and clean up
     lines = text.strip().splitlines()
     _LOGGER.debug("Split into %d lines", len(lines))
@@ -593,12 +619,12 @@ def format_compact_forecast(text: str) -> str:
                     if smoke_events:
                         events_str = ", ".join(smoke_events)
                         result.append(
-                            f"{day.strip()}: {events_str}{details_str} | Smoke"
+                            f"{day.strip()}: {events_str}{details_str} - Smoke"
                         )
                     else:
                         events_str = ", ".join(detected_events)
                         result.append(
-                            f"{day.strip()}: {events_str}{details_str} | {first_sentence}"
+                            f"{day.strip()}: {events_str}{details_str} - {first_sentence}"
                         )
                 else:
                     result.append(f"{day.strip()}: {first_sentence}{details_str}")
@@ -621,6 +647,7 @@ def format_compact_forecast(text: str) -> str:
     _LOGGER.debug(
         "Compact forecast formatted, result length: %d characters", len(final_result)
     )
+    _LOGGER.debug("Compact forecast final result: %r", final_result)
     return final_result
 
 
@@ -1128,7 +1155,7 @@ def summarize_forecast(text, days=None):
     period_events = []
     for period, events in period_events_dict.items():
         if events:
-            period_events.append(f"{period}:{','.join(events)}")
+            period_events.append(f"{period}: {','.join(events)}")
 
     # Join period events with newlines for better readability
     summary = "\n".join(period_events)
