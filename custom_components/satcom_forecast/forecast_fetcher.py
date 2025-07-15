@@ -15,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def fetch_forecast(lat, lon, days=None):
-    """Fetch NOAA forecast for given coordinates using aiohttp.
+    """Fetch NWS forecast for given coordinates using aiohttp.
 
     Args:
         lat: Latitude coordinate
@@ -34,20 +34,20 @@ async def fetch_forecast(lat, lon, days=None):
     }
 
     _LOGGER.debug("Fetching forecast for coordinates: %s, %s", lat, lon)
-    _LOGGER.debug("NOAA URL: %s", url)
+    _LOGGER.debug("NWS URL: %s", url)
     _LOGGER.debug("Days parameter: %s (None = all available)", days)
 
     try:
         async with aiohttp.ClientSession() as session:
-            _LOGGER.debug("Making HTTP request to NOAA")
+            _LOGGER.debug("Making HTTP request to NWS")
             async with session.get(
                 url, headers=headers, timeout=aiohttp.ClientTimeout(total=10)
             ) as response:
-                _LOGGER.debug("NOAA response status: %s", response.status)
+                _LOGGER.debug("NWS response status: %s", response.status)
                 response.raise_for_status()
                 content = await response.text()
                 _LOGGER.debug(
-                    "NOAA response content length: %d characters", len(content)
+                    "NWS response content length: %d characters", len(content)
                 )
 
         soup = BeautifulSoup(content, "html.parser")
@@ -57,7 +57,7 @@ async def fetch_forecast(lat, lon, days=None):
         forecast_div = soup.find("div", style="margin:25px 0px 0px 0px;")
 
         if not forecast_div:
-            _LOGGER.warning("Forecast div not found in NOAA response")
+            _LOGGER.warning("Forecast div not found in NWS response")
             _LOGGER.debug(
                 "Available divs with style attributes: %s",
                 [
@@ -92,7 +92,7 @@ async def fetch_forecast(lat, lon, days=None):
                 forecast_text += f"{period['day']}: {period['content']}\n"
         else:
             _LOGGER.warning("No forecast periods parsed from HTML")
-            return "Unable to extract forecast data from NOAA response."
+            return "Unable to extract forecast data from NWS response."
 
         # Clean up the text
         forecast_text = forecast_text.strip()
@@ -116,7 +116,7 @@ async def fetch_forecast(lat, lon, days=None):
     except aiohttp.ClientError as e:
         _LOGGER.error("HTTP error fetching forecast: %s", e)
         _LOGGER.debug("HTTP error details:", exc_info=True)
-        return f"NOAA error: Could not fetch forecast - {str(e)}"
+        return f"NWS error: Could not fetch forecast - {str(e)}"
     except Exception as e:
         _LOGGER.error("Error fetching forecast: %s", e)
         _LOGGER.debug("Exception details:", exc_info=True)
@@ -127,4 +127,4 @@ async def fetch_forecast(lat, lon, days=None):
             _LOGGER.debug("Error logged to: %s", log_path)
         except Exception:
             pass
-        return f"NOAA error: {str(e)}"
+        return f"NWS error: {str(e)}"

@@ -61,7 +61,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class SatcomForecastCoordinator(DataUpdateCoordinator):
-    """Periodically polls an IMAP inbox for GPS requests and dispatches NOAA
+    """Periodically polls an IMAP inbox for GPS requests and dispatches NWS
     forecasts back to the requesting sender.
     """
 
@@ -146,7 +146,7 @@ class SatcomForecastCoordinator(DataUpdateCoordinator):
 
                 forecast_text = await fetch_forecast(msg["lat"], msg["lon"], days)
 
-                if forecast_text and not forecast_text.startswith("NOAA error"):
+                if forecast_text and not forecast_text.startswith("NWS error"):
                     _LOGGER.debug(
                         "Forecast fetched successfully, length: %d characters",
                         len(forecast_text),
@@ -216,9 +216,9 @@ class SatcomForecastCoordinator(DataUpdateCoordinator):
                             msg["sender"],
                             part,
                             subject=(
-                                f"NOAA Forecast Update ({i+1}/{len(message_parts)})"
+                                f"NWS Forecast Update ({i+1}/{len(message_parts)})"
                                 if len(message_parts) > 1
-                                else "NOAA Forecast Update"
+                                else "NWSForecast Update"
                             ),
                         )
                         if not part_success:

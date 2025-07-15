@@ -9,13 +9,13 @@
 [![Discussions](https://img.shields.io/badge/discussions-welcome-brightgreen.svg)](https://github.com/clayauld/satcom-forecast/discussions)
 [![Support the project](https://img.shields.io/badge/support%20the%20project-☕%20Buy%20me%20a%20coffee-orange.svg)](https://www.buymeacoffee.com/clayauld)
 
-A Home Assistant integration for fetching NOAA weather forecasts and sending them via email to satellite communicators.
+A Home Assistant integration for fetching National Weather Service (NWS) weather forecasts and sending them via email to satellite communicators.
 
 <!-- [![My Home Assistant](https://my.home-assistant.io/badge.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=clayauld&repository=satcom-forecast&category=Integration) -->
 
 ## Features
 
-- Fetches NOAA weather forecasts for GPS coordinates
+- Fetches NWS weather forecasts for GPS coordinates
 - Supports multiple forecast formats (summary, compact, full)
 - Email delivery to satellite communicators (ZOLEO, InReach)
 - Automatic message splitting for device character limits
@@ -195,7 +195,7 @@ The integration supports three forecast formats:
 
 - **Summary**: Concise time-based summaries with weather events and probabilities (1500 character limit)
 - **Compact**: Detailed multi-line format with weather highlights and temperature/wind info (1500 character limit)
-- **Full**: Complete NOAA forecast text (2000+ character limit)
+- **Full**: Complete NWS forecast text (2000+ character limit)
 
 See [docs/format_comparison.md](docs/format_comparison.md) for detailed format comparisons.
 
@@ -216,7 +216,7 @@ All formats support comprehensive weather event detection:
 - **Warning Indicators**: Extreme events and smoke conditions are marked with 🚨
 - **Temperature Formatting**: High/low temperatures with degree symbols (°)
 - **Wind Detection**: Only shows wind events for significant speeds (15+ mph)
-- **Probability Inference**: Provides meaningful percentages when NOAA doesn't specify them
+- **Probability Inference**: Provides meaningful percentages when NWS doesn't specify them
 - **Smart Truncation**: Cuts at sentence boundaries to maintain readability
 - **Standard Abbreviations**: Uses standard forecast abbreviations (Tngt for Tonight, Aft for This Afternoon)
 
@@ -336,7 +336,7 @@ When debug logging is enabled, the integration will log detailed information abo
 
 - IMAP connection and email processing
 - GPS coordinate extraction from emails
-- NOAA API requests and responses
+- NWS API requests and responses
 - Forecast parsing and formatting
 - Email sending operations
 - Message splitting for device compatibility
@@ -404,12 +404,12 @@ If forecasts are not being sent via email:
 
 #### Forecast Fetching Issues
 
-If NOAA forecasts are not being fetched:
+If NWS forecasts are not being fetched:
 
 1. Verify the GPS coordinates are in the correct format (decimal degrees)
 2. Check your internet connection
-3. Enable debug logging to see NOAA API request details
-4. Verify the coordinates are within the United States (NOAA coverage area)
+3. Enable debug logging to see NWS API request details
+4. Verify the coordinates are within the United States (NWS coverage area)
 
 ### Getting Help
 

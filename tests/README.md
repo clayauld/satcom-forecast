@@ -110,7 +110,7 @@ pytest tests/test_forecast_parser.py::TestForecastParser::test_weather_event_det
 - ✅ **Splitting Detection**: Tests format detection for splitting logic
 
 ### Full Format Tests (`test_full_format.py` - 7 tests)
-- ✅ **Complete Forecast**: Tests full NOAA forecast text parsing
+- ✅ **Complete Forecast**: Tests full NWS forecast text parsing
 - ✅ **Structure Preservation**: Validates forecast structure is maintained
 - ✅ **No Abbreviations**: Ensures full format doesn't use abbreviations
 - ✅ **Splitting Logic**: Tests message splitting for long forecasts

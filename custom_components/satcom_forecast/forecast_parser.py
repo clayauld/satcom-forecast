@@ -1204,7 +1204,7 @@ def parse_forecast_periods(
     """Parse forecast periods from HTML content with days limit.
 
     Args:
-        html_content: HTML content from NOAA forecast page
+        html_content: HTML content from NWS forecast page
         days_limit: Number of days to include:
             - 0: Only current day (day 0)
             - 1: Current day + next full day (day 0 + day 1)

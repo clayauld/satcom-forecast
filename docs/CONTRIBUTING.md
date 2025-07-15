@@ -137,7 +137,7 @@ custom_components/satcom_forecast/
 ├── config_flow.py           # Configuration flow
 ├── const.py                 # Constants and configuration
 ├── coordinator.py           # Data coordinator
-├── forecast_fetcher.py      # NOAA API client
+├── forecast_fetcher.py      # NWS API client
 ├── forecast_parser.py       # Forecast parsing and formatting
 ├── imap_handler.py          # Email handling
 ├── manifest.json            # Integration manifest
@@ -367,7 +367,7 @@ Adds support for detecting heavy smoke conditions with probability levels.
 
 ## Testing
 - Added unit tests for heavy smoke detection
-- Tested with real NOAA forecast data
+- Tested with real NWS forecast data
 - Verified backward compatibility
 
 ## Related Issues

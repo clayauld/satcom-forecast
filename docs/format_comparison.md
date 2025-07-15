@@ -26,7 +26,7 @@ Tngt:Rn(40%),L:46°,SE5-10mph | Tue:Rn(40%),H:61°,SE5-10mph,L:45°,E15mph | Wed
 
 **Email:**
 ```
-Subject: NOAA Forecast Update
+Subject: NWS Forecast Update
 Body: Tngt:Rn(40%),L:46°,SE5-10mph | Tue:Rn(40%),H:61°,SE5-10mph,L:45°,E15mph | Wed:Rn(50%),H:61°,E5-10mph
 ```
 
@@ -96,13 +96,13 @@ Wednesday: 🚨Smoke(85%), Rain(60%), Thunderstorm(60%) (H:61, E5-10mph) | Heavy
 
 **Email 1/2:**
 ```
-Subject: NOAA Forecast Update (1/2)
+Subject: NWS Forecast Update (1/2)
 Body: (1/2) Tonight: 🚨Smoke(90%), Rain(80%), Thunderstorm(80%) (L:46, SE5-10mph) | Smoke from nearby wildfires. Showers and possibly a thunderstorm before 10pm | Tuesday: Rain(50%), Fog(70%) (H:61, E5-10mph) | A chance of rain with foggy conditions
 ```
 
 **Email 2/2:**
 ```
-Subject: NOAA Forecast Update (2/2)
+Subject: NWS Forecast Update (2/2)
 Body: (2/2) Tuesday Night: Rain (L:45, E15mph) | Scattered showers | Wednesday: 🚨Smoke(85%), Rain(60%), Thunderstorm(60%) (H:61, E5-10mph) | Heavy smoke conditions with showers likely
 ```
 
@@ -161,7 +161,7 @@ Sunday: Rain likely. Cloudy, with a high near 52.
 - ✅ Wind information
 - ✅ Detailed precipitation chances
 - ✅ Cloud cover information
-- ✅ Full NOAA forecast text
+- ✅ Full NWS forecast text
 - ✅ **All weather events visible** in the raw forecast text
 - ✅ **Smart Truncation**: Cuts at sentence boundaries when needed
 - ✅ **No Mid-Sentence Cuts**: Always shows complete sentences
@@ -203,7 +203,7 @@ Sunday: Rain likely. Cloudy, with a high near 52.
 - You're planning extended outdoor activities
 - You want wind and cloud information
 - You have plenty of satellite communication time
-- You want the raw NOAA forecast text
+- You want the raw NWS forecast text
 - You need comprehensive meteorological data
 
 ## 🔧 How to Request Different Formats
@@ -262,7 +262,7 @@ All three formats now use the same enhanced weather detection logic:
 - **Fog Detection**: Fog, patchy fog, dense fog, haze, mist
 - **Smoke Detection**: Wildfire smoke, smoke conditions, smoke from fires
 - **Extreme Event Detection**: Blizzard, ice storm, tornado, hurricane, severe thunderstorm, high wind warning, flood warning, dense fog, smoke
-- **Smart Inference**: Provides meaningful percentages when NOAA doesn't specify them
+- **Smart Inference**: Provides meaningful percentages when NWS doesn't specify them
 - **Visual Highlighting**: Extreme events marked with 🚨
 - **Wind Filtering**: Only shows wind events for significant speeds (15+ mph)
 

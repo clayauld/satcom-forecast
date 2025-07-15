@@ -13,7 +13,7 @@ async def send_forecast_email(
     smtp_pass,
     to_email,
     forecast_text,
-    subject="NOAA Forecast Update",
+    subject="NWS Forecast Update",
 ):
     _LOGGER.debug(
         "Preparing to send forecast email - SMTP: %s:%s, From: %s, To: %s, Subject: %s",
