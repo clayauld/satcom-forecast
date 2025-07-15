@@ -247,6 +247,14 @@ The FULL format has been improved to prevent truncation issues:
 - **No Mid-Sentence Cuts**: Always shows complete sentences
 - **Better Readability**: Complete meteorological information
 
+### Recent Formatting Fixes (Latest)
+Several formatting issues have been resolved to improve readability:
+
+- **Summary Format Spacing**: Fixed missing space after colon in day names (e.g., "Tonight: Dense fog" instead of "Tonight:Dense fog")
+- **Compact Format Newlines**: Fixed newline preservation between days for proper day separation
+- **Split Utility Logic**: Improved day separation logic to combine multiple days efficiently while preserving structure
+- **Pipe Separator Replacement**: Replaced pipe separators with dashes in Compact format for better detection
+
 ### Enhanced Weather Detection (All Formats)
 All three formats now use the same enhanced weather detection logic:
 

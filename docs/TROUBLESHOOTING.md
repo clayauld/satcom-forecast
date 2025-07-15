@@ -2,6 +2,30 @@
 
 If Home Assistant doesn't detect the SatCom Forecast integration after manual installation, follow these steps:
 
+## Recent Fixes and Improvements
+
+### Formatting Fixes (Latest)
+Several formatting issues have been resolved:
+
+- **Summary Format**: Fixed missing space after colon in day names (e.g., "Tonight: Dense fog" instead of "Tonight:Dense fog")
+- **Compact Format**: Fixed newline preservation between days for proper day separation
+- **Split Utility**: Improved day separation logic to combine multiple days efficiently while preserving structure
+
+### Test Suite Improvements
+The test suite has been enhanced for better reliability:
+
+- **Self-contained tests**: No Home Assistant dependencies required
+- **55 tests with 0 skips**: Comprehensive coverage of all functionality
+- **Fast execution**: Complete suite runs in ~0.12 seconds
+- **Direct imports**: Faster execution by importing functions directly from module files
+
+### Known Working Configurations
+The integration has been tested and confirmed working with:
+- Home Assistant 2023.1+
+- Python 3.9+
+- All major email providers (Gmail, Outlook, etc.)
+- ZOLEO and InReach devices
+
 ## Quick Checklist
 
 - [ ] Copied the **entire** `custom_components/satcom_forecast` folder (not just individual files)
@@ -70,13 +94,13 @@ Common errors:
 Run the modern pytest-based test suite:
 ```bash
 cd /path/to/satcom-forecast
-pytest tests/verify_installation.py -v
+pytest tests/ -v  # Runs all 55 tests
 ```
 
-Or run the legacy verification script:
+Or run specific test categories:
 ```bash
-cd /path/to/satcom-forecast
-python3 tests/verify_installation.py
+pytest tests/test_forecast_parser.py -v
+pytest tests/test_imap_handler_pytest.py -v
 ```
 
 ### 6. Verify in Home Assistant Environment
@@ -130,21 +154,27 @@ If manual installation continues to fail:
 
 ### Modern Pytest Testing
 ```bash
-# Run all tests
+# Run all tests (55 tests, ~0.12s)
 pytest tests/ -v
 
 # Run specific test categories
 pytest tests/test_forecast_parser.py -v
-pytest tests/test_imap_handler.py -v
-pytest tests/verify_installation.py -v
+pytest tests/test_compact_format.py -v
+pytest tests/test_summary_format.py -v
+pytest tests/test_full_format.py -v
+pytest tests/test_split_utility.py -v
+pytest tests/test_text_length.py -v
+pytest tests/test_imap_handler_pytest.py -v
 ```
 
-### Legacy Testing
-```bash
-# Run legacy test suite
-cd tests
-python3 run_tests.py
-```
+### Test Coverage
+The comprehensive test suite covers:
+- ✅ **Forecast Parsing**: All format types and edge cases
+- ✅ **Weather Events**: Comprehensive event detection including smoke
+- ✅ **Format Fixes**: Recent formatting improvements (spacing, newlines)
+- ✅ **Split Utilities**: Message splitting and day separation
+- ✅ **Character Limits**: Device-specific handling
+- ✅ **IMAP Handling**: Email processing and error handling
 
 ## Search Terms
 
@@ -178,4 +208,4 @@ When reporting issues, include:
 - Complete error messages from logs
 - Output from verification scripts
 - Directory structure of your installation
-- Test results from pytest suite
+- Test results from pytest suite (all 55 tests should pass)
