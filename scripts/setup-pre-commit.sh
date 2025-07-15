@@ -120,4 +120,4 @@ echo -e "${YELLOW}# Update hooks${NC}"
 echo "pre-commit autoupdate"
 
 echo -e "\n${GREEN}🎉 Pre-commit setup complete!${NC}"
-echo -e "See ${YELLOW}PRE_COMMIT_SETUP.md${NC} for detailed documentation."
+echo -e "See ${YELLOW}docs/PRE_COMMIT_SETUP.md${NC} for detailed documentation."

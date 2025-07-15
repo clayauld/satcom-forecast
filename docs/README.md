@@ -4,7 +4,12 @@ This directory contains documentation for the SatCom Forecast Home Assistant int
 
 ## Files
 
+- **`CONTRIBUTING.md`** - Comprehensive guide for contributing to the project
 - **`format_comparison.md`** - Detailed comparison of the three forecast formats (Summary, Compact, Full)
+- **`MANUAL_INSTALLATION.md`** - Step-by-step manual installation instructions
+- **`PRE_COMMIT_SETUP.md`** - Setup guide for pre-commit hooks and development tools
+- **`TROUBLESHOOTING.md`** - Common issues and troubleshooting solutions
+- **`VERSION_MANAGEMENT.md`** - Version management and release process documentation
 - **`README.md`** - This file
 
 ## Format Comparison

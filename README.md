@@ -380,8 +380,12 @@ If you're still experiencing issues:
 ## Documentation
 
 - [Format Comparison](docs/format_comparison.md) - Detailed comparison of forecast formats
+- [Manual Installation](docs/MANUAL_INSTALLATION.md) - Step-by-step manual installation guide
+- [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
+- [Contributing Guide](docs/CONTRIBUTING.md) - How to contribute to the project
+- [Version Management](docs/VERSION_MANAGEMENT.md) - Version management and release process
+- [Pre-commit Setup](docs/PRE_COMMIT_SETUP.md) - Development environment setup
 - [Test Suite](tests/README.md) - Testing information and examples
-- [Contributing Guide](CONTRIBUTING.md) - How to contribute to the project
 
 ## Contributing
 
@@ -432,7 +436,7 @@ pytest tests/ -v
 
 ### Getting Help
 
-- **Read the [Contributing Guide](CONTRIBUTING.md)** for detailed instructions
+- **Read the [Contributing Guide](docs/CONTRIBUTING.md)** for detailed instructions
 - **Check existing issues** to see if your problem is already being worked on
 - **Use GitHub Discussions** for general questions and ideas
 - **Join the community** and engage with other contributors
@@ -444,7 +448,7 @@ Contributors are recognized in:
 - Release notes
 - GitHub contributors list
 
-For detailed information about contributing, including development setup, coding standards, testing, and the pull request process, please see our [Contributing Guide](CONTRIBUTING.md).
+For detailed information about contributing, including development setup, coding standards, testing, and the pull request process, please see our [Contributing Guide](docs/CONTRIBUTING.md).
 
 ## License
 
