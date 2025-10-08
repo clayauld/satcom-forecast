@@ -159,6 +159,134 @@ python scripts/run_api_tests.py unit --coverage --html-report
 3. **Compatibility Tests**: Ensure output matches current implementation
 4. **Performance Tests**: Benchmark performance improvements
 
+### Testing in Home Assistant with Docker
+
+#### Method 1: Docker Compose (Recommended)
+
+Add environment variables to your `docker-compose.yml`:
+
+```yaml
+version: '3.8'
+services:
+  homeassistant:
+    container_name: homeassistant
+    image: ghcr.io/home-assistant/home-assistant:stable
+    volumes:
+      - ./config:/config
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      # Weather API Configuration
+      - WEATHER_USE_API=true
+      - WEATHER_FALLBACK_HTML=true
+      - WEATHER_ENABLE_CACHING=true
+      - WEATHER_DEBUG_MODE=true
+      - WEATHER_API_TIMEOUT=10
+      - WEATHER_API_RETRY_ATTEMPTS=3
+      - WEATHER_API_RATE_LIMIT_DELAY=0.5
+      - WEATHER_API_CACHE_DURATION=300
+    restart: unless-stopped
+    privileged: true
+    network_mode: host
+```
+
+#### Method 2: Docker Run Command
+
+```bash
+docker run -d \
+  --name homeassistant \
+  --privileged \
+  --restart unless-stopped \
+  -e WEATHER_USE_API=true \
+  -e WEATHER_FALLBACK_HTML=true \
+  -e WEATHER_ENABLE_CACHING=true \
+  -e WEATHER_DEBUG_MODE=true \
+  -e WEATHER_API_TIMEOUT=10 \
+  -e WEATHER_API_RETRY_ATTEMPTS=3 \
+  -e WEATHER_API_RATE_LIMIT_DELAY=0.5 \
+  -e WEATHER_API_CACHE_DURATION=300 \
+  -v /path/to/config:/config \
+  -v /etc/localtime:/etc/localtime:ro \
+  --network=host \
+  ghcr.io/home-assistant/home-assistant:stable
+```
+
+#### Method 3: Environment File
+
+Create a `.env` file:
+
+```bash
+# .env file
+WEATHER_USE_API=true
+WEATHER_FALLBACK_HTML=true
+WEATHER_ENABLE_CACHING=true
+WEATHER_DEBUG_MODE=true
+WEATHER_API_TIMEOUT=10
+WEATHER_API_RETRY_ATTEMPTS=3
+WEATHER_API_RATE_LIMIT_DELAY=0.5
+WEATHER_API_CACHE_DURATION=300
+```
+
+Reference in `docker-compose.yml`:
+
+```yaml
+version: '3.8'
+services:
+  homeassistant:
+    container_name: homeassistant
+    image: ghcr.io/home-assistant/home-assistant:stable
+    env_file:
+      - .env
+    volumes:
+      - ./config:/config
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    privileged: true
+    network_mode: host
+```
+
+#### Testing Phases
+
+**Phase 1: Safe Testing (HTML Mode)**
+```bash
+# Start with HTML mode to ensure everything works
+export WEATHER_USE_API=false
+export WEATHER_FALLBACK_HTML=true
+export WEATHER_DEBUG_MODE=true
+```
+
+**Phase 2: API Testing (With Fallback)**
+```bash
+# Enable API with HTML fallback
+export WEATHER_USE_API=true
+export WEATHER_FALLBACK_HTML=true
+export WEATHER_DEBUG_MODE=true
+```
+
+**Phase 3: API Only (When Confident)**
+```bash
+# Use API only
+export WEATHER_USE_API=true
+export WEATHER_FALLBACK_HTML=false
+export WEATHER_DEBUG_MODE=false
+```
+
+#### Verification Commands
+
+```bash
+# Check environment variables
+docker exec homeassistant printenv | grep WEATHER
+
+# Check Home Assistant logs
+docker logs homeassistant | grep -i weather
+
+# Test API configuration
+docker exec homeassistant python3 -c "
+import os
+print('WEATHER_USE_API:', os.getenv('WEATHER_USE_API'))
+print('WEATHER_FALLBACK_HTML:', os.getenv('WEATHER_FALLBACK_HTML'))
+"
+```
+
 ## Migration Guide
 
 ### Phase 1: Preparation
@@ -286,12 +414,44 @@ Ensure compliance with Weather.gov API terms of service:
 - Don't abuse the service
 - Follow attribution requirements
 
+## Quick Start for Home Assistant
+
+### Docker Compose Setup
+
+Add these environment variables to your `docker-compose.yml`:
+
+```yaml
+environment:
+  - WEATHER_USE_API=true
+  - WEATHER_FALLBACK_HTML=true
+  - WEATHER_DEBUG_MODE=true
+```
+
+### Testing Phases
+
+1. **Phase 1**: `WEATHER_USE_API=false` (HTML mode)
+2. **Phase 2**: `WEATHER_USE_API=true` (API with fallback)
+3. **Phase 3**: `WEATHER_FALLBACK_HTML=false` (API only)
+
+### Verification
+
+```bash
+# Check configuration
+docker exec homeassistant printenv | grep WEATHER
+
+# Monitor logs
+docker logs homeassistant | grep -i weather
+```
+
+For detailed Home Assistant testing instructions, see [Home Assistant Testing Guide](HOME_ASSISTANT_TESTING_GUIDE.md).
+
 ## Support
 
 ### Documentation
 
 - **API Documentation**: [Weather.gov API](https://www.weather.gov/documentation/services-web-api)
 - **Migration Documents**: See `docs/development/` directory
+- **Home Assistant Testing**: See [Home Assistant Testing Guide](HOME_ASSISTANT_TESTING_GUIDE.md)
 - **Test Results**: See test output and coverage reports
 
 ### Issues
