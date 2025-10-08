@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from .const import DEFAULT_POLLING_INTERVAL
-from .forecast_fetcher import fetch_forecast
+from .forecast_fetcher_api import fetch_forecast
 from .forecast_parser import format_forecast
 from .imap_handler import check_imap_for_gps
 from .notifier import send_forecast_email
