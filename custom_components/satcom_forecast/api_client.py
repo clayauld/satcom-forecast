@@ -262,7 +262,7 @@ class WeatherGovAPIClient:
             
         return response.data
         
-    async def get_gridpoint(self, lat: float, lon: float) -> Tuple[str, int, int, str]:
+    async def get_gridpoint(self, lat: float, lon: float) -> Tuple[str, int, int, Optional[str]]:
         """
         Convert coordinates to NWS grid point.
         
