@@ -46,7 +46,7 @@ async def test_api():
         
         print(f"\n1. Testing Gridpoint Lookup for {lat}, {lon}...")
         try:
-            office, grid_x, grid_y = await client.get_gridpoint(lat, lon)
+            office, grid_x, grid_y, forecast_url = await client.get_gridpoint(lat, lon)
             print(f"Success! Gridpoint: {office}/{grid_x},{grid_y}")
         except Exception as e:
             print(f"Failed to get gridpoint: {e}")
