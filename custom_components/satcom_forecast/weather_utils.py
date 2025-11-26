@@ -95,19 +95,43 @@ def infer_chance(event_type: str, forecast_text: str, period: ForecastPeriod) ->
         r"(\d+)%",
     ]
     
+    # Track the best match (closest percentage to an event keyword)
+    best_match = None
+    best_distance = float('inf')
+    
     for pattern in percent_patterns:
-        matches = re.findall(pattern, forecast_text)
-        for match in matches:
-            percent_val = int(match)
+        # Use finditer to get match objects with positions
+        for match_obj in re.finditer(pattern, forecast_text):
+            percent_val = int(match_obj.group(1))
+            match_pos = match_obj.start()
+            
             # Check if this percentage is associated with the current event
-            context_start = max(0, forecast_text.find(match) - 100)
-            context_end = min(len(forecast_text), forecast_text.find(match) + 100)
+            # Look for event keywords within 100 characters of the percentage
+            context_start = max(0, match_pos - 100)
+            context_end = min(len(forecast_text), match_pos + 100)
             context = forecast_text[context_start:context_end]
             
             event_keywords = EVENT_TYPES.get(event_type, [])
-            if any(kw in context for kw in event_keywords):
-                if "precipitation" not in context or event_type == "rain":
-                    return percent_val
+            for keyword in event_keywords:
+                if keyword in context:
+                    # Skip if "precipitation" is in context unless we're looking for rain
+                    if "precipitation" in context and event_type != "rain":
+                        continue
+                    
+                    # Find the position of the keyword in the full text
+                    keyword_pos = forecast_text.find(keyword, context_start)
+                    if keyword_pos != -1:
+                        # Calculate distance between percentage and keyword
+                        distance = abs(match_pos - keyword_pos)
+                        
+                        # Keep track of the closest match
+                        if distance < best_distance:
+                            best_distance = distance
+                            best_match = percent_val
+    
+    # Return the best match if found
+    if best_match is not None:
+        return best_match
                     
     # Infer based on keywords
     if event_type == "rain":
