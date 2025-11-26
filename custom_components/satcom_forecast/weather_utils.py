@@ -118,9 +118,13 @@ def infer_chance(event_type: str, forecast_text: str, period: ForecastPeriod) ->
                     if "precipitation" in context and event_type != "rain":
                         continue
                     
-                    # Find the position of the keyword in the full text
-                    keyword_pos = forecast_text.find(keyword, context_start)
-                    if keyword_pos != -1:
+                    # Find all occurrences of the keyword within the context window
+                    # We search in the context string and calculate actual positions
+                    keyword_pos_in_context = context.find(keyword)
+                    while keyword_pos_in_context != -1:
+                        # Calculate the actual position in the full text
+                        keyword_pos = context_start + keyword_pos_in_context
+                        
                         # Calculate distance between percentage and keyword
                         distance = abs(match_pos - keyword_pos)
                         
@@ -128,6 +132,9 @@ def infer_chance(event_type: str, forecast_text: str, period: ForecastPeriod) ->
                         if distance < best_distance:
                             best_distance = distance
                             best_match = percent_val
+                        
+                        # Look for next occurrence of keyword in context
+                        keyword_pos_in_context = context.find(keyword, keyword_pos_in_context + 1)
     
     # Return the best match if found
     if best_match is not None:

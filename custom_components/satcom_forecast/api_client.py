@@ -122,14 +122,15 @@ class WeatherGovAPIClient:
         await self._ensure_session()
         await self._rate_limit()
         
-        start_time = asyncio.get_event_loop().time()
+        loop = asyncio.get_running_loop()
+        start_time = loop.time()
         
         for attempt in range(self.retry_attempts):
             try:
                 _LOGGER.debug(f"Making {method} request to {url} (attempt {attempt + 1})")
                 
                 async with self._session.request(method, url) as response:
-                    response_time = asyncio.get_event_loop().time() - start_time
+                    response_time = loop.time() - start_time
                     
                     _LOGGER.debug(f"Response status: {response.status} in {response_time:.2f}s")
                     
@@ -183,7 +184,7 @@ class WeatherGovAPIClient:
                     await asyncio.sleep(wait_time)
                     continue
                 else:
-                    response_time = asyncio.get_event_loop().time() - start_time
+                    response_time = loop.time() - start_time
                     return APIResponse(
                         success=False,
                         error="Request timeout",
@@ -196,14 +197,14 @@ class WeatherGovAPIClient:
                     await asyncio.sleep(wait_time)
                     continue
                 else:
-                    response_time = asyncio.get_event_loop().time() - start_time
+                    response_time = loop.time() - start_time
                     return APIResponse(
                         success=False,
                         error=f"Client error: {e}",
                         response_time=response_time
                     )
             except Exception as e:
-                response_time = asyncio.get_event_loop().time() - start_time
+                response_time = loop.time() - start_time
                 _LOGGER.error(f"Unexpected error: {e}")
                 return APIResponse(
                     success=False,
@@ -212,7 +213,7 @@ class WeatherGovAPIClient:
                 )
                 
         # If we get here, all retries failed
-        response_time = asyncio.get_event_loop().time() - start_time
+        response_time = loop.time() - start_time
         return APIResponse(
             success=False,
             error="Max retries exceeded",
