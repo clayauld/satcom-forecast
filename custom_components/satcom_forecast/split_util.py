@@ -380,8 +380,18 @@ def split_summary_format(text: str, effective_limit: int) -> List[str]:
                         if current_length + len(first_part) <= effective_limit:
                             current_part.append(first_part)
                             parts.append("\n".join(current_part))
-                            current_part = [remaining_part]
-                            current_length = len(remaining_part)
+
+                            # Check if remaining_part is too long
+                            if len(remaining_part) > effective_limit:
+                                sub_parts = split_long_line_aggressively(
+                                    remaining_part, effective_limit
+                                )
+                                parts.extend(sub_parts[:-1])
+                                current_part = [sub_parts[-1]]
+                                current_length = len(sub_parts[-1])
+                            else:
+                                current_part = [remaining_part]
+                                current_length = len(remaining_part)
                             continue
 
             # Current part is full or can't be filled more, start new part

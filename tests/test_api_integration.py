@@ -316,17 +316,18 @@ class TestAPIPerformance:
         
         start_time = asyncio.get_event_loop().time()
         
-        # Make concurrent requests
-        tasks = [fetch_forecast(lat, lon) for lat, lon in coordinates]
-        results = await asyncio.gather(*tasks)
-        
-        total_time = asyncio.get_event_loop().time() - start_time
-        
-        print(f"Concurrent requests completed in {total_time:.2f}s")
-        for lat, lon, result in results:
-            print(f"  {lat}, {lon}: {result}")
-        
-        await client.close()
+        try:
+            # Make concurrent requests
+            tasks = [fetch_forecast(lat, lon) for lat, lon in coordinates]
+            results = await asyncio.gather(*tasks)
+            
+            total_time = asyncio.get_event_loop().time() - start_time
+            
+            print(f"Concurrent requests completed in {total_time:.2f}s")
+            for lat, lon, result in results:
+                print(f"  {lat}, {lon}: {result}")
+        finally:
+            await client.close()
     
     @pytest.mark.asyncio
     async def test_memory_usage(self):
@@ -343,26 +344,28 @@ class TestAPIPerformance:
             timeout=30
         )
         
-        # Make several requests to test memory usage
-        for i in range(5):
-            try:
-                office, grid_x, grid_y, forecast_url = await client.get_gridpoint(40.7128, -74.0060)
-                forecast_data = await client.get_forecast(office, grid_x, grid_y)
-                
-                current_memory = process.memory_info().rss / 1024 / 1024  # MB
-                print(f"Request {i+1}: {current_memory:.1f} MB")
-                
-            except Exception as e:
-                print(f"Request {i+1} failed: {e}")
-        
-        final_memory = process.memory_info().rss / 1024 / 1024  # MB
-        memory_increase = final_memory - initial_memory
-        
-        print(f"Initial memory: {initial_memory:.1f} MB")
-        print(f"Final memory: {final_memory:.1f} MB")
-        print(f"Memory increase: {memory_increase:.1f} MB")
-        
-        # Memory increase should be reasonable (< 50 MB)
-        assert memory_increase < 50, f"Memory increase too high: {memory_increase:.1f} MB"
-        
-        await client.close()
+        try:
+            # Make several requests to test memory usage
+            for i in range(5):
+                try:
+                    office, grid_x, grid_y, forecast_url = await client.get_gridpoint(40.7128, -74.0060)
+                    forecast_data = await client.get_forecast(office, grid_x, grid_y)
+                    
+                    current_memory = process.memory_info().rss / 1024 / 1024  # MB
+                    print(f"Request {i+1}: {current_memory:.1f} MB")
+                    
+                except Exception as e:
+                    print(f"Request {i+1} failed: {e}")
+            
+            final_memory = process.memory_info().rss / 1024 / 1024  # MB
+            memory_increase = final_memory - initial_memory
+            
+            print(f"Initial memory: {initial_memory:.1f} MB")
+            print(f"Final memory: {final_memory:.1f} MB")
+            print(f"Memory increase: {memory_increase:.1f} MB")
+            
+            # Memory increase should be reasonable (< 50 MB)
+            assert memory_increase < 50, f"Memory increase too high: {memory_increase:.1f} MB"
+            
+        finally:
+            await client.close()
