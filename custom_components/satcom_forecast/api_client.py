@@ -361,7 +361,7 @@ class WeatherGovAPIClient:
 
 
 # Convenience functions for backward compatibility
-async def get_gridpoint(lat: float, lon: float, **kwargs) -> Tuple[str, int, int]:
+async def get_gridpoint(lat: float, lon: float, **kwargs) -> Tuple[str, int, int, Optional[str]]:
     """Get grid point for coordinates using default client settings."""
     async with WeatherGovAPIClient(**kwargs) as client:
         return await client.get_gridpoint(lat, lon)
