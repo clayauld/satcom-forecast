@@ -410,16 +410,16 @@ def check_significant_wind(forecast_text: str) -> bool:
     return False
 
 
-def extract_temperature_info(forecast_text: str) -> Dict[str, str]:
-    """Extracts high and low temperature, returning a dict."""
-    temps = {}
+def extract_temperature_info(forecast_text: str) -> List[str]:
+    """Extracts high and low temperature, returning a list."""
+    temps = []
     high_match = re.search(r"high (?:near|around) (\d+)", forecast_text, re.IGNORECASE)
     if high_match:
-        temps["high"] = f"H:{high_match.group(1)}°"
+        temps.append(f"H:{high_match.group(1)}°")
 
     low_match = re.search(r"low (?:around|near) (\d+)", forecast_text, re.IGNORECASE)
     if low_match:
-        temps["low"] = f"L:{low_match.group(1)}°"
+        temps.append(f"L:{low_match.group(1)}°")
 
     return temps
 
@@ -447,7 +447,7 @@ def get_abbr(direction_word: str) -> str:
     return mapping.get(direction_word.lower(), direction_word)
 
 
-def extract_wind_info(forecast_text: str) -> Optional[str]:
+def extract_wind_info(forecast_text: str) -> List[str]:
     """Extracts wind direction and speed, supporting various formats including gusts."""
     # Pattern for direction and speed, with optional gusts
     patterns = [
@@ -463,10 +463,10 @@ def extract_wind_info(forecast_text: str) -> Optional[str]:
             groups = match.groups()
             if "from the" in pattern:
                 direction, speed = get_abbr(groups[1]), groups[0].replace(" to ", "-")
-                return f"{direction}{speed}mph"
+                return [f"{direction}{speed}mph"]
             if "becoming" in pattern:
                 direction, speed = get_abbr(groups[0]), groups[1].replace(" to ", "-")
-                return f"{direction}{speed}mph"
+                return [f"{direction}{speed}mph"]
 
             direction, speed = get_abbr(groups[0]), groups[1].replace(" to ", "-")
             gusts = groups[2] if len(groups) > 2 and groups[2] else None
@@ -474,8 +474,8 @@ def extract_wind_info(forecast_text: str) -> Optional[str]:
             wind_str = f"{direction}{speed}mph"
             if gusts:
                 wind_str += f" (G:{gusts}mph)"
-            return wind_str
-    return None
+            return [wind_str]
+    return []
 
 
 def format_compact_forecast(text: str) -> str:
@@ -580,12 +580,11 @@ def format_compact_forecast(text: str) -> str:
                 # Build details string
                 details = []
                 if temp_info:
-                    if "high" in temp_info:
-                        details.append(temp_info["high"].replace("°", ""))
-                    if "low" in temp_info:
-                        details.append(temp_info["low"].replace("°", ""))
+                    for item in temp_info:
+                        # Remove degree symbol for compact display
+                        details.append(item.replace("°", ""))
                 if wind_info:
-                    details.append(wind_info)
+                    details.extend(wind_info)
 
                 details_str = f" ({', '.join(details)})" if details else ""
 
