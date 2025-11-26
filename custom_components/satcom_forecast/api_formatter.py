@@ -11,7 +11,9 @@ from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 
 from .api_models import ForecastPeriod, WeatherEvent
-from .api_data_processor import EVENT_TYPES, EVENT_NAME_MAP
+from .api_data_processor import EVENT_NAME_MAP
+from . import weather_utils
+from .weather_utils import EVENT_TYPES
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -137,8 +139,8 @@ class APIFormatter:
                 period_events = self._detect_period_events(period, events)
                 
                 # Extract temperature and wind info
-                temp_info = self._extract_temperature_info(period)
-                wind_info = self._extract_wind_info(period)
+                temp_info = weather_utils.extract_temperature_info(period)
+                wind_info = weather_utils.extract_wind_info(period)
                 
                 # Clean forecast text for display
                 display_forecast = self._clean_forecast_for_display(period.detailed_forecast)
@@ -218,8 +220,8 @@ class APIFormatter:
             period_events = self._detect_period_events(period, events)
             
             # Extract temperature and wind info
-            temp_info = self._extract_temperature_info(period)
-            wind_info = self._extract_wind_info(period)
+            temp_info = weather_utils.extract_temperature_info(period)
+            wind_info = weather_utils.extract_wind_info(period)
             
             # Combine all information
             all_info = period_events + temp_info + wind_info
@@ -312,10 +314,10 @@ class APIFormatter:
         for event_type, keywords in EVENT_TYPES.items():
             if any(keyword in forecast_lower for keyword in keywords):
                 # For wind events, check if speeds are significant
-                if event_type == "wind" and not self._check_significant_wind(period):
+                if event_type == "wind" and not weather_utils.check_significant_wind(period):
                     continue
                     
-                probability = self._infer_chance(event_type, forecast_lower, period)
+                probability = weather_utils.infer_chance(event_type, forecast_lower, period)
                 if probability > 0:
                     event_name = EVENT_NAME_MAP.get(event_type, event_type.replace(" ", "").title()[:2])
                     
@@ -333,127 +335,7 @@ class APIFormatter:
                         
         return events
         
-    def _extract_temperature_info(self, period: ForecastPeriod) -> List[str]:
-        """Extract temperature information from period."""
-        temp_info = []
-        
-        if period.temperature is not None:
-            if period.is_daytime:
-                temp_info.append(f"H:{period.temperature}°")
-            else:
-                temp_info.append(f"L:{period.temperature}°")
-                
-        return temp_info
-        
-    def _extract_wind_info(self, period: ForecastPeriod) -> List[str]:
-        """Extract wind information from period."""
-        if not period.wind_speed or not period.wind_direction:
-            return []
-            
-        # Convert wind direction to abbreviation
-        direction_abbr = self._get_wind_direction_abbr(period.wind_direction)
-        
-        # Format wind speed
-        speed = period.wind_speed.replace(' mph', '').replace(' mph', '')
-        speed = speed.replace(' to ', '-')
-        
-        # Handle wind gusts
-        wind_str = f"{direction_abbr}{speed}mph"
-        if period.wind_gust:
-            gust_speed = period.wind_gust.replace(' mph', '').replace(' mph', '')
-            wind_str += f" (G:{gust_speed}mph)"
-            
-        return [wind_str]
-        
-    def _check_significant_wind(self, period: ForecastPeriod) -> bool:
-        """Check if wind speeds are significant (15+ mph)."""
-        if not period.wind_speed:
-            return False
-            
-        wind_match = re.search(r'(\d+)', period.wind_speed)
-        if wind_match:
-            speed = int(wind_match.group(1))
-            return speed >= 15
-            
-        return False
-        
-    def _infer_chance(self, event_type: str, forecast_text: str, period: ForecastPeriod) -> int:
-        """Infer probability percentage for weather events."""
-        # Use explicit precipitation probability if available
-        if event_type == "rain" and period.probability_of_precipitation is not None:
-            return period.probability_of_precipitation
-            
-        # Look for explicit percentages
-        percent_patterns = [r"(\d+)\s*percent", r"(\d+)%"]
-        
-        for pattern in percent_patterns:
-            matches = re.findall(pattern, forecast_text)
-            for match in matches:
-                percent_val = int(match)
-                context_start = max(0, forecast_text.find(match) - 100)
-                context_end = min(len(forecast_text), forecast_text.find(match) + 100)
-                context = forecast_text[context_start:context_end]
-                
-                event_keywords = EVENT_TYPES.get(event_type, [])
-                if any(kw in context for kw in event_keywords):
-                    if "precipitation" not in context or event_type == "rain":
-                        return percent_val
-                        
-        # Infer based on keywords (simplified version)
-        if event_type == "rain":
-            if "likely" in forecast_text:
-                return 70
-            elif "scattered" in forecast_text:
-                return 40
-            elif "isolated" in forecast_text:
-                return 20
-            elif "chance" in forecast_text:
-                return 30
-            else:
-                return 50
-        elif event_type == "snow":
-            if "blizzard" in forecast_text:
-                return 90
-            elif "likely" in forecast_text:
-                return 70
-            elif "flurries" in forecast_text:
-                return 30
-            else:
-                return 50
-        elif event_type == "wind":
-            if "high wind" in forecast_text or "gusts" in forecast_text:
-                return 80
-            elif "windy" in forecast_text:
-                return 60
-            else:
-                return 30
-        elif event_type == "fog":
-            if "dense fog" in forecast_text:
-                return 90
-            elif "patchy fog" in forecast_text:
-                return 60
-            else:
-                return 70
-        elif event_type == "smoke":
-            if "heavy smoke" in forecast_text:
-                return 90
-            else:
-                return 65
-        elif event_type in ["tornado", "hurricane", "blizzard", "ice storm"]:
-            return 90
-            
-        return 0
-        
-    def _get_wind_direction_abbr(self, direction: str) -> str:
-        """Convert wind direction to abbreviation."""
-        direction_map = {
-            "north": "N", "northeast": "NE", "east": "E", "southeast": "SE",
-            "south": "S", "southwest": "SW", "west": "W", "northwest": "NW",
-            "north northeast": "NNE", "east northeast": "ENE", "east southeast": "ESE",
-            "south southeast": "SSE", "south southwest": "SSW", "west southwest": "WSW",
-            "west northwest": "WNW", "north northwest": "NNW", "variable": "VAR"
-        }
-        return direction_map.get(direction.lower(), direction.upper()[:2])
+
         
     def _clean_forecast_text(self, text: str) -> str:
         """Clean and format forecast text."""

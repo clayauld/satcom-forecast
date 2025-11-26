@@ -223,7 +223,7 @@ Monday: A 30 percent chance of rain. Mostly cloudy, with a high near 61.
         # Wed: Rn(30%),H:61°,NW5mph,L:45°,SE15mph
         
         # I will update the expectation to be exactly what I think it should be based on the logic.
-        pass
+
         assert summary == expected_summary
 
     def test_summarize_forecast_with_holidays(self) -> None:

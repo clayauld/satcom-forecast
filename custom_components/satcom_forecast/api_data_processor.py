@@ -6,52 +6,20 @@ the existing forecast parser and formatter.
 """
 
 import logging
-import re
 from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
 
 from .api_models import (
     ForecastPeriod, 
     WeatherEvent, 
-    ForecastData, 
-    ProcessedForecast,
+    ForecastData,
     create_forecast_period_from_api,
     create_weather_event
 )
+from . import weather_utils
+from .weather_utils import EVENT_TYPES
 
 _LOGGER = logging.getLogger(__name__)
-
-# Weather event types and their keywords (ported from forecast_parser.py)
-EVENT_TYPES = {
-    "rain": ["rain", "showers", "precipitation", "drizzle", "sprinkles"],
-    "snow": ["snow", "blizzard", "flurries", "snowfall"],
-    "sleet": ["sleet"],
-    "freezing rain": ["freezing rain", "ice", "icy"],
-    "wind": ["windy", "gusts", "high wind", "breezy"],
-    "hail": ["hail"],
-    "thunderstorm": ["thunderstorm", "thunderstorms", "t-storm", "tstorms"],
-    "smoke": [
-        "smoke",
-        "smoky",
-        "wildfire smoke",
-        "fire smoke",
-        "smoke from fires",
-        "smoke conditions",
-        "smoke warning",
-        "areas of smoke",
-        "widespread haze",
-    ],
-    "fog": ["fog", "foggy", "mist"],
-    "dense fog": ["dense fog", "thick fog", "heavy fog"],
-    "patchy fog": ["patchy fog"],
-    "tornado": ["tornado"],
-    "hurricane": ["hurricane", "tropical storm"],
-    "blizzard": ["blizzard"],
-    "ice storm": ["ice storm"],
-    "severe thunderstorm": ["severe thunderstorm", "severe t-storm", "severe tstorm"],
-    "high wind warning": ["high wind warning"],
-    "flood warning": ["flood warning", "flash flood warning"],
-}
 
 # Event name mapping (ported from forecast_parser.py)
 EVENT_NAME_MAP = {
@@ -133,10 +101,10 @@ class APIDataProcessor:
         for event_type, keywords in EVENT_TYPES.items():
             if any(keyword in forecast_text for keyword in keywords):
                 # For wind events, check if speeds are significant
-                if event_type == "wind" and not self._check_significant_wind(period):
+                if event_type == "wind" and not weather_utils.check_significant_wind(period):
                     continue
                     
-                probability = self._infer_chance(event_type, forecast_text, period)
+                probability = weather_utils.infer_chance(event_type, forecast_text, period)
                 if probability > 0:
                     event = create_weather_event(
                         event_type=event_type,
@@ -159,13 +127,14 @@ class APIDataProcessor:
         Returns:
             Dictionary with temperature information
         """
+        temp_list = weather_utils.extract_temperature_info(period)
         temp_info = {}
         
-        if period.temperature is not None:
-            if period.is_daytime:
-                temp_info['high'] = f"H:{period.temperature}°"
-            else:
-                temp_info['low'] = f"L:{period.temperature}°"
+        for item in temp_list:
+            if item.startswith('H:'):
+                temp_info['high'] = item
+            elif item.startswith('L:'):
+                temp_info['low'] = item
                 
         return temp_info
         
@@ -179,23 +148,8 @@ class APIDataProcessor:
         Returns:
             Formatted wind string or None
         """
-        if not period.wind_speed or not period.wind_direction:
-            return None
-            
-        # Convert wind direction to abbreviation
-        direction_abbr = self._get_wind_direction_abbr(period.wind_direction)
-        
-        # Format wind speed (remove units if present)
-        speed = period.wind_speed.replace(' mph', '').replace(' mph', '')
-        speed = speed.replace(' to ', '-')
-        
-        # Handle wind gusts
-        wind_str = f"{direction_abbr}{speed}mph"
-        if period.wind_gust:
-            gust_speed = period.wind_gust.replace(' mph', '').replace(' mph', '')
-            wind_str += f" (G:{gust_speed}mph)"
-            
-        return wind_str
+        wind_list = weather_utils.extract_wind_info(period)
+        return wind_list[0] if wind_list else None
         
     def extract_precipitation_data(self, period: ForecastPeriod) -> Dict[str, Any]:
         """
@@ -263,180 +217,7 @@ class APIDataProcessor:
             elevation=elevation
         )
         
-    def _check_significant_wind(self, period: ForecastPeriod) -> bool:
-        """
-        Check if wind speeds are significant (15+ mph).
-        
-        Args:
-            period: ForecastPeriod object
-            
-        Returns:
-            True if wind is significant
-        """
-        if not period.wind_speed:
-            return False
-            
-        # Extract numeric wind speed
-        wind_match = re.search(r'(\d+)', period.wind_speed)
-        if wind_match:
-            speed = int(wind_match.group(1))
-            return speed >= 15
-            
-        return False
-        
-    def _infer_chance(self, event_type: str, forecast_text: str, period: ForecastPeriod) -> int:
-        """
-        Infer probability percentage for weather events.
-        
-        Args:
-            event_type: Type of weather event
-            forecast_text: Forecast text (lowercase)
-            period: ForecastPeriod object
-            
-        Returns:
-            Probability percentage (0-100)
-        """
-        # Use explicit precipitation probability if available
-        if event_type == "rain" and period.probability_of_precipitation is not None:
-            return period.probability_of_precipitation
-            
-        # Look for explicit percentages in forecast text
-        percent_patterns = [
-            r"(\d+)\s*percent",
-            r"(\d+)%",
-        ]
-        
-        for pattern in percent_patterns:
-            matches = re.findall(pattern, forecast_text)
-            for match in matches:
-                percent_val = int(match)
-                # Check if this percentage is associated with the current event
-                context_start = max(0, forecast_text.find(match) - 100)
-                context_end = min(len(forecast_text), forecast_text.find(match) + 100)
-                context = forecast_text[context_start:context_end]
-                
-                event_keywords = EVENT_TYPES.get(event_type, [])
-                if any(kw in context for kw in event_keywords):
-                    if "precipitation" not in context or event_type == "rain":
-                        return percent_val
-                        
-        # Infer based on keywords (ported from forecast_parser.py)
-        if event_type == "rain":
-            if "rain likely" in forecast_text or "showers likely" in forecast_text:
-                return 70
-            elif "scattered" in forecast_text:
-                return 40
-            elif "isolated" in forecast_text:
-                return 20
-            elif "chance" in forecast_text:
-                return 30
-            elif "drizzle" in forecast_text or "sprinkles" in forecast_text:
-                return 25
-            else:
-                return 50
-        elif event_type == "snow":
-            if "blizzard" in forecast_text:
-                return 90
-            elif "snow likely" in forecast_text or "heavy snow" in forecast_text:
-                return 70
-            elif "flurries" in forecast_text:
-                return 30
-            elif "chance" in forecast_text:
-                return 30
-            else:
-                return 50
-        elif event_type in ["sleet", "freezing rain"]:
-            if "likely" in forecast_text:
-                return 60
-            elif "chance" in forecast_text:
-                return 30
-            else:
-                return 40
-        elif event_type == "wind":
-            if "high wind" in forecast_text or "gusts" in forecast_text:
-                return 80
-            elif "windy" in forecast_text:
-                return 60
-            elif "breezy" in forecast_text:
-                return 40
-            else:
-                return 30
-        elif event_type == "hail":
-            if "likely" in forecast_text:
-                return 60
-            elif "chance" in forecast_text:
-                return 30
-            else:
-                return 40
-        elif event_type == "thunderstorm":
-            if "severe" in forecast_text:
-                return 80
-            elif "likely" in forecast_text:
-                return 60
-            elif "chance" in forecast_text:
-                return 30
-            else:
-                return 50
-        elif event_type == "fog":
-            if "dense fog" in forecast_text or "thick fog" in forecast_text or "heavy fog" in forecast_text:
-                return 90
-            elif "patchy fog" in forecast_text:
-                return 60
-            elif "fog" in forecast_text or "foggy" in forecast_text:
-                return 70
-            elif "mist" in forecast_text:
-                return 30
-            else:
-                return 50
-        elif event_type == "smoke":
-            if "heavy smoke" in forecast_text or "thick smoke" in forecast_text or "dense smoke" in forecast_text:
-                return 90
-            elif "wildfire smoke" in forecast_text or "fire smoke" in forecast_text:
-                return 75
-            elif "smoke" in forecast_text or "smoky" in forecast_text:
-                return 65
-            else:
-                return 50
-        elif event_type == "dense fog":
-            return 90
-        elif event_type == "patchy fog":
-            return 60
-        elif event_type in ["tornado", "hurricane", "blizzard", "ice storm", "severe thunderstorm", "high wind warning", "flood warning"]:
-            return 90
-            
-        return 0
-        
-    def _get_wind_direction_abbr(self, direction: str) -> str:
-        """
-        Convert wind direction to abbreviation.
-        
-        Args:
-            direction: Wind direction string
-            
-        Returns:
-            Abbreviated direction
-        """
-        direction_map = {
-            "north": "N",
-            "northeast": "NE",
-            "east": "E",
-            "southeast": "SE",
-            "south": "S",
-            "southwest": "SW",
-            "west": "W",
-            "northwest": "NW",
-            "north northeast": "NNE",
-            "east northeast": "ENE",
-            "east southeast": "ESE",
-            "south southeast": "SSE",
-            "south southwest": "SSW",
-            "west southwest": "WSW",
-            "west northwest": "WNW",
-            "north northwest": "NNW",
-            "variable": "VAR",
-        }
-        
-        return direction_map.get(direction.lower(), direction.upper()[:2])
+
 
 
 # Convenience functions for backward compatibility

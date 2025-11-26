@@ -7,6 +7,7 @@ from unittest.mock import Mock
 
 from custom_components.satcom_forecast.api_data_processor import APIDataProcessor
 from custom_components.satcom_forecast.api_models import ForecastPeriod
+from custom_components.satcom_forecast import weather_utils
 
 
 class TestAPIDataProcessor:
@@ -273,7 +274,7 @@ class TestAPIDataProcessor:
             wind_speed="20 mph"
         )
         
-        assert processor._check_significant_wind(period) is True
+        assert weather_utils.check_significant_wind(period) is True
     
     def test_check_significant_wind_false(self, processor):
         """Test significant wind check with insignificant wind."""
@@ -285,7 +286,7 @@ class TestAPIDataProcessor:
             wind_speed="10 mph"
         )
         
-        assert processor._check_significant_wind(period) is False
+        assert weather_utils.check_significant_wind(period) is False
     
     def test_check_significant_wind_no_speed(self, processor):
         """Test significant wind check with no wind speed."""
@@ -297,7 +298,7 @@ class TestAPIDataProcessor:
             wind_speed=None
         )
         
-        assert processor._check_significant_wind(period) is False
+        assert weather_utils.check_significant_wind(period) is False
     
     def test_infer_chance_explicit_percentage(self, processor):
         """Test chance inference with explicit percentage."""
@@ -309,7 +310,7 @@ class TestAPIDataProcessor:
             probability_of_precipitation=75
         )
         
-        chance = processor._infer_chance("rain", "rain likely", period)
+        chance = weather_utils.infer_chance("rain", "rain likely", period)
         assert chance == 75  # Should use explicit percentage
     
     def test_infer_chance_keyword_based(self, processor):
@@ -323,15 +324,15 @@ class TestAPIDataProcessor:
         )
         
         # Test "likely" keyword
-        chance = processor._infer_chance("rain", "rain likely", period)
+        chance = weather_utils.infer_chance("rain", "rain likely", period)
         assert chance == 70
         
         # Test "scattered" keyword
-        chance = processor._infer_chance("rain", "scattered showers", period)
+        chance = weather_utils.infer_chance("rain", "scattered showers", period)
         assert chance == 40
         
         # Test "isolated" keyword
-        chance = processor._infer_chance("rain", "isolated showers", period)
+        chance = weather_utils.infer_chance("rain", "isolated showers", period)
         assert chance == 20
     
     def test_infer_chance_snow_blizzard(self, processor):
@@ -344,7 +345,7 @@ class TestAPIDataProcessor:
             probability_of_precipitation=None
         )
         
-        chance = processor._infer_chance("snow", "blizzard conditions", period)
+        chance = weather_utils.infer_chance("snow", "blizzard conditions", period)
         assert chance == 90
     
     def test_infer_chance_wind_high(self, processor):
@@ -357,7 +358,7 @@ class TestAPIDataProcessor:
             probability_of_precipitation=None
         )
         
-        chance = processor._infer_chance("wind", "high wind warning", period)
+        chance = weather_utils.infer_chance("wind", "high wind warning", period)
         assert chance == 80
     
     def test_infer_chance_fog_dense(self, processor):
@@ -370,7 +371,7 @@ class TestAPIDataProcessor:
             probability_of_precipitation=None
         )
         
-        chance = processor._infer_chance("fog", "dense fog expected", period)
+        chance = weather_utils.infer_chance("fog", "dense fog expected", period)
         assert chance == 90
     
     def test_infer_chance_smoke_heavy(self, processor):
@@ -383,13 +384,13 @@ class TestAPIDataProcessor:
             probability_of_precipitation=None
         )
         
-        chance = processor._infer_chance("smoke", "heavy smoke from wildfires", period)
+        chance = weather_utils.infer_chance("smoke", "heavy smoke from wildfires", period)
         assert chance == 90
     
     def test_get_wind_direction_abbr(self, processor):
         """Test wind direction abbreviation conversion."""
-        assert processor._get_wind_direction_abbr("north") == "N"
-        assert processor._get_wind_direction_abbr("northeast") == "NE"
-        assert processor._get_wind_direction_abbr("southwest") == "SW"
-        assert processor._get_wind_direction_abbr("variable") == "VAR"
-        assert processor._get_wind_direction_abbr("unknown") == "UN"  # First 2 chars
+        assert weather_utils.get_wind_direction_abbr("north") == "N"
+        assert weather_utils.get_wind_direction_abbr("northeast") == "NE"
+        assert weather_utils.get_wind_direction_abbr("southwest") == "SW"
+        assert weather_utils.get_wind_direction_abbr("variable") == "VAR"
+        assert weather_utils.get_wind_direction_abbr("unknown") == "UN"  # First 2 chars

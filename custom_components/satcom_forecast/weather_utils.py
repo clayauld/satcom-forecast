@@ -1,0 +1,279 @@
+"""
+Weather Utility Functions Module
+
+This module provides shared utility functions for weather data processing
+and formatting. These functions are used by both the API data processor
+and the API formatter to avoid code duplication.
+"""
+
+import logging
+import re
+from typing import List, Optional
+
+_LOGGER = logging.getLogger(__name__)
+
+# Import ForecastPeriod after defining EVENT_TYPES to avoid circular import
+# This will be imported at the end of this section
+
+# Weather event types and their keywords (ported from forecast_parser.py)
+EVENT_TYPES = {
+    "rain": ["rain", "showers", "precipitation", "drizzle", "sprinkles"],
+    "snow": ["snow", "blizzard", "flurries", "snowfall"],
+    "sleet": ["sleet"],
+    "freezing rain": ["freezing rain", "ice", "icy"],
+    "wind": ["windy", "gusts", "high wind", "breezy"],
+    "hail": ["hail"],
+    "thunderstorm": ["thunderstorm", "thunderstorms", "t-storm", "tstorms"],
+    "smoke": [
+        "smoke",
+        "smoky",
+        "wildfire smoke",
+        "fire smoke",
+        "smoke from fires",
+        "smoke conditions",
+        "smoke warning",
+        "areas of smoke",
+        "widespread haze",
+    ],
+    "fog": ["fog", "foggy", "mist"],
+    "dense fog": ["dense fog", "thick fog", "heavy fog"],
+    "patchy fog": ["patchy fog"],
+    "tornado": ["tornado"],
+    "hurricane": ["hurricane", "tropical storm"],
+    "blizzard": ["blizzard"],
+    "ice storm": ["ice storm"],
+    "severe thunderstorm": ["severe thunderstorm", "severe t-storm", "severe tstorm"],
+    "high wind warning": ["high wind warning"],
+    "flood warning": ["flood warning", "flash flood warning"],
+}
+
+# Now import ForecastPeriod
+from .api_models import ForecastPeriod
+
+
+def check_significant_wind(period: ForecastPeriod) -> bool:
+    """
+    Check if wind speeds are significant (15+ mph).
+    
+    Args:
+        period: ForecastPeriod object
+        
+    Returns:
+        True if wind is significant
+    """
+    if not period.wind_speed:
+        return False
+        
+    # Extract numeric wind speed
+    wind_match = re.search(r'(\d+)', period.wind_speed)
+    if wind_match:
+        speed = int(wind_match.group(1))
+        return speed >= 15
+        
+    return False
+
+
+def infer_chance(event_type: str, forecast_text: str, period: ForecastPeriod) -> int:
+    """
+    Infer probability percentage for weather events.
+    
+    Args:
+        event_type: Type of weather event
+        forecast_text: Forecast text (lowercase)
+        period: ForecastPeriod object
+        
+    Returns:
+        Probability percentage (0-100)
+    """
+    # Use explicit precipitation probability if available
+    if event_type == "rain" and period.probability_of_precipitation is not None:
+        return period.probability_of_precipitation
+        
+    # Look for explicit percentages in forecast text
+    percent_patterns = [
+        r"(\d+)\s*percent",
+        r"(\d+)%",
+    ]
+    
+    for pattern in percent_patterns:
+        matches = re.findall(pattern, forecast_text)
+        for match in matches:
+            percent_val = int(match)
+            # Check if this percentage is associated with the current event
+            context_start = max(0, forecast_text.find(match) - 100)
+            context_end = min(len(forecast_text), forecast_text.find(match) + 100)
+            context = forecast_text[context_start:context_end]
+            
+            event_keywords = EVENT_TYPES.get(event_type, [])
+            if any(kw in context for kw in event_keywords):
+                if "precipitation" not in context or event_type == "rain":
+                    return percent_val
+                    
+    # Infer based on keywords
+    if event_type == "rain":
+        if "rain likely" in forecast_text or "showers likely" in forecast_text:
+            return 70
+        elif "scattered" in forecast_text:
+            return 40
+        elif "isolated" in forecast_text:
+            return 20
+        elif "chance" in forecast_text:
+            return 30
+        elif "drizzle" in forecast_text or "sprinkles" in forecast_text:
+            return 25
+        else:
+            return 50
+    elif event_type == "snow":
+        if "blizzard" in forecast_text:
+            return 90
+        elif "snow likely" in forecast_text or "heavy snow" in forecast_text:
+            return 70
+        elif "flurries" in forecast_text:
+            return 30
+        elif "chance" in forecast_text:
+            return 30
+        else:
+            return 50
+    elif event_type in ["sleet", "freezing rain"]:
+        if "likely" in forecast_text:
+            return 60
+        elif "chance" in forecast_text:
+            return 30
+        else:
+            return 40
+    elif event_type == "wind":
+        if "high wind" in forecast_text or "gusts" in forecast_text:
+            return 80
+        elif "windy" in forecast_text:
+            return 60
+        elif "breezy" in forecast_text:
+            return 40
+        else:
+            return 30
+    elif event_type == "hail":
+        if "likely" in forecast_text:
+            return 60
+        elif "chance" in forecast_text:
+            return 30
+        else:
+            return 40
+    elif event_type == "thunderstorm":
+        if "severe" in forecast_text:
+            return 80
+        elif "likely" in forecast_text:
+            return 60
+        elif "chance" in forecast_text:
+            return 30
+        else:
+            return 50
+    elif event_type == "fog":
+        if "dense fog" in forecast_text or "thick fog" in forecast_text or "heavy fog" in forecast_text:
+            return 90
+        elif "patchy fog" in forecast_text:
+            return 60
+        elif "fog" in forecast_text or "foggy" in forecast_text:
+            return 70
+        elif "mist" in forecast_text:
+            return 30
+        else:
+            return 50
+    elif event_type == "smoke":
+        if "heavy smoke" in forecast_text or "thick smoke" in forecast_text or "dense smoke" in forecast_text:
+            return 90
+        elif "wildfire smoke" in forecast_text or "fire smoke" in forecast_text:
+            return 75
+        elif "smoke" in forecast_text or "smoky" in forecast_text:
+            return 65
+        else:
+            return 50
+    elif event_type == "dense fog":
+        return 90
+    elif event_type == "patchy fog":
+        return 60
+    elif event_type in ["tornado", "hurricane", "blizzard", "ice storm", "severe thunderstorm", "high wind warning", "flood warning"]:
+        return 90
+        
+    return 0
+
+
+def get_wind_direction_abbr(direction: str) -> str:
+    """
+    Convert wind direction to abbreviation.
+    
+    Args:
+        direction: Wind direction string
+        
+    Returns:
+        Abbreviated direction
+    """
+    direction_map = {
+        "north": "N",
+        "northeast": "NE",
+        "east": "E",
+        "southeast": "SE",
+        "south": "S",
+        "southwest": "SW",
+        "west": "W",
+        "northwest": "NW",
+        "north northeast": "NNE",
+        "east northeast": "ENE",
+        "east southeast": "ESE",
+        "south southeast": "SSE",
+        "south southwest": "SSW",
+        "west southwest": "WSW",
+        "west northwest": "WNW",
+        "north northwest": "NNW",
+        "variable": "VAR",
+    }
+    
+    return direction_map.get(direction.lower(), direction.upper()[:2])
+
+
+def extract_temperature_info(period: ForecastPeriod) -> List[str]:
+    """
+    Extract temperature information from a forecast period.
+    
+    Args:
+        period: ForecastPeriod object
+        
+    Returns:
+        List of temperature strings
+    """
+    temp_info = []
+    
+    if period.temperature is not None:
+        if period.is_daytime:
+            temp_info.append(f"H:{period.temperature}°")
+        else:
+            temp_info.append(f"L:{period.temperature}°")
+            
+    return temp_info
+
+
+def extract_wind_info(period: ForecastPeriod) -> List[str]:
+    """
+    Extract wind information from a forecast period.
+    
+    Args:
+        period: ForecastPeriod object
+        
+    Returns:
+        List containing formatted wind string, or empty list if no wind data
+    """
+    if not period.wind_speed or not period.wind_direction:
+        return []
+        
+    # Convert wind direction to abbreviation
+    direction_abbr = get_wind_direction_abbr(period.wind_direction)
+    
+    # Format wind speed (remove units if present)
+    speed = period.wind_speed.replace(' mph', '').replace(' mph', '')
+    speed = speed.replace(' to ', '-')
+    
+    # Handle wind gusts
+    wind_str = f"{direction_abbr}{speed}mph"
+    if period.wind_gust:
+        gust_speed = period.wind_gust.replace(' mph', '').replace(' mph', '')
+        wind_str += f" (G:{gust_speed}mph)"
+        
+    return [wind_str]

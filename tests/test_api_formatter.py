@@ -7,6 +7,7 @@ from unittest.mock import Mock
 
 from custom_components.satcom_forecast.api_formatter import APIFormatter
 from custom_components.satcom_forecast.api_models import ForecastPeriod, WeatherEvent
+from custom_components.satcom_forecast import weather_utils
 
 
 class TestAPIFormatter:
@@ -210,7 +211,7 @@ class TestAPIFormatter:
             temperature=75
         )
         
-        temp_info = formatter._extract_temperature_info(period)
+        temp_info = weather_utils.extract_temperature_info(period)
         assert "H:75°" in temp_info
     
     def test_extract_temperature_info_nighttime(self, formatter):
@@ -223,7 +224,7 @@ class TestAPIFormatter:
             temperature=55
         )
         
-        temp_info = formatter._extract_temperature_info(period)
+        temp_info = weather_utils.extract_temperature_info(period)
         assert "L:55°" in temp_info
     
     def test_extract_wind_info_success(self, formatter):
@@ -237,7 +238,7 @@ class TestAPIFormatter:
             wind_direction="NW"
         )
         
-        wind_info = formatter._extract_wind_info(period)
+        wind_info = weather_utils.extract_wind_info(period)
         assert wind_info == ["NW10-15mph"]
     
     def test_extract_wind_info_with_gusts(self, formatter):
@@ -252,7 +253,7 @@ class TestAPIFormatter:
             wind_gust="25 mph"
         )
         
-        wind_info = formatter._extract_wind_info(period)
+        wind_info = weather_utils.extract_wind_info(period)
         assert wind_info == ["NW15mph (G:25mph)"]
     
     def test_extract_wind_info_missing(self, formatter):
@@ -266,7 +267,7 @@ class TestAPIFormatter:
             wind_direction=None
         )
         
-        wind_info = formatter._extract_wind_info(period)
+        wind_info = weather_utils.extract_wind_info(period)
         assert wind_info == []
     
     def test_check_significant_wind_true(self, formatter):
@@ -279,7 +280,7 @@ class TestAPIFormatter:
             wind_speed="20 mph"
         )
         
-        assert formatter._check_significant_wind(period) is True
+        assert weather_utils.check_significant_wind(period) is True
     
     def test_check_significant_wind_false(self, formatter):
         """Test insignificant wind check."""
@@ -291,7 +292,7 @@ class TestAPIFormatter:
             wind_speed="10 mph"
         )
         
-        assert formatter._check_significant_wind(period) is False
+        assert weather_utils.check_significant_wind(period) is False
     
     def test_infer_chance_explicit_percentage(self, formatter):
         """Test chance inference with explicit percentage."""
@@ -303,7 +304,7 @@ class TestAPIFormatter:
             probability_of_precipitation=75
         )
         
-        chance = formatter._infer_chance("rain", "rain likely", period)
+        chance = weather_utils.infer_chance("rain", "rain likely", period)
         assert chance == 75  # Should use explicit percentage
     
     def test_infer_chance_keyword_based(self, formatter):
@@ -317,21 +318,21 @@ class TestAPIFormatter:
         )
         
         # Test various keywords
-        assert formatter._infer_chance("rain", "rain likely", period) == 70
-        assert formatter._infer_chance("rain", "scattered showers", period) == 40
-        assert formatter._infer_chance("rain", "isolated showers", period) == 20
-        assert formatter._infer_chance("snow", "blizzard conditions", period) == 90
-        assert formatter._infer_chance("wind", "high wind warning", period) == 80
-        assert formatter._infer_chance("fog", "dense fog expected", period) == 90
-        assert formatter._infer_chance("smoke", "heavy smoke from wildfires", period) == 90
+        assert weather_utils.infer_chance("rain", "rain likely", period) == 70
+        assert weather_utils.infer_chance("rain", "scattered showers", period) == 40
+        assert weather_utils.infer_chance("rain", "isolated showers", period) == 20
+        assert weather_utils.infer_chance("snow", "blizzard conditions", period) == 90
+        assert weather_utils.infer_chance("wind", "high wind warning", period) == 80
+        assert weather_utils.infer_chance("fog", "dense fog expected", period) == 90
+        assert weather_utils.infer_chance("smoke", "heavy smoke from wildfires", period) == 90
     
     def test_get_wind_direction_abbr(self, formatter):
         """Test wind direction abbreviation conversion."""
-        assert formatter._get_wind_direction_abbr("north") == "N"
-        assert formatter._get_wind_direction_abbr("northeast") == "NE"
-        assert formatter._get_wind_direction_abbr("southwest") == "SW"
-        assert formatter._get_wind_direction_abbr("variable") == "VAR"
-        assert formatter._get_wind_direction_abbr("unknown") == "UN"  # First 2 chars
+        assert weather_utils.get_wind_direction_abbr("north") == "N"
+        assert weather_utils.get_wind_direction_abbr("northeast") == "NE"
+        assert weather_utils.get_wind_direction_abbr("southwest") == "SW"
+        assert weather_utils.get_wind_direction_abbr("variable") == "VAR"
+        assert weather_utils.get_wind_direction_abbr("unknown") == "UN"  # First 2 chars
     
     def test_clean_forecast_text(self, formatter):
         """Test forecast text cleaning."""
