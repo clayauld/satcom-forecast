@@ -1,8 +1,9 @@
 """Extended tests for split utility functionality to improve coverage."""
 
-import pytest
-import sys
 import os
+import sys
+
+import pytest
 
 # Add the custom_components directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "custom_components"))
@@ -16,13 +17,13 @@ try:
         ),
     )
     from split_util import (
-        smart_split_text,
-        split_long_line_aggressively,
-        split_line_to_fill_space,
-        split_single_line_text,
         find_best_break_point,
-        split_summary_format,
+        smart_split_text,
+        split_line_to_fill_space,
+        split_long_line_aggressively,
         split_message,
+        split_single_line_text,
+        split_summary_format,
     )
 except ImportError:
     pytest.fail("Could not import split_util functions")
@@ -93,11 +94,11 @@ class TestSplitUtilExtended:
         # "I am" -> "I" (1). "am" (2).
         # If available space is 10. "I am" fits.
         # We need a case where current_length < available_space * 0.4
-        
+
         # line = "I am a robot"
         # available_space = 10
         # "I am a" = 6 chars. 6/10 = 0.6.
-        
+
         # line = "I cannotfitthisword"
         # available_space = 10
         # "I" fits (1 char). "cannotfitthisword" (17 chars) doesn't fit.
@@ -123,17 +124,17 @@ class TestSplitUtilExtended:
     def test_find_best_break_point_priorities(self):
         """Test find_best_break_point priorities."""
         # Preference: newline > pipe > period > comma > space
-        
+
         # Period vs Comma
         text = "Hello, World. Test"
         # If limit includes both, should pick period?
         # The code iterates patterns in order.
         # It finds ALL matches for a pattern and takes the last one.
         # But it returns immediately if it finds matches for a higher priority pattern.
-        
+
         # So if we have newlines, it splits there.
         # If no newlines, looks for pipes.
-        
+
         # "Hello, World. Test"
         # Limit 15.
         # No newline. No pipe.
@@ -151,7 +152,7 @@ class TestSplitUtilExtended:
         parts = split_summary_format(text, effective_limit=20)
         # Should split the middle part
         assert len(parts) > 3
-        
+
     def test_split_message_empty(self):
         """Test split_message with empty string."""
         assert split_message("") == [""]

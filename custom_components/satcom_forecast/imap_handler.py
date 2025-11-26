@@ -234,7 +234,9 @@ def extract_days_override(body: str) -> Optional[int]:
     """
     # First check for special keywords
     if re.search(r"\b(current|today|tonight)\b", body, re.IGNORECASE):
-        _LOGGER.debug("Found special keyword 'current', 'today', or 'tonight', returning 0 days")
+        _LOGGER.debug(
+            "Found special keyword 'current', 'today', or 'tonight', returning 0 days"
+        )
         return 0
 
     # Pattern to match: number 0-7 followed by optional space and "day" or "days"

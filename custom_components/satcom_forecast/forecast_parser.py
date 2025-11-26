@@ -95,6 +95,7 @@ VALID_PERIOD_NAMES = [
     "Christmas Day",
 ]
 
+
 def format_forecast(
     forecast_text: str, mode: str = "summary", days: Optional[int] = None
 ) -> str:
@@ -127,7 +128,7 @@ def clean_forecast_text(text: str) -> str:
 
     # Ensure every period label starts on a new line (except at the start)
     period_labels = [label + ":" for label in VALID_PERIOD_NAMES]
-    
+
     # Insert newline before each period label (except at the start of the text)
     for label in period_labels:
         # Replace any occurrence of the label (not at the start) with newline + label
@@ -148,7 +149,9 @@ def clean_forecast_text(text: str) -> str:
         if ":" in line:
             # Split by common period patterns
             # Create a regex pattern from VALID_PERIOD_NAMES
-            period_pattern = "|".join([re.escape(name + ":") for name in VALID_PERIOD_NAMES])
+            period_pattern = "|".join(
+                [re.escape(name + ":") for name in VALID_PERIOD_NAMES]
+            )
             parts = re.split(f"({period_pattern})", line)
 
             current_period = ""
@@ -191,9 +194,7 @@ def format_full_forecast(text: str) -> str:
 
     for line in lines:
         line = line.strip()
-        if ":" in line and any(
-            day in line for day in VALID_PERIOD_NAMES
-        ):
+        if ":" in line and any(day in line for day in VALID_PERIOD_NAMES):
             # Normalize spaces in the line
             line = normalize_spaces(line)
             formatted_lines.append(line)
@@ -499,9 +500,7 @@ def format_compact_forecast(text: str) -> str:
     ]
 
     for line in lines:
-        if ":" in line and any(
-            day in line for day in VALID_PERIOD_NAMES
-        ):
+        if ":" in line and any(day in line for day in VALID_PERIOD_NAMES):
             try:
                 day, forecast = line.split(":", 1)
                 day = day.strip()
@@ -1041,7 +1040,7 @@ def summarize_forecast(text, days=None):
     current_day_index = 0
     is_previous_night = False
     day_display_names = {}  # Map index to display name
-    
+
     # Filter and parse lines first to handle indexing correctly
     parsed_periods = []
     for line in lines:
@@ -1060,28 +1059,28 @@ def summarize_forecast(text, days=None):
         is_daytime = True
         if "Night" in period or period in ["Tonight", "Overnight"]:
             is_daytime = False
-            
+
         # Check for Day/Night transition
         if i > 0 and is_daytime and is_previous_night:
             current_day_index += 1
-            
+
         is_previous_night = not is_daytime
-        
+
         # Determine display name for this day index
         if current_day_index not in day_display_names:
             # Use the current period name to generate the short name
             # If it's a night period (e.g. Tonight), it will be the name
             # If it's a day period (e.g. Thanksgiving Day), it will be the name
             base_name = period
-            
+
             # Special handling: "This Afternoon" on day 0 should be "Today"
             if current_day_index == 0 and base_name == "This Afternoon":
                 base_name = "Today"
-            
+
             if "Night" in base_name and base_name not in ["Tonight", "Overnight"]:
-                 base_name = base_name.replace(" Night", "")
+                base_name = base_name.replace(" Night", "")
             day_display_names[current_day_index] = short_period(base_name)
-            
+
         short_period_name = day_display_names[current_day_index]
 
         # Extract weather events
@@ -1250,7 +1249,7 @@ def parse_forecast_periods(
 
     for i, (day_name, forecast_text) in enumerate(period_matches):
         day_name = day_name.strip()
-        
+
         # Clean up the period content
         forecast_text = re.sub(r"<br\s*/?>", "\n", forecast_text).strip()
         forecast_text = re.sub(r"\n+", "\n", forecast_text)  # Normalize line breaks
@@ -1259,16 +1258,16 @@ def parse_forecast_periods(
         is_daytime = True
         if "Night" in day_name or day_name in ["Tonight", "Overnight"]:
             is_daytime = False
-            
+
         # Check for Day/Night transition to increment day count
         # A new day starts when we transition from Night to Day (except for the first period)
         if i > 0 and is_daytime and is_previous_night:
             current_day_index += 1
-            
+
         # If we've reached the target number of days, stop
         if current_day_index >= target_days:
             break
-            
+
         # Update previous night status for next iteration
         is_previous_night = not is_daytime
 
@@ -1281,5 +1280,7 @@ def parse_forecast_periods(
         periods.append(period)
         _LOGGER.debug(f"Parsed period: {day_name} (Day {current_day_index})")
 
-    _LOGGER.info(f"Successfully parsed {len(periods)} forecast periods (covered {current_day_index + (1 if periods else 0)} days)")
+    _LOGGER.info(
+        f"Successfully parsed {len(periods)} forecast periods (covered {current_day_index + (1 if periods else 0)} days)"
+    )
     return periods

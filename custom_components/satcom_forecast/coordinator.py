@@ -135,7 +135,7 @@ class SatcomForecastCoordinator(DataUpdateCoordinator):
                 days = msg.get("days")
                 if days is None:
                     days = self.config.get("default_days", 3)
-                
+
                 _LOGGER.debug(
                     "Using %d days for forecast (override: %s, default: %s)",
                     days,

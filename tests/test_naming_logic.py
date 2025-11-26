@@ -1,10 +1,13 @@
 """
 Test naming logic for day summaries.
 """
+
 import pytest
-from custom_components.satcom_forecast.forecast_parser import summarize_forecast
+
 from custom_components.satcom_forecast.api_formatter import APIFormatter
 from custom_components.satcom_forecast.api_models import ForecastPeriod, WeatherEvent
+from custom_components.satcom_forecast.forecast_parser import summarize_forecast
+
 
 def test_parser_summary_this_afternoon():
     """Test that 'This Afternoon' is summarized as 'Tdy' in forecast_parser."""
@@ -14,13 +17,14 @@ def test_parser_summary_this_afternoon():
     <b>Tonight: </b>Clear with a low around 55.<br><br>
     <b>Wednesday: </b>Sunny with a high near 80.<br><br>
     """
-    
+
     summary = summarize_forecast(text)
-    
+
     # Current behavior might be "Aft", we want "Tdy"
     # Let's assert what we WANT, so it fails if not implemented
     assert "Tdy:" in summary
     assert "Aft:" not in summary
+
 
 def test_api_formatter_summary_this_afternoon():
     """Test that 'This Afternoon' is summarized as 'Tdy' in api_formatter."""
@@ -32,7 +36,7 @@ def test_api_formatter_summary_this_afternoon():
             end_time="2024-01-01T18:00:00-05:00",
             is_daytime=True,
             temperature=75,
-            detailed_forecast="Sunny"
+            detailed_forecast="Sunny",
         ),
         ForecastPeriod(
             name="Tonight",
@@ -40,16 +44,17 @@ def test_api_formatter_summary_this_afternoon():
             end_time="2024-01-02T06:00:00-05:00",
             is_daytime=False,
             temperature=55,
-            detailed_forecast="Clear"
-        )
+            detailed_forecast="Clear",
+        ),
     ]
     events = []
-    
+
     summary = formatter.format_summary_forecast(periods, events)
-    
+
     # Current behavior might be "Aft", we want "Tdy"
     assert "Tdy:" in summary
     assert "Aft:" not in summary
+
 
 def test_parser_summary_today():
     """Test that 'Today' is summarized as 'Tdy'."""
@@ -59,6 +64,7 @@ def test_parser_summary_today():
     """
     summary = summarize_forecast(text)
     assert "Tdy:" in summary
+
 
 def test_parser_summary_overnight():
     """Test that 'Overnight' is summarized as 'Tdy' (or kept as ON if preferred, but let's check consistency)."""

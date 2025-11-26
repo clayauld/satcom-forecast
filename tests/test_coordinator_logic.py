@@ -1,5 +1,5 @@
-
 import unittest
+
 
 class TestCoordinatorLogic(unittest.TestCase):
     """Test coordinator logic."""
@@ -7,7 +7,7 @@ class TestCoordinatorLogic(unittest.TestCase):
     def test_days_logic(self):
         """Test days determination logic."""
         config = {"default_days": 3}
-        
+
         # Helper function to simulate the logic in coordinator.py
         def get_days(msg, config):
             days = msg.get("days")
@@ -20,6 +20,7 @@ class TestCoordinatorLogic(unittest.TestCase):
         self.assertEqual(get_days({"days": 5}, config), 5)
         self.assertEqual(get_days({}, config), 3)
         self.assertEqual(get_days({"days": None}, config), 3)
+
 
 if __name__ == "__main__":
     unittest.main()

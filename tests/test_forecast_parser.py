@@ -198,30 +198,30 @@ Monday: A 30 percent chance of rain. Mostly cloudy, with a high near 61.
         # Sat + Sat Night -> Sat
         # Sun + Sun Night -> Sun
         # Mon -> Mon
-        
+
         # Wait, my previous expectation string already had merged lines!
         # "Wed: Rn(30%),H:61°,NW5mph,L:45°,SE15mph" -> This has H and L.
         # "Thu: Rn(30%),H:61°,SE5-10mph,L:47°,E10mph" -> This has H and L.
-        
+
         # The failure was: assert 'Tngt: L:46°,...Rn(30%),H:61°' == 'Tngt: L:46°,...Rn(30%),H:61°'
         # Wait, the failure message showed identical strings?
         # FAILED tests/test_forecast_parser.py::TestForecastParser::test_real_world_summary - AssertionError: assert 'Tngt: L:46°,...Rn(30%),H:61°' == 'Tngt: L:46°,...Rn(30%),H:61°'
         # This usually means there's a subtle difference (whitespace, invisible char, or order).
         # Let's re-verify the expected string carefully.
-        
+
         # In the actual output (from reproduction script):
         # Tngt: Rn(70%),L:12°,NE5mph
         # Wed: Rn(70%),H:27°,NE5mph,L:26°,NE5-10mph
-        
+
         # In the test case:
         # Tonight: ... low around 46 ...
         # Wednesday: ... high near 61 ...
         # Wednesday Night: ... low around 45 ...
-        
+
         # Expected:
         # Tngt: L:46°,SE5-10mph
         # Wed: Rn(30%),H:61°,NW5mph,L:45°,SE15mph
-        
+
         # I will update the expectation to be exactly what I think it should be based on the logic.
 
         assert summary == expected_summary
@@ -238,12 +238,12 @@ Friday: Rain likely. High near 34. Northeast wind 5 to 10 mph.
 Friday Night: Rain likely. Low around 23.
 """
         summary = summarize_forecast(forecast_text)
-        
+
         # Check that "Thanksgiving Day" (Tha) and "Thursday Night" are grouped
         # Expect "Tha" to be present, but NOT "Thu" (Thursday Night) as a separate line
         assert "Tha:" in summary
         assert "Thu:" not in summary
-        
+
         # Check that it contains info from both day and night
         # High from Day (32), Low from Night (29)
         tha_line = [line for line in summary.splitlines() if line.startswith("Tha:")][0]

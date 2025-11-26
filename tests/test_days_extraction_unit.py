@@ -1,12 +1,18 @@
-
-import sys
 import os
+import sys
+
 import pytest
 
 # Add custom_components/satcom_forecast to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "custom_components", "satcom_forecast"))
+sys.path.insert(
+    0,
+    os.path.join(
+        os.path.dirname(__file__), "..", "custom_components", "satcom_forecast"
+    ),
+)
 
 from imap_handler import extract_days_override
+
 
 class TestDaysExtraction:
     """Test days extraction logic."""
