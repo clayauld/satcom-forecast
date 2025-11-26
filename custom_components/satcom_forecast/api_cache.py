@@ -312,7 +312,7 @@ class CacheManager:
                 except asyncio.CancelledError:
                     break
                 except Exception as e:
-                    _LOGGER.error(f"Error in cache cleanup task: {e}")
+                    _LOGGER.exception("Error in cache cleanup task")
                     await asyncio.sleep(interval)
                     
         self._cleanup_task = asyncio.create_task(cleanup_loop())
