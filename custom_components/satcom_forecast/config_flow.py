@@ -1,6 +1,6 @@
 import imaplib
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 
 import voluptuous as vol
 from homeassistant import config_entries
@@ -17,6 +17,7 @@ def get_imap_folders(
 ) -> Tuple[Optional[list], Optional[str]]:
     """Get list of available IMAP folders."""
     try:
+        mail: Union[imaplib.IMAP4_SSL, imaplib.IMAP4]
         if security == "SSL":
             mail = imaplib.IMAP4_SSL(host, port)
         elif security == "STARTTLS":
@@ -37,10 +38,15 @@ def get_imap_folders(
         available_folders = []
         for f in folders:
             # Parse folder name from IMAP LIST response
-            if b'"' in f:
+            if isinstance(f, bytes) and b'"' in f:
                 folder_name = f.decode().split('"')[-2]
-            else:
+            elif isinstance(f, bytes):
                 folder_name = f.decode().split()[-1]
+            elif isinstance(f, tuple) and len(f) >= 2:
+                # Handle tuple format (flags, delimiter, name)
+                folder_name = f[-1].decode() if isinstance(f[-1], bytes) else str(f[-1])
+            else:
+                continue
             available_folders.append(folder_name)
 
         mail.logout()
@@ -60,6 +66,7 @@ def validate_imap_folder(
 ) -> Tuple[bool, Optional[str]]:
     """Validate that the specified IMAP folder exists and is accessible."""
     try:
+        mail: Union[imaplib.IMAP4_SSL, imaplib.IMAP4]
         if security == "SSL":
             mail = imaplib.IMAP4_SSL(host, port)
         elif security == "STARTTLS":
@@ -200,7 +207,7 @@ class SatcomForecastConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # typ
         )
 
     @staticmethod
-    @callback
+    @callback  # type: ignore[misc]
     def async_get_options_flow(
         config_entry: config_entries.ConfigEntry,
     ) -> config_entries.OptionsFlow:
@@ -242,6 +249,7 @@ class SatcomForecastOptionsFlow(config_entries.OptionsFlow):
                         "imap_security"
                     ) or self.config_entry.data.get("imap_security", "SSL")
 
+                    mail: Union[imaplib.IMAP4_SSL, imaplib.IMAP4]
                     if imap_security == "SSL":
                         mail = imaplib.IMAP4_SSL(imap_host, imap_port)
                     elif imap_security == "STARTTLS":

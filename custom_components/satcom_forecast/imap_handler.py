@@ -31,7 +31,7 @@ async def check_imap_for_gps(
 
     try:
         # Run the synchronous IMAP operation in a thread pool
-        result = await asyncio.to_thread(
+        result = await asyncio.to_thread(  # type: ignore[attr-defined]
             _check_imap_sync,
             host,
             port,
@@ -40,7 +40,8 @@ async def check_imap_for_gps(
             folder,
             security,
         )
-        return result
+        # The result is already List[Dict[str, Any]] from _check_imap_sync
+        return result  # type: ignore[no-any-return]
 
     except Exception as e:
         _LOGGER.exception("Error checking IMAP: %s", str(e))
@@ -130,20 +131,30 @@ def _check_imap_sync(
         message_count = len(messages[0].split()) if messages and messages[0] else 0
         _LOGGER.debug("Found %d unread messages", message_count)
 
-        result = []
+        result: List[Dict[str, Any]] = []
         for num in messages[0].split():
             _LOGGER.debug("Processing message number: %s", num)
 
-            typ, data = mail.fetch(num, "(RFC822)")
+            typ, data = mail.fetch(num, "(RFC822)")  # type: ignore[assignment]
             if typ != "OK":
                 _LOGGER.debug("Failed to fetch message %s: %s", num, typ)
                 continue
 
-            if not data or not isinstance(data[0], tuple):
+            if not data:
+                _LOGGER.debug("No data for msg %s", num)
+                continue
+
+            # Check if data[0] is tuple before accessing
+            first_item = data[0]
+            if not isinstance(first_item, tuple):
                 _LOGGER.debug("Unexpected fetch data format for msg %s: %s", num, data)
                 continue
 
-            payload = data[0][1]
+            if len(first_item) < 2:  # type: ignore[unreachable]
+                _LOGGER.debug("Incomplete fetch data for msg %s", num)
+                continue
+
+            payload = first_item[1]
             if not isinstance(payload, (bytes, bytearray)):
                 _LOGGER.debug("Skipping non-bytes payload for msg %s", num)
                 continue
@@ -278,10 +289,10 @@ def _safe_decode_payload(payload: Any) -> str:
 
     # Fallback: assume bytes-like – try UTF-8 first and ignore errors.
     try:
-        return payload.decode("utf-8", errors="ignore")
+        return payload.decode("utf-8", errors="ignore")  # type: ignore[no-any-return]
     except Exception:  # pragma: no cover – extremely rare encodings
         try:
-            return payload.decode(errors="ignore")  # Use system default
+            return payload.decode(errors="ignore")  # type: ignore[no-any-return]
         except Exception:
             # As a last resort, repr() keeps us from crashing the loop.
             return repr(payload)

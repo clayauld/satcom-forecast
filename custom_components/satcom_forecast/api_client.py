@@ -31,7 +31,7 @@ class APIResponse:
 class APIError(Exception):
     """Custom exception for API-related errors."""
 
-    def __init__(self, message: str, error_info=None):
+    def __init__(self, message: str, error_info: Optional[Dict[str, Any]] = None):
         super().__init__(message)
         self.error_info = error_info
 
@@ -47,7 +47,7 @@ class WeatherGovAPIClient:
         retry_attempts: int = 3,
         retry_delay: float = 1.0,
         rate_limit_delay: float = 0.5,
-    ):
+    ) -> None:
         """
         Initialize the API client.
 
@@ -69,16 +69,16 @@ class WeatherGovAPIClient:
         self._session: Optional[aiohttp.ClientSession] = None
         self._last_request_time = 0.0
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "WeatherGovAPIClient":
         """Async context manager entry."""
         await self._ensure_session()
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Async context manager exit."""
         await self.close()
 
-    async def _ensure_session(self):
+    async def _ensure_session(self) -> None:
         """Ensure HTTP session is created."""
         if self._session is None or self._session.closed:
             timeout = aiohttp.ClientTimeout(total=self.timeout)
@@ -89,13 +89,13 @@ class WeatherGovAPIClient:
             }
             self._session = aiohttp.ClientSession(timeout=timeout, headers=headers)
 
-    async def close(self):
+    async def close(self) -> None:
         """Close the HTTP session."""
         if self._session and not self._session.closed:
             await self._session.close()
             self._session = None
 
-    async def _rate_limit(self):
+    async def _rate_limit(self) -> None:
         """Implement rate limiting between requests."""
         loop = asyncio.get_running_loop()
         current_time = loop.time()
@@ -122,6 +122,9 @@ class WeatherGovAPIClient:
         await self._ensure_session()
         await self._rate_limit()
 
+        if self._session is None:
+            raise APIError("Session not initialized")
+
         loop = asyncio.get_running_loop()
         start_time = loop.time()
 
@@ -130,6 +133,9 @@ class WeatherGovAPIClient:
                 _LOGGER.debug(
                     f"Making {method} request to {url} (attempt {attempt + 1})"
                 )
+
+                if self._session is None:
+                    raise APIError("Session not initialized")
 
                 async with self._session.request(method, url) as response:
                     response_time = loop.time() - start_time
@@ -374,26 +380,28 @@ class WeatherGovAPIClient:
         response = await self._make_request(url)
         data = self._validate_response(response)
 
-        _LOGGER.debug(f"Retrieved alerts data")
+        _LOGGER.debug("Retrieved alerts data")
         return data
 
 
 # Convenience functions for backward compatibility
 async def get_gridpoint(
-    lat: float, lon: float, **kwargs
+    lat: float, lon: float, **kwargs: Any
 ) -> Tuple[str, int, int, Optional[str]]:
     """Get grid point for coordinates using default client settings."""
     async with WeatherGovAPIClient(**kwargs) as client:
         return await client.get_gridpoint(lat, lon)
 
 
-async def get_forecast(office: str, grid_x: int, grid_y: int, **kwargs) -> dict:
+async def get_forecast(
+    office: str, grid_x: int, grid_y: int, **kwargs: Any
+) -> "Dict[Any, Any]":
     """Get forecast for grid point using default client settings."""
     async with WeatherGovAPIClient(**kwargs) as client:
         return await client.get_forecast(office, grid_x, grid_y)
 
 
-async def get_alerts(lat: float, lon: float, **kwargs) -> dict:
+async def get_alerts(lat: float, lon: float, **kwargs: Any) -> "Dict[Any, Any]":
     """Get alerts for coordinates using default client settings."""
     async with WeatherGovAPIClient(**kwargs) as client:
         return await client.get_alerts(lat, lon)

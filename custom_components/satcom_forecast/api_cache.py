@@ -6,12 +6,10 @@ and improve performance.
 """
 
 import asyncio
-import json
 import logging
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,7 +28,7 @@ class CacheEntry:
 class APICache:
     """Thread-safe cache for API responses."""
 
-    def __init__(self, max_size: int = 1000, default_ttl: int = 300):
+    def __init__(self, max_size: int = 1000, default_ttl: int = 300) -> None:
         """
         Initialize the cache.
 
@@ -44,7 +42,9 @@ class APICache:
         self._lock = asyncio.Lock()
         self._stats = {"hits": 0, "misses": 0, "evictions": 0, "total_requests": 0}
 
-    def _generate_key(self, endpoint: str, params: Dict[str, Any] = None) -> str:
+    def _generate_key(
+        self, endpoint: str, params: Optional[Dict[str, Any]] = None
+    ) -> str:
         """
         Generate a cache key for an API request.
 
@@ -74,7 +74,7 @@ class APICache:
         """
         return time.time() - entry.timestamp > entry.ttl
 
-    def _evict_lru(self):
+    def _evict_lru(self) -> None:
         """Evict least recently used entries."""
         if len(self._cache) < self.max_size:
             return
@@ -91,7 +91,9 @@ class APICache:
 
         _LOGGER.debug(f"Evicted {evict_count} cache entries")
 
-    async def get(self, endpoint: str, params: Dict[str, Any] = None) -> Optional[Any]:
+    async def get(
+        self, endpoint: str, params: Optional[Dict[str, Any]] = None
+    ) -> Optional[Any]:
         """
         Get data from cache.
 
@@ -131,7 +133,7 @@ class APICache:
         self,
         endpoint: str,
         data: Any,
-        params: Dict[str, Any] = None,
+        params: Optional[Dict[str, Any]] = None,
         ttl: Optional[int] = None,
     ) -> None:
         """
@@ -156,7 +158,9 @@ class APICache:
             self._cache[key] = entry
             _LOGGER.debug(f"Cached data for key: {key} (TTL: {ttl}s)")
 
-    async def delete(self, endpoint: str, params: Dict[str, Any] = None) -> bool:
+    async def delete(
+        self, endpoint: str, params: Optional[Dict[str, Any]] = None
+    ) -> bool:
         """
         Delete data from cache.
 
@@ -260,7 +264,7 @@ class APICache:
 class CacheManager:
     """Manages multiple caches for different data types."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._caches: Dict[str, APICache] = {}
         self._cleanup_task: Optional[asyncio.Task] = None
 
@@ -286,7 +290,7 @@ class CacheManager:
 
         return self._caches[cache_name]
 
-    async def start_cleanup_task(self, interval: int = 300):
+    async def start_cleanup_task(self, interval: int = 300) -> None:
         """
         Start background cleanup task.
 
@@ -296,7 +300,7 @@ class CacheManager:
         if self._cleanup_task and not self._cleanup_task.done():
             return
 
-        async def cleanup_loop():
+        async def cleanup_loop() -> None:
             while True:
                 try:
                     total_cleaned = 0
@@ -312,14 +316,14 @@ class CacheManager:
                     await asyncio.sleep(interval)
                 except asyncio.CancelledError:
                     break
-                except Exception as e:
+                except Exception:
                     _LOGGER.exception("Error in cache cleanup task")
                     await asyncio.sleep(interval)
 
         self._cleanup_task = asyncio.create_task(cleanup_loop())
         _LOGGER.info(f"Started cache cleanup task (interval: {interval}s)")
 
-    async def stop_cleanup_task(self):
+    async def stop_cleanup_task(self) -> None:
         """Stop background cleanup task."""
         if self._cleanup_task and not self._cleanup_task.done():
             self._cleanup_task.cancel()
@@ -329,7 +333,7 @@ class CacheManager:
                 pass
             _LOGGER.info("Stopped cache cleanup task")
 
-    async def clear_all_caches(self):
+    async def clear_all_caches(self) -> None:
         """Clear all caches."""
         for cache_name, cache in self._caches.items():
             await cache.clear()

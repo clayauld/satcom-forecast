@@ -1,26 +1,26 @@
 import logging
 import os
+from typing import Optional, Union
 
 import aiofiles
 import aiohttp
 from bs4 import BeautifulSoup
 
-# Try relative import first, fall back to absolute import for testing
-try:
-    from .forecast_parser import parse_forecast_periods
-except ImportError:
-    from forecast_parser import parse_forecast_periods
+from .forecast_parser import parse_forecast_periods
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def fetch_forecast(lat, lon, days=None):
+async def fetch_forecast(
+    lat: Union[float, str], lon: Union[float, str], days: Optional[int] = None
+) -> str:
     """Fetch NWS forecast for given coordinates using aiohttp.
 
     Args:
         lat: Latitude coordinate
         lon: Longitude coordinate
-        days: Number of days to include in forecast (1-7, None for all available)
+        days: Number of days to include in forecast
+              (1-7, None for all available)
     """
     url = (
         f"https://forecast.weather.gov/MapClick.php"
@@ -75,7 +75,7 @@ async def fetch_forecast(lat, lon, days=None):
 
         # Get the location and issue info
         location_info = forecast_div.find("font", size="3")
-        if location_info:
+        if location_info and hasattr(location_info, "get_text"):
             location_text = location_info.get_text().strip()
             forecast_text += location_text + "\n"
             _LOGGER.debug("Found location info: %s", location_text)
@@ -84,7 +84,7 @@ async def fetch_forecast(lat, lon, days=None):
 
         # Get the forecast periods using the new parser
         forecast_html = str(forecast_div)
-        periods = parse_forecast_periods(forecast_html, days)
+        periods = parse_forecast_periods(forecast_html, days if days is not None else 7)
 
         if periods:
             _LOGGER.debug("Successfully parsed %d forecast periods", len(periods))
@@ -99,7 +99,11 @@ async def fetch_forecast(lat, lon, days=None):
         _LOGGER.debug("Final forecast text length: %d characters", len(forecast_text))
         _LOGGER.debug(
             "Final forecast text preview: %s",
-            forecast_text[:200] + "..." if len(forecast_text) > 200 else forecast_text,
+            (
+                forecast_text[:200] + "..."
+                if len(forecast_text) > 200
+                else forecast_text
+            ),
         )
 
         # Optional: log raw output for debugging
@@ -125,6 +129,7 @@ async def fetch_forecast(lat, lon, days=None):
             async with aiofiles.open(log_path, "w", encoding="utf-8") as f:
                 await f.write(f"Error fetching forecast: {str(e)}\n")
             _LOGGER.debug("Error logged to: %s", log_path)
-        except Exception:
-            pass
+        except Exception as log_error:
+            # Gracefully handle logging failures
+            _LOGGER.debug("Could not write error log: %s", log_error)
         return f"NWS error: {str(e)}"

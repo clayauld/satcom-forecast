@@ -258,12 +258,19 @@ def infer_chance(event: str, forecast_text: str) -> int:
     for pattern in percent_patterns:
         matches = re.findall(pattern, forecast_text, re.IGNORECASE)
         for match in matches:
-            percent_val = int(match)
+            if not match:
+                continue
+            # Handle different match types from re.findall
+            if isinstance(match, tuple):
+                match_str = str(match[0])
+            else:
+                match_str = str(match)
+            percent_val = int(match_str)
             # Check if this percentage is associated with the current event
             # Look for the percentage in context with weather keywords
-            context_start = max(0, forecast_text.lower().find(match) - 100)
+            context_start = max(0, forecast_text.lower().find(match_str) - 100)
             context_end = min(
-                len(forecast_text), forecast_text.lower().find(match) + 100
+                len(forecast_text), forecast_text.lower().find(match_str) + 100
             )
             context = forecast_text[context_start:context_end].lower()
 
@@ -627,7 +634,7 @@ def format_compact_forecast(text: str) -> str:
     return final_result
 
 
-def summarize_forecast(text, days=None):
+def summarize_forecast(text: str, days: Optional[int] = None) -> str:
     """Summarize forecast text with weather events, temperatures, and wind info.
 
     Args:
@@ -686,7 +693,7 @@ def summarize_forecast(text, days=None):
         "smoke",
     ]
 
-    def short_period(period):
+    def short_period(period: str) -> str:
         """Shorten period names for brevity"""
         period = period.strip()
         if period == "This Afternoon":
@@ -714,7 +721,7 @@ def summarize_forecast(text, days=None):
         else:
             return period[:3]
 
-    def extract_temperature_info(forecast_text):
+    def extract_temperature_info(forecast_text: str) -> List[str]:
         """Extract high and low temperature information from forecast text."""
         temp_info = []
 
@@ -750,7 +757,7 @@ def summarize_forecast(text, days=None):
 
         return temp_info
 
-    def extract_wind_info(forecast_text):
+    def extract_wind_info(forecast_text: str) -> List[str]:
         """Extract wind direction and speed information from forecast text."""
 
         direction_map = {
@@ -765,7 +772,7 @@ def summarize_forecast(text, days=None):
             "variable": "VAR",
         }
 
-        def get_abbr(direction_word):
+        def get_abbr(direction_word: str) -> str:
             return direction_map.get(direction_word.lower(), direction_word.title()[:1])
 
         forecast_lower = forecast_text.lower()
@@ -856,7 +863,7 @@ def summarize_forecast(text, days=None):
 
         return []
 
-    def infer_chance(event, forecast_text):
+    def infer_chance(event: str, forecast_text: str) -> int:
         """Infer probability percentage for weather events, prioritizing explicit percentages when available."""
         forecast_lower = forecast_text.lower()
 
@@ -895,12 +902,19 @@ def summarize_forecast(text, days=None):
         for pattern in percent_patterns:
             matches = re.findall(pattern, forecast_text, re.IGNORECASE)
             for match in matches:
-                percent_val = int(match)
+                if not match:
+                    continue
+                # Handle different match types from re.findall
+                # re.findall returns strings when pattern has one group
+                match_str = (
+                    str(match) if not isinstance(match, tuple) else str(match[0])
+                )
+                percent_val = int(match_str)
                 # Check if this percentage is associated with the current event
                 # Look for the percentage in context with weather keywords
-                context_start = max(0, forecast_text.lower().find(match) - 100)
+                context_start = max(0, forecast_text.lower().find(match_str) - 100)
                 context_end = min(
-                    len(forecast_text), forecast_text.lower().find(match) + 100
+                    len(forecast_text), forecast_text.lower().find(match_str) + 100
                 )
                 context = forecast_text[context_start:context_end].lower()
 
@@ -1013,7 +1027,7 @@ def summarize_forecast(text, days=None):
         return 0
 
     # Dictionary to store events by period (consolidating day/night)
-    period_events_dict = {}
+    period_events_dict: Dict[str, List[str]] = {}
 
     event_name_map = {
         "rain": "Rn",
@@ -1159,7 +1173,7 @@ def summarize_forecast(text, days=None):
     return summary
 
 
-def get_email_body_from_subject(subject):
+def get_email_body_from_subject(subject: str) -> str:
     """
     Parses an email subject to extract the email body (coordinates and format).
     Example subjects:
@@ -1183,9 +1197,10 @@ def get_email_body_from_subject(subject):
             result = f"{lat},{lon}"
         _LOGGER.debug("Parsed subject to: %s", result)
         return result
-    else:
-        _LOGGER.debug("No coordinates found in subject")
-        return None
+
+    # Return empty string if no match found
+    _LOGGER.debug("No coordinates found in subject")
+    return ""
 
 
 def parse_forecast_periods(

@@ -6,8 +6,7 @@ the existing forecast parser and formatter.
 """
 
 import logging
-from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from . import weather_utils
 from .api_models import (
@@ -47,7 +46,7 @@ EVENT_NAME_MAP = {
 class APIDataProcessor:
     """Processes raw API data into structured format."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = _LOGGER
 
     def parse_forecast_periods(
@@ -171,14 +170,14 @@ class APIDataProcessor:
         Returns:
             Dictionary with precipitation information
         """
-        precip_info = {}
+        precip_info: Dict[str, Any] = {}
 
         if period.probability_of_precipitation is not None:
             precip_info["probability"] = period.probability_of_precipitation
 
         # Extract precipitation type from weather field
         if period.weather:
-            precip_types = []
+            precip_types: List[str] = []
             for weather_item in period.weather:
                 if "precipitation" in weather_item:
                     precip_types.append(weather_item["precipitation"])

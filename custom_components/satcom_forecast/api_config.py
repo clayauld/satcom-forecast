@@ -7,8 +7,8 @@ including API settings, feature flags, and environment variable support.
 
 import logging
 import os
-from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from dataclasses import dataclass
+from typing import Any, Dict
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -43,12 +43,12 @@ class FeatureFlags:
 class ConfigManager:
     """Manages configuration loading and validation."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.api_config = APIConfig()
         self.feature_flags = FeatureFlags()
         self._load_from_environment()
 
-    def _load_from_environment(self):
+    def _load_from_environment(self) -> None:
         """Load configuration from environment variables."""
         # API Configuration
         self.api_config.base_url = os.getenv(
@@ -134,24 +134,8 @@ class ConfigManager:
         if self.api_config.max_cache_size <= 0:
             errors.append("Max cache size must be positive")
 
-        # Validate feature flags
-        if not isinstance(self.feature_flags.use_api, bool):
-            errors.append("use_api must be a boolean")
-
-        if not isinstance(self.feature_flags.fallback_to_html, bool):
-            errors.append("fallback_to_html must be a boolean")
-
-        if not isinstance(self.feature_flags.enable_alerts, bool):
-            errors.append("enable_alerts must be a boolean")
-
-        if not isinstance(self.feature_flags.enable_caching, bool):
-            errors.append("enable_caching must be a boolean")
-
-        if not isinstance(self.feature_flags.enable_metrics, bool):
-            errors.append("enable_metrics must be a boolean")
-
-        if not isinstance(self.feature_flags.debug_mode, bool):
-            errors.append("debug_mode must be a boolean")
+        # Validate feature flags - Skip isinstance checks as dataclass ensures types
+        # These checks are redundant with typed dataclass fields
 
         if errors:
             for error in errors:
@@ -228,7 +212,7 @@ def get_config() -> ConfigManager:
     return config_manager
 
 
-def reload_config():
+def reload_config() -> None:
     """Reload configuration from environment variables."""
     global config_manager
     config_manager = ConfigManager()

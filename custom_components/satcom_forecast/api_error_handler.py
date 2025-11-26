@@ -13,7 +13,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -151,7 +151,8 @@ class ErrorHandler:
         message = str(exception)
 
         # Determine category and severity
-        # Check TimeoutError before OSError since both asyncio.TimeoutError and built-in TimeoutError inherit from OSError in Python 3.11+
+        # Check TimeoutError before OSError since asyncio.TimeoutError
+        # and built-in TimeoutError inherit from OSError in Python 3.11+
         if isinstance(exception, (asyncio.TimeoutError, builtins.TimeoutError)):
             category = ErrorCategory.TIMEOUT_ERROR
             severity = ErrorSeverity.MEDIUM
@@ -260,7 +261,8 @@ class ErrorHandler:
             delay = self._calculate_delay(context.retry_count)
 
             _LOGGER.warning(
-                f"Retrying {context.operation} in {delay:.2f}s (attempt {context.retry_count}/{self.max_retries})"
+                f"Retrying {context.operation} in {delay:.2f}s "
+                f"(attempt {context.retry_count}/{self.max_retries})"
             )
             await asyncio.sleep(delay)
 
@@ -281,29 +283,33 @@ class ErrorHandler:
 
         # All options exhausted, raise error
         raise APIError(
-            f"Operation {context.operation} failed after {context.retry_count} retries: {error_info.message}",
+            f"Operation {context.operation} failed after "
+            f"{context.retry_count} retries: {error_info.message}",
             error_info,
         )
 
     def _calculate_delay(self, retry_count: int) -> float:
         """Calculate delay for retry with exponential backoff and jitter."""
         delay = min(
-            self.base_delay * (self.backoff_factor ** (retry_count - 1)), self.max_delay
+            self.base_delay * (self.backoff_factor ** (retry_count - 1)),
+            self.max_delay,
         )
 
         if self.jitter:
             # Add random jitter (±25%)
-            jitter_factor = random.uniform(0.75, 1.25)
+            # Using random.uniform is acceptable for jitter
+            jitter_factor = random.uniform(0.75, 1.25)  # nosec B311
             delay *= jitter_factor
 
         return delay
 
-    def _log_error(self, error_info: ErrorInfo):
+    def _log_error(self, error_info: ErrorInfo) -> None:
         """Log error with appropriate level based on severity."""
         context = error_info.context
         log_message = (
             f"Error in {context.operation}: {error_info.message} "
-            f"(Category: {error_info.category.value}, Severity: {error_info.severity.value})"
+            f"(Category: {error_info.category.value}, "
+            f"Severity: {error_info.severity.value})"
         )
 
         if error_info.severity == ErrorSeverity.CRITICAL:
@@ -323,9 +329,9 @@ class ErrorHandler:
         total_errors = sum(self.error_stats.values())
         recent_errors = len(
             [
-                e
-                for e in self.error_history
-                if e.context.timestamp > datetime.now() - timedelta(hours=1)
+                err
+                for err in self.error_history
+                if err.context.timestamp > datetime.now() - timedelta(hours=1)
             ]
         )
 
@@ -339,7 +345,7 @@ class ErrorHandler:
 
     def _get_category_stats(self) -> Dict[str, int]:
         """Get error statistics by category."""
-        categories = {}
+        categories: Dict[str, int] = {}
         for error in self.error_history:
             category = error.category.value
             categories[category] = categories.get(category, 0) + 1
@@ -347,18 +353,18 @@ class ErrorHandler:
 
     def _get_severity_stats(self) -> Dict[str, int]:
         """Get error statistics by severity."""
-        severities = {}
-        for error in self.error_history:
-            severity = error.severity.value
+        severities: Dict[str, int] = {}
+        for err in self.error_history:
+            severity = err.severity.value
             severities[severity] = severities.get(severity, 0) + 1
         return severities
 
     def get_recent_errors(self, hours: int = 24) -> List[ErrorInfo]:
         """Get recent errors within specified hours."""
         cutoff = datetime.now() - timedelta(hours=hours)
-        return [e for e in self.error_history if e.context.timestamp > cutoff]
+        return [err for err in self.error_history if err.context.timestamp > cutoff]
 
-    def clear_error_history(self):
+    def clear_error_history(self) -> None:
         """Clear error history and statistics."""
         self.error_stats.clear()
         self.error_history.clear()
@@ -387,10 +393,10 @@ class CircuitBreaker:
         self.expected_exception = expected_exception
 
         self.failure_count = 0
-        self.last_failure_time = None
+        self.last_failure_time: Optional[float] = None
         self.state = "CLOSED"  # CLOSED, OPEN, HALF_OPEN
 
-    async def call(self, func: Callable, *args, **kwargs) -> Any:
+    async def call(self, func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
         """
         Execute function with circuit breaker protection.
 
@@ -415,8 +421,9 @@ class CircuitBreaker:
             result = await func(*args, **kwargs)
             self._on_success()
             return result
-        except self.expected_exception as e:
-            self._on_failure()
+        except Exception as e:
+            if isinstance(e, self.expected_exception):
+                self._on_failure()
             raise
 
     def _should_attempt_reset(self) -> bool:
@@ -425,12 +432,12 @@ class CircuitBreaker:
             return True
         return time.time() - self.last_failure_time >= self.recovery_timeout
 
-    def _on_success(self):
+    def _on_success(self) -> None:
         """Handle successful call."""
         self.failure_count = 0
         self.state = "CLOSED"
 
-    def _on_failure(self):
+    def _on_failure(self) -> None:
         """Handle failed call."""
         self.failure_count += 1
         self.last_failure_time = time.time()

@@ -5,7 +5,6 @@ This module defines data models for API responses and forecast data structures.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 
@@ -167,7 +166,10 @@ def create_forecast_period_from_api(period_data: Dict[str, Any]) -> ForecastPeri
 
 
 def create_weather_event(
-    event_type: str, probability: int, description: str, keywords: List[str] = None
+    event_type: str,
+    probability: int,
+    description: str,
+    keywords: Optional[List[str]] = None,
 ) -> WeatherEvent:
     """
     Create a WeatherEvent with appropriate severity.

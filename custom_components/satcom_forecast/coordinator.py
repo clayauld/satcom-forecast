@@ -31,11 +31,11 @@ if TYPE_CHECKING:
 else:  # Runtime import with graceful fallback
     try:
         from homeassistant.helpers.update_coordinator import (
-            DataUpdateCoordinator as DataUpdateCoordinatorBase,  # type: ignore
+            DataUpdateCoordinator as DataUpdateCoordinatorBase,
         )
     except ImportError:  # pragma: no cover
 
-        class DataUpdateCoordinatorBase:  # type: ignore
+        class DataUpdateCoordinatorBase:
             """Lightweight stub used when Home-Assistant is absent."""
 
             def __init__(
@@ -55,12 +55,15 @@ else:  # Runtime import with graceful fallback
 
 
 # Re-export under the public name expected by the rest of the module.
-DataUpdateCoordinator = DataUpdateCoordinatorBase  # type: ignore[var-annotated]
+if TYPE_CHECKING:
+    DataUpdateCoordinator = DataUpdateCoordinatorBase
+else:
+    DataUpdateCoordinator = DataUpdateCoordinatorBase  # type: ignore[misc,assignment,valid-type]
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class SatcomForecastCoordinator(DataUpdateCoordinator):
+class SatcomForecastCoordinator(DataUpdateCoordinatorBase):  # type: ignore[misc,valid-type]
     """Periodically polls an IMAP inbox for GPS requests and dispatches NWS
     forecasts back to the requesting sender.
     """
@@ -161,7 +164,7 @@ class SatcomForecastCoordinator(DataUpdateCoordinator):
                     )
                     _LOGGER.debug("Formatting forecast using format: %s", format_type)
 
-                    forecast = format_forecast(forecast_text, format_type, days)
+                    forecast = format_forecast(forecast_text, str(format_type), days)
                     _LOGGER.debug(
                         "Forecast formatted successfully, length: %d characters",
                         len(forecast),

@@ -10,10 +10,9 @@ import logging
 import re
 from typing import List, Optional
 
-_LOGGER = logging.getLogger(__name__)
+from .api_models import ForecastPeriod
 
-# Import ForecastPeriod after defining EVENT_TYPES to avoid circular import
-# This will be imported at the end of this section
+_LOGGER = logging.getLogger(__name__)
 
 # Weather event types and their keywords (ported from forecast_parser.py)
 EVENT_TYPES = {
@@ -46,9 +45,6 @@ EVENT_TYPES = {
     "high wind warning": ["high wind warning"],
     "flood warning": ["flood warning", "flash flood warning"],
 }
-
-# Now import ForecastPeriod
-from .api_models import ForecastPeriod
 
 
 def check_significant_wind(period: ForecastPeriod) -> bool:

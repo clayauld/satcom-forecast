@@ -5,7 +5,6 @@ This module provides a hybrid forecast fetcher that can use either the Weather.g
 or fall back to HTML scraping, with comprehensive error handling and caching.
 """
 
-import asyncio
 import logging
 from typing import Any, Dict, Optional, Tuple
 
@@ -14,7 +13,7 @@ from .api_cache import get_forecast_cache, get_gridpoint_cache
 from .api_client import APIError, WeatherGovAPIClient
 from .api_config import get_config, is_api_enabled, is_fallback_enabled
 from .api_data_processor import APIDataProcessor
-from .api_models import ForecastData, ProcessedForecast
+from .api_models import ForecastData
 
 # Import existing HTML fetcher for fallback
 from .forecast_fetcher import fetch_forecast as fetch_forecast_html
@@ -25,7 +24,7 @@ _LOGGER = logging.getLogger(__name__)
 class ForecastFetcherAPI:
     """Enhanced forecast fetcher with API support and fallback capabilities."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.config = get_config()
         self.data_processor = APIDataProcessor()
         self.gridpoint_cache = get_gridpoint_cache()
@@ -167,7 +166,7 @@ class ForecastFetcherAPI:
 
         if cached_data:
             _LOGGER.debug("Using cached forecast data")
-            return cached_data
+            return cached_data  # type: ignore[no-any-return]
 
         # Fetch from API
         api_config = self.config.get_api_config_dict()
@@ -272,7 +271,7 @@ class ForecastFetcherAPI:
             "forecast_cache": self.forecast_cache.get_stats(),
         }
 
-    async def clear_caches(self):
+    async def clear_caches(self) -> None:
         """Clear all caches."""
         await self.gridpoint_cache.clear()
         await self.forecast_cache.clear()

@@ -8,7 +8,7 @@ results to the existing HTML-based formatter.
 import logging
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from . import weather_utils
 from .api_data_processor import EVENT_NAME_MAP
@@ -31,7 +31,7 @@ class FormattingResult:
 class APIFormatter:
     """Formats API data into Summary, Compact, and Full formats."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = _LOGGER
 
     def format_forecast(
@@ -136,17 +136,6 @@ class APIFormatter:
         filtered_periods = weather_utils.filter_periods_by_days(periods, days)
 
         result = []
-        extreme_events = [
-            "blizzard",
-            "ice storm",
-            "tornado",
-            "hurricane",
-            "severe thunderstorm",
-            "high wind warning",
-            "flood warning",
-            "dense fog",
-            "smoke",
-        ]
 
         for period in filtered_periods:
             try:
@@ -237,29 +226,18 @@ class APIFormatter:
         filtered_periods = weather_utils.filter_periods_by_days(periods, days)
 
         # Group events by period
-        period_events_dict = {}
-        extreme_events = [
-            "blizzard",
-            "ice storm",
-            "tornado",
-            "hurricane",
-            "severe thunderstorm",
-            "high wind warning",
-            "flood warning",
-            "dense fog",
-            "smoke",
-        ]
+        period_events_dict: Dict[str, List[str]] = {}
 
         for period in filtered_periods:
             # Detect events for this period
-            period_events = self._detect_period_events(period, events)
+            current_period_events = self._detect_period_events(period, events)
 
             # Extract temperature and wind info
             temp_info = weather_utils.extract_temperature_info(period)
             wind_info = weather_utils.extract_wind_info(period)
 
             # Combine all information
-            all_info = period_events + temp_info + wind_info
+            all_info = current_period_events + temp_info + wind_info
 
             if all_info:
                 # Get base period name
@@ -274,10 +252,10 @@ class APIFormatter:
                 period_events_dict[short_period_name] = all_info
 
         # Convert to list format
-        period_events = []
-        for period, events_list in period_events_dict.items():
+        period_events: List[str] = []
+        for period_name, events_list in period_events_dict.items():
             if events_list:
-                period_events.append(f"{period}: {','.join(events_list)}")
+                period_events.append(f"{period_name}: {','.join(events_list)}")
 
         # Join with newlines
         summary = "\n".join(period_events)

@@ -7,14 +7,14 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def send_forecast_email(
-    smtp_host,
-    smtp_port,
-    smtp_user,
-    smtp_pass,
-    to_email,
-    forecast_text,
-    subject="NWS Forecast Update",
-):
+    smtp_host: str,
+    smtp_port: int,
+    smtp_user: str,
+    smtp_pass: str,
+    to_email: str,
+    forecast_text: str,
+    subject: str = "NWS Forecast Update",
+) -> bool:
     _LOGGER.debug(
         "Preparing to send forecast email - SMTP: %s:%s, From: %s, To: %s, Subject: %s",
         smtp_host,
@@ -27,7 +27,7 @@ async def send_forecast_email(
 
     try:
         # Run the synchronous SMTP operation in a thread pool
-        result = await asyncio.to_thread(
+        result = await asyncio.to_thread(  # type: ignore[attr-defined]
             _send_email_sync,
             smtp_host,
             smtp_port,
@@ -40,7 +40,7 @@ async def send_forecast_email(
 
         if result:
             _LOGGER.info("Forecast sent to %s", to_email)
-        return result
+        return bool(result)
 
     except Exception as e:
         _LOGGER.exception("Failed to send forecast email: %s", str(e))
@@ -55,8 +55,14 @@ async def send_forecast_email(
 
 
 def _send_email_sync(
-    smtp_host, smtp_port, smtp_user, smtp_pass, to_email, forecast_text, subject
-):
+    smtp_host: str,
+    smtp_port: int,
+    smtp_user: str,
+    smtp_pass: str,
+    to_email: str,
+    forecast_text: str,
+    subject: str,
+) -> bool:
     """Synchronous SMTP email sending function to be run in thread pool."""
     try:
         msg = EmailMessage()
