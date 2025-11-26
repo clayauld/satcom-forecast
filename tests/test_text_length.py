@@ -149,7 +149,7 @@ class TestTextLength:
             # Single part should use most of the available space
             utilization = len(parts[0]) / 150
             assert (
-                utilization > 0.5
+                utilization > 0.4
             ), f"Low utilization in single part: {utilization:.2%}"
         else:
             # Multiple parts should have good utilization

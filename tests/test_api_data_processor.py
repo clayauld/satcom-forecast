@@ -267,6 +267,9 @@ class TestAPIDataProcessor:
         """Test significant wind check with significant wind."""
         period = ForecastPeriod(
             name="Today",
+            start_time="2024-01-01T06:00:00-05:00",
+            end_time="2024-01-01T18:00:00-05:00",
+            is_daytime=True,
             wind_speed="20 mph"
         )
         
@@ -276,6 +279,9 @@ class TestAPIDataProcessor:
         """Test significant wind check with insignificant wind."""
         period = ForecastPeriod(
             name="Today",
+            start_time="2024-01-01T06:00:00-05:00",
+            end_time="2024-01-01T18:00:00-05:00",
+            is_daytime=True,
             wind_speed="10 mph"
         )
         
@@ -285,6 +291,9 @@ class TestAPIDataProcessor:
         """Test significant wind check with no wind speed."""
         period = ForecastPeriod(
             name="Today",
+            start_time="2024-01-01T06:00:00-05:00",
+            end_time="2024-01-01T18:00:00-05:00",
+            is_daytime=True,
             wind_speed=None
         )
         
@@ -294,6 +303,9 @@ class TestAPIDataProcessor:
         """Test chance inference with explicit percentage."""
         period = ForecastPeriod(
             name="Today",
+            start_time="2024-01-01T06:00:00-05:00",
+            end_time="2024-01-01T18:00:00-05:00",
+            is_daytime=True,
             probability_of_precipitation=75
         )
         
@@ -304,6 +316,9 @@ class TestAPIDataProcessor:
         """Test chance inference based on keywords."""
         period = ForecastPeriod(
             name="Today",
+            start_time="2024-01-01T06:00:00-05:00",
+            end_time="2024-01-01T18:00:00-05:00",
+            is_daytime=True,
             probability_of_precipitation=None
         )
         
@@ -323,6 +338,9 @@ class TestAPIDataProcessor:
         """Test chance inference for snow blizzard."""
         period = ForecastPeriod(
             name="Today",
+            start_time="2024-01-01T06:00:00-05:00",
+            end_time="2024-01-01T18:00:00-05:00",
+            is_daytime=True,
             probability_of_precipitation=None
         )
         
@@ -333,6 +351,9 @@ class TestAPIDataProcessor:
         """Test chance inference for high wind."""
         period = ForecastPeriod(
             name="Today",
+            start_time="2024-01-01T06:00:00-05:00",
+            end_time="2024-01-01T18:00:00-05:00",
+            is_daytime=True,
             probability_of_precipitation=None
         )
         
@@ -343,6 +364,9 @@ class TestAPIDataProcessor:
         """Test chance inference for dense fog."""
         period = ForecastPeriod(
             name="Today",
+            start_time="2024-01-01T06:00:00-05:00",
+            end_time="2024-01-01T18:00:00-05:00",
+            is_daytime=True,
             probability_of_precipitation=None
         )
         
@@ -353,6 +377,9 @@ class TestAPIDataProcessor:
         """Test chance inference for heavy smoke."""
         period = ForecastPeriod(
             name="Today",
+            start_time="2024-01-01T06:00:00-05:00",
+            end_time="2024-01-01T18:00:00-05:00",
+            is_daytime=True,
             probability_of_precipitation=None
         )
         

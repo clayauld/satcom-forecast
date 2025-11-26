@@ -18,37 +18,37 @@ help:
 # Run all tests
 test:
 	@echo "🧪 Running SatCom Forecast Test Suite..."
-	cd tests && python3 run_tests.py
+	pytest --cov=custom_components/satcom_forecast
 
 # Run all tests with verbose output
 test-all:
 	@echo "🧪 Running SatCom Forecast Test Suite (Verbose)..."
-	cd tests && python3 run_tests.py
+	pytest -v --cov=custom_components/satcom_forecast
 
 # Run individual tests
 test-structure:
 	@echo "🔍 Testing integration structure..."
-	cd tests && python3 test_integration_structure.py
+	pytest tests/test_integration_structure.py -v
 
 test-reconfig:
 	@echo "⚙️  Testing reconfiguration functionality..."
-	cd tests && python3 test_reconfiguration.py
+	pytest tests/test_reconfiguration.py -v
 
 test-core:
 	@echo "🧪 Testing core functionality..."
-	cd tests && python3 test_core_functionality.py
+	pytest tests/test_core_functionality.py -v
 
 test-multi:
 	@echo "🌍 Testing multi-region functionality..."
-	cd tests && python3 test_multi_region.py
+	pytest tests/test_multi_region.py -v
 
 test-weather:
 	@echo "🌦️  Testing weather detection..."
-	cd tests && python3 test_weather_detection.py
+	pytest tests/test_weather_detection.py -v
 
 test-summary:
 	@echo "📝 Testing summary length..."
-	cd tests && python3 test_summary_length.py
+	pytest tests/test_summary_length.py -v
 
 # Run linting
 lint:

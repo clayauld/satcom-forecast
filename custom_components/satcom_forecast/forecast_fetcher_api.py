@@ -49,10 +49,10 @@ class ForecastFetcherAPI:
         
         try:
             # Get grid point information
-            office, grid_x, grid_y = await self._get_gridpoint(lat, lon)
+            office, grid_x, grid_y, forecast_url = await self._get_gridpoint(lat, lon)
             
             # Get forecast data
-            forecast_data = await self._get_forecast(office, grid_x, grid_y)
+            forecast_data = await self._get_forecast(office, grid_x, grid_y, forecast_url)
             
             # Process the forecast data
             processed_data = self.data_processor.process_forecast_data(forecast_data)
@@ -112,41 +112,31 @@ class ForecastFetcherAPI:
             _LOGGER.debug("Using HTML scraping mode")
             return await fetch_forecast_html(lat, lon, days)
             
-    async def _get_gridpoint(self, lat: float, lon: float) -> Tuple[str, int, int]:
-        """
-        Get grid point information for coordinates.
-        
-        Args:
-            lat: Latitude coordinate
-            lon: Longitude coordinate
-            
-        Returns:
-            Tuple of (office, grid_x, grid_y)
-        """
-        # Check cache first
+    async def _get_gridpoint(self, lat: float, lon: float) -> Tuple[str, int, int, Optional[str]]:
+        """Get grid point from cache or API."""
         cache_key = f"gridpoint_{lat}_{lon}"
         cached_data = await self.gridpoint_cache.get(cache_key)
-        
         if cached_data:
-            _LOGGER.debug("Using cached grid point data")
-            return cached_data['office'], cached_data['grid_x'], cached_data['grid_y']
+            _LOGGER.debug(f"Using cached grid point for {lat}, {lon}")
+            return cached_data['office'], cached_data['grid_x'], cached_data['grid_y'], cached_data.get('forecast_url')
             
         # Fetch from API
         api_config = self.config.get_api_config_dict()
         async with WeatherGovAPIClient(**api_config) as client:
-            office, grid_x, grid_y = await client.get_gridpoint(lat, lon)
+            office, grid_x, grid_y, forecast_url = await client.get_gridpoint(lat, lon)
             
         # Cache the result
         cache_data = {
             'office': office,
             'grid_x': grid_x,
-            'grid_y': grid_y
+            'grid_y': grid_y,
+            'forecast_url': forecast_url
         }
         await self.gridpoint_cache.set(cache_key, cache_data)
         
-        return office, grid_x, grid_y
+        return office, grid_x, grid_y, forecast_url
         
-    async def _get_forecast(self, office: str, grid_x: int, grid_y: int) -> Dict[str, Any]:
+    async def _get_forecast(self, office: str, grid_x: int, grid_y: int, forecast_url: Optional[str] = None) -> Dict[str, Any]:
         """
         Get forecast data for a grid point.
         
@@ -154,6 +144,7 @@ class ForecastFetcherAPI:
             office: NWS office code
             grid_x: Grid X coordinate
             grid_y: Grid Y coordinate
+            forecast_url: Optional direct URL to the forecast endpoint.
             
         Returns:
             Forecast data dictionary
@@ -169,7 +160,7 @@ class ForecastFetcherAPI:
         # Fetch from API
         api_config = self.config.get_api_config_dict()
         async with WeatherGovAPIClient(**api_config) as client:
-            forecast_data = await client.get_forecast(office, grid_x, grid_y)
+            forecast_data = await client.get_forecast(office, grid_x, grid_y, forecast_url)
             
         # Cache the result
         await self.forecast_cache.set(cache_key, forecast_data)
@@ -216,24 +207,44 @@ class ForecastFetcherAPI:
         Returns:
             Filtered list of periods
         """
-        if days is None or days <= 0:
-            return periods
-            
-        # Group periods by day
-        day_groups = {}
-        for period in periods:
-            day_name = self._get_day_name(period.name)
-            if day_name not in day_groups:
-                day_groups[day_name] = []
-            day_groups[day_name].append(period)
-            
-        # Select the first N days
-        selected_days = list(day_groups.keys())[:days]
-        filtered_periods = []
+        # Handle days parameter
+        # days=0 means "Today" (current day)
+        # days=1 means "Today + Tomorrow" (current day + 1 day)
+        # So we want to select (days + 1) days
         
-        for day in selected_days:
-            filtered_periods.extend(day_groups[day])
+        _LOGGER.debug(f"_filter_periods_by_days input days: {days}")
+        
+        target_days = 1
+        if days is not None:
+            # Ensure non-negative
+            days_val = max(0, days)
+            target_days = days_val + 1
             
+        _LOGGER.debug(f"Calculated target_days: {target_days}")
+            
+        filtered_periods = []
+        current_day_index = 0
+        
+        # Track if the previous period was a night period
+        # We initialize to False, but we handle the first period specially if needed
+        is_previous_night = False
+        
+        for i, period in enumerate(periods):
+            # Check if we are transitioning from Night to Day
+            # This marks the start of a new day (except for the very first period)
+            if i > 0 and period.is_daytime and is_previous_night:
+                current_day_index += 1
+                
+            # If we've reached the target number of days, stop
+            if current_day_index >= target_days:
+                break
+                
+            filtered_periods.append(period)
+            
+            # Update previous night status for next iteration
+            is_previous_night = not period.is_daytime
+            
+        _LOGGER.debug(f"Returning {len(filtered_periods)} filtered periods (covered {current_day_index + (1 if filtered_periods else 0)} days)")
         return filtered_periods
         
     def _get_day_name(self, period_name: str) -> str:
@@ -268,17 +279,18 @@ class ForecastFetcherAPI:
             True if coordinates are valid
         """
         try:
-            if not isinstance(lat, (int, float)) or not isinstance(lon, (int, float)):
+            # Attempt to convert to float to handle string inputs
+            lat_float = float(lat)
+            lon_float = float(lon)
+            
+            if not (-90 <= lat_float <= 90):
                 return False
                 
-            if not (-90 <= lat <= 90):
-                return False
-                
-            if not (-180 <= lon <= 180):
+            if not (-180 <= lon_float <= 180):
                 return False
                 
             return True
-        except Exception:
+        except (ValueError, TypeError):
             return False
             
     async def get_cache_stats(self) -> Dict[str, Any]:
@@ -340,7 +352,10 @@ async def fetch_forecast(lat: float, lon: float, days: Optional[int] = None) -> 
         return f"NWS error: Invalid coordinates {lat}, {lon}"
         
     try:
-        return await fetcher.fetch_forecast_hybrid(lat, lon, days, mode='auto')
+        # Convert coordinates to float
+        lat_float = float(lat)
+        lon_float = float(lon)
+        return await fetcher.fetch_forecast_hybrid(lat_float, lon_float, days, mode='auto')
     except Exception as e:
         _LOGGER.error(f"Forecast fetch failed: {e}")
         return f"NWS error: {str(e)}"

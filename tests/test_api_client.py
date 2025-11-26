@@ -81,7 +81,7 @@ class TestWeatherGovAPIClient:
             client._validate_response(response)
         
         response = APIResponse(success=True, data={"invalid": "structure"})
-        with pytest.raises(APIError, match="Missing 'properties' in API response"):
+        with pytest.raises(APIError, match="Missing 'properties' or 'features' in API response"):
             client._validate_response(response)
     
     @pytest.mark.asyncio
@@ -100,11 +100,12 @@ class TestWeatherGovAPIClient:
         )
         
         with patch.object(client, '_make_request', return_value=mock_response):
-            office, grid_x, grid_y = await client.get_gridpoint(40.7128, -74.0060)
+            office, grid_x, grid_y, forecast_url = await client.get_gridpoint(40.7128, -74.0060)
             
             assert office == "OKX"
             assert grid_x == 32
             assert grid_y == 34
+            assert forecast_url is None
     
     @pytest.mark.asyncio
     async def test_get_gridpoint_missing_field(self, client):
@@ -198,7 +199,10 @@ class TestWeatherGovAPIClient:
         mock_response.status = 200
         mock_response.json = AsyncMock(return_value={"test": "data"})
         
-        mock_session.request.return_value.__aenter__.return_value = mock_response
+        # session.request returns a context manager, not a coroutine
+        mock_session.request = Mock()
+        mock_session.request.return_value.__aenter__ = AsyncMock(return_value=mock_response)
+        mock_session.request.return_value.__aexit__ = AsyncMock(return_value=None)
         
         with patch('aiohttp.ClientSession', return_value=mock_session):
             await client._ensure_session()
@@ -216,7 +220,10 @@ class TestWeatherGovAPIClient:
         mock_response.status = 404
         mock_response.text = AsyncMock(return_value="Not Found")
         
-        mock_session.request.return_value.__aenter__.return_value = mock_response
+        # session.request returns a context manager
+        mock_session.request = Mock()
+        mock_session.request.return_value.__aenter__ = AsyncMock(return_value=mock_response)
+        mock_session.request.return_value.__aexit__ = AsyncMock(return_value=None)
         
         with patch('aiohttp.ClientSession', return_value=mock_session):
             await client._ensure_session()
@@ -231,7 +238,9 @@ class TestWeatherGovAPIClient:
         """Test HTTP request with timeout."""
         with patch('aiohttp.ClientSession') as mock_session_class:
             mock_session = AsyncMock()
-            mock_session.request.side_effect = asyncio.TimeoutError()
+            mock_session.request = Mock()
+            mock_session.request.return_value.__aenter__ = AsyncMock(side_effect=asyncio.TimeoutError())
+            mock_session.request.return_value.__aexit__ = AsyncMock(return_value=None)
             mock_session_class.return_value = mock_session
             
             await client._ensure_session()
@@ -253,10 +262,12 @@ class TestWeatherGovAPIClient:
         mock_response_200.status = 200
         mock_response_200.json = AsyncMock(return_value={"test": "data"})
         
-        mock_session.request.return_value.__aenter__.side_effect = [
+        mock_session.request = Mock()
+        mock_session.request.return_value.__aenter__ = AsyncMock(side_effect=[
             mock_response_500,
             mock_response_200
-        ]
+        ])
+        mock_session.request.return_value.__aexit__ = AsyncMock(return_value=None)
         
         with patch('aiohttp.ClientSession', return_value=mock_session):
             await client._ensure_session()
@@ -278,7 +289,11 @@ class TestWeatherGovAPIClient:
         mock_response = AsyncMock()
         mock_response.status = 200
         mock_response.json = AsyncMock(return_value={"test": "data"})
-        mock_session.request.return_value.__aenter__.return_value = mock_response
+        mock_response.json = AsyncMock(return_value={"test": "data"})
+        
+        mock_session.request = Mock()
+        mock_session.request.return_value.__aenter__ = AsyncMock(return_value=mock_response)
+        mock_session.request.return_value.__aexit__ = AsyncMock(return_value=None)
         
         with patch('aiohttp.ClientSession', return_value=mock_session):
             await client._ensure_session()
@@ -296,6 +311,8 @@ class TestWeatherGovAPIClient:
         """Test client as context manager."""
         with patch('aiohttp.ClientSession') as mock_session_class:
             mock_session = AsyncMock()
+            mock_session.closed = False
+            mock_session.close = AsyncMock()
             mock_session_class.return_value = mock_session
             
             async with client as ctx_client:
@@ -310,6 +327,8 @@ class TestWeatherGovAPIClient:
         """Test manual session close."""
         with patch('aiohttp.ClientSession') as mock_session_class:
             mock_session = AsyncMock()
+            mock_session.closed = False
+            mock_session.close = AsyncMock()
             mock_session_class.return_value = mock_session
             
             await client._ensure_session()

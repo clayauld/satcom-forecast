@@ -9,7 +9,7 @@ import asyncio
 import json
 import logging
 import time
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, List
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 

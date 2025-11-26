@@ -59,6 +59,42 @@ event_name_map = {
 }
 
 
+# Define valid period names including holidays
+VALID_PERIOD_NAMES = [
+    "This Afternoon",
+    "Today",
+    "Tonight",
+    "Overnight",
+    "Monday",
+    "Monday Night",
+    "Tuesday",
+    "Tuesday Night",
+    "Wednesday",
+    "Wednesday Night",
+    "Thursday",
+    "Thursday Night",
+    "Friday",
+    "Friday Night",
+    "Saturday",
+    "Saturday Night",
+    "Sunday",
+    "Sunday Night",
+    # Holidays
+    "New Year's Day",
+    "Martin Luther King Jr. Day",
+    "M.L. King Day",
+    "Washington's Birthday",
+    "Presidents' Day",
+    "Memorial Day",
+    "Juneteenth",
+    "Independence Day",
+    "Labor Day",
+    "Columbus Day",
+    "Veterans Day",
+    "Thanksgiving Day",
+    "Christmas Day",
+]
+
 def format_forecast(
     forecast_text: str, mode: str = "summary", days: Optional[int] = None
 ) -> str:
@@ -90,26 +126,8 @@ def clean_forecast_text(text: str) -> str:
     _LOGGER.debug("Cleaning forecast text, input length: %d characters", len(text))
 
     # Ensure every period label starts on a new line (except at the start)
-    period_labels = [
-        "This Afternoon:",
-        "Today:",
-        "Tonight:",
-        "Overnight:",
-        "Monday:",
-        "Monday Night:",
-        "Tuesday:",
-        "Tuesday Night:",
-        "Wednesday:",
-        "Wednesday Night:",
-        "Thursday:",
-        "Thursday Night:",
-        "Friday:",
-        "Friday Night:",
-        "Saturday:",
-        "Saturday Night:",
-        "Sunday:",
-        "Sunday Night:",
-    ]
+    period_labels = [label + ":" for label in VALID_PERIOD_NAMES]
+    
     # Insert newline before each period label (except at the start of the text)
     for label in period_labels:
         # Replace any occurrence of the label (not at the start) with newline + label
@@ -128,30 +146,16 @@ def clean_forecast_text(text: str) -> str:
 
         # Handle the case where periods are concatenated
         if ":" in line:
-            # Split by common period patterns - added "This Afternoon"
-            parts = re.split(
-                r"(This Afternoon:|Today:|Tonight:|Overnight:|Monday:|Monday Night:|Tuesday:|Tuesday Night:|Wednesday:|Wednesday Night:|Thursday:|Thursday Night:|Friday:|Friday Night:|Saturday:|Saturday Night:|Sunday:)",
-                line,
-            )
+            # Split by common period patterns
+            # Create a regex pattern from VALID_PERIOD_NAMES
+            period_pattern = "|".join([re.escape(name + ":") for name in VALID_PERIOD_NAMES])
+            parts = re.split(f"({period_pattern})", line)
 
             current_period = ""
             for part in parts:
                 part = part.strip()
                 if part.endswith(":") and any(
-                    day in part
-                    for day in [
-                        "This Afternoon",
-                        "Today",
-                        "Tonight",
-                        "Overnight",
-                        "Monday",
-                        "Tuesday",
-                        "Wednesday",
-                        "Thursday",
-                        "Friday",
-                        "Saturday",
-                        "Sunday",
-                    ]
+                    day in part for day in VALID_PERIOD_NAMES
                 ):
                     current_period = part
                 elif part and current_period:
@@ -188,20 +192,7 @@ def format_full_forecast(text: str) -> str:
     for line in lines:
         line = line.strip()
         if ":" in line and any(
-            day in line
-            for day in [
-                "This Afternoon",
-                "Today",
-                "Tonight",
-                "Overnight",
-                "Monday",
-                "Tuesday",
-                "Wednesday",
-                "Thursday",
-                "Friday",
-                "Saturday",
-                "Sunday",
-            ]
+            day in line for day in VALID_PERIOD_NAMES
         ):
             # Normalize spaces in the line
             line = normalize_spaces(line)
@@ -509,20 +500,7 @@ def format_compact_forecast(text: str) -> str:
 
     for line in lines:
         if ":" in line and any(
-            day in line
-            for day in [
-                "This Afternoon",
-                "Today",
-                "Tonight",
-                "Overnight",
-                "Monday",
-                "Tuesday",
-                "Wednesday",
-                "Thursday",
-                "Friday",
-                "Saturday",
-                "Sunday",
-            ]
+            day in line for day in VALID_PERIOD_NAMES
         ):
             try:
                 day, forecast = line.split(":", 1)
@@ -1060,96 +1038,105 @@ def summarize_forecast(text, days=None):
         "flood warning": "FldWng",
     }
 
+    # Track day grouping
+    current_day_index = 0
+    is_previous_night = False
+    day_display_names = {}  # Map index to display name
+    
+    # Filter and parse lines first to handle indexing correctly
+    parsed_periods = []
     for line in lines:
-        if ":" in line and any(
-            day in line
-            for day in [
-                "This Afternoon",
-                "Today",
-                "Tonight",
-                "Overnight",
-                "Monday",
-                "Tuesday",
-                "Wednesday",
-                "Thursday",
-                "Friday",
-                "Saturday",
-                "Sunday",
-            ]
-        ):
+        if ":" in line and any(day in line for day in VALID_PERIOD_NAMES):
             try:
                 period, forecast = line.split(":", 1)
-                forecast = forecast.strip().lower()
-                detected = []
-
-                # Extract weather events
-                for event, keywords in event_types.items():
-                    if any(kw in forecast for kw in keywords):
-                        # For wind events, only add if speeds are significant
-                        if event == "wind" and not check_significant_wind(forecast):
-                            continue
-
-                        chance = infer_chance(event, forecast)
-                        if chance > 0:
-                            # Format event with proper capitalization and probability
-                            event_name = event_name_map.get(
-                                event, event.replace(" ", "").title()[:2]
-                            )
-                            if event in extreme_events:
-                                detected.append(f"🚨{event_name}({chance}%)")
-                            else:
-                                detected.append(f"{event_name}({chance}%)")
-
-                # Extract temperature and wind information
-                temp_info = extract_temperature_info(forecast)
-                wind_info = extract_wind_info(forecast)
-
-                # Combine all information
-                all_info = detected + temp_info + wind_info
-
-                if all_info:
-                    # Get the base period name (without "Night")
-                    base_period = period.strip()
-                    if "Night" in base_period:
-                        # For night periods, use the base day name
-                        base_period = base_period.replace(" Night", "")
-
-                    short_period_name = short_period(base_period)
-
-                    # If we already have events for this period, merge them
-                    if short_period_name in period_events_dict:
-                        existing_events = period_events_dict[short_period_name]
-                        # Merge events, keeping the highest probability for duplicates
-                        for new_event in all_info:
-                            if "(" in new_event and ")" in new_event:
-                                # Event with probability
-                                event_name = new_event.split("(")[0]
-                                new_prob = int(new_event.split("(")[1].split("%")[0])
-
-                                # Check if we already have this event
-                                found = False
-                                for i, existing_event in enumerate(existing_events):
-                                    if existing_event.split("(")[0] == event_name:
-                                        existing_prob = int(
-                                            existing_event.split("(")[1].split("%")[0]
-                                        )
-                                        # Keep the higher probability
-                                        if new_prob > existing_prob:
-                                            existing_events[i] = new_event
-                                        found = True
-                                        break
-
-                                if not found:
-                                    existing_events.append(new_event)
-                            else:
-                                # For events without probabilities, just add if not already present
-                                if new_event not in existing_events:
-                                    existing_events.append(new_event)
-                    else:
-                        period_events_dict[short_period_name] = all_info
-
+                parsed_periods.append((period.strip(), forecast.strip()))
             except ValueError:
                 continue
+
+    for i, (period, forecast) in enumerate(parsed_periods):
+        forecast = forecast.lower()
+        detected = []
+
+        # Determine is_daytime
+        is_daytime = True
+        if "Night" in period or period in ["Tonight", "Overnight"]:
+            is_daytime = False
+            
+        # Check for Day/Night transition
+        if i > 0 and is_daytime and is_previous_night:
+            current_day_index += 1
+            
+        is_previous_night = not is_daytime
+        
+        # Determine display name for this day index
+        if current_day_index not in day_display_names:
+            # Use the current period name to generate the short name
+            # If it's a night period (e.g. Tonight), it will be the name
+            # If it's a day period (e.g. Thanksgiving Day), it will be the name
+            base_name = period
+            if "Night" in base_name and base_name not in ["Tonight", "Overnight"]:
+                 base_name = base_name.replace(" Night", "")
+            day_display_names[current_day_index] = short_period(base_name)
+            
+        short_period_name = day_display_names[current_day_index]
+
+        # Extract weather events
+        for event, keywords in event_types.items():
+            if any(kw in forecast for kw in keywords):
+                # For wind events, only add if speeds are significant
+                if event == "wind" and not check_significant_wind(forecast):
+                    continue
+
+                chance = infer_chance(event, forecast)
+                if chance > 0:
+                    # Format event with proper capitalization and probability
+                    event_name = event_name_map.get(
+                        event, event.replace(" ", "").title()[:2]
+                    )
+                    if event in extreme_events:
+                        detected.append(f"🚨{event_name}({chance}%)")
+                    else:
+                        detected.append(f"{event_name}({chance}%)")
+
+        # Extract temperature and wind information
+        temp_info = extract_temperature_info(forecast)
+        wind_info = extract_wind_info(forecast)
+
+        # Combine all information
+        all_info = detected + temp_info + wind_info
+
+        if all_info:
+            # If we already have events for this period, merge them
+            if short_period_name in period_events_dict:
+                existing_events = period_events_dict[short_period_name]
+                # Merge events, keeping the highest probability for duplicates
+                for new_event in all_info:
+                    if "(" in new_event and ")" in new_event:
+                        # Event with probability
+                        event_name = new_event.split("(")[0]
+                        new_prob = int(new_event.split("(")[1].split("%")[0])
+
+                        # Check if we already have this event
+                        found = False
+                        for i, existing_event in enumerate(existing_events):
+                            if existing_event.split("(")[0] == event_name:
+                                existing_prob = int(
+                                    existing_event.split("(")[1].split("%")[0]
+                                )
+                                # Keep the higher probability
+                                if new_prob > existing_prob:
+                                    existing_events[i] = new_event
+                                found = True
+                                break
+
+                        if not found:
+                            existing_events.append(new_event)
+                    else:
+                        # For events without probabilities, just add if not already present
+                        if new_event not in existing_events:
+                            existing_events.append(new_event)
+            else:
+                period_events_dict[short_period_name] = all_info
 
     # Convert dictionary to list format with pipe separators for better character utilization
     period_events = []
@@ -1247,98 +1234,48 @@ def parse_forecast_periods(
 
     _LOGGER.debug(f"Found {len(period_matches)} period matches")
 
+    # Calculate target days (N+1 logic)
+    # If days_limit is None, we want all available days (set to a high number)
+    target_days = 100
+    if days_limit is not None:
+        target_days = max(0, days_limit) + 1
+
     periods = []
-    current_day = None
-    days_counted = 0
+    current_day_index = 0
+    is_previous_night = False
 
-    for i, (day_name, period_content) in enumerate(period_matches):
+    for i, (day_name, forecast_text) in enumerate(period_matches):
         day_name = day_name.strip()
-
-        # Determine which day this period belongs to
-        period_day = None
-        # All current-day periods should be treated as day 0
-        if day_name in ["Overnight", "Tonight", "This Afternoon", "Today"]:
-            period_day = "Today"  # Use 'Today' as the common identifier for day 0
-        elif day_name in ["Monday", "Monday Night"]:
-            period_day = "Monday"
-        elif day_name in ["Tuesday", "Tuesday Night"]:
-            period_day = "Tuesday"
-        elif day_name in ["Wednesday", "Wednesday Night"]:
-            period_day = "Wednesday"
-        elif day_name in ["Thursday", "Thursday Night"]:
-            period_day = "Thursday"
-        elif day_name in ["Friday", "Friday Night"]:
-            period_day = "Friday"
-        elif day_name in ["Saturday", "Saturday Night"]:
-            period_day = "Saturday"
-        elif day_name in ["Sunday", "Sunday Night"]:
-            period_day = "Sunday"
-
-        # Check if this is a new day
-        if period_day != current_day:
-            if current_day is not None:  # Not the first period
-                # Only count days if we're moving from current day to a future day
-                if current_day == "Today" and period_day != "Today":
-                    days_counted += 1
-                    _LOGGER.debug(
-                        f"Completed current day, starting day {days_counted}: {period_day}"
-                    )
-
-                    # Check if we've exceeded the days limit after completing a day
-                    if days_limit is not None and days_counted > days_limit:
-                        _LOGGER.debug(
-                            f"Reached days limit ({days_limit}), stopping after completing day {days_counted}"
-                        )
-                        break
-                elif current_day != "Today":
-                    days_counted += 1
-                    _LOGGER.debug(f"Completed day {days_counted}: {current_day}")
-
-                    # Check if we've exceeded the days limit after completing a day
-                    if days_limit is not None and days_counted > days_limit:
-                        _LOGGER.debug(
-                            f"Reached days limit ({days_limit}), stopping after completing day {days_counted}"
-                        )
-                        break
-                else:
-                    _LOGGER.debug("Completed current day period")
-
-            current_day = period_day
-            if period_day == "Today":
-                _LOGGER.debug("Starting current day period (day 0)")
-            else:
-                _LOGGER.debug(f"Starting new day: {period_day}")
-
+        
         # Clean up the period content
-        period_content = re.sub(r"<br\s*/?>", "\n", period_content).strip()
-        period_content = re.sub(r"\n+", "\n", period_content)  # Normalize line breaks
+        forecast_text = re.sub(r"<br\s*/?>", "\n", forecast_text).strip()
+        forecast_text = re.sub(r"\n+", "\n", forecast_text)  # Normalize line breaks
 
-        # Determine which day number to display
-        if period_day == "Today":
-            day_number = 0
-        else:
-            day_number = days_counted + 1
+        # Determine is_daytime from period name
+        is_daytime = True
+        if "Night" in day_name or day_name in ["Tonight", "Overnight"]:
+            is_daytime = False
+            
+        # Check for Day/Night transition to increment day count
+        # A new day starts when we transition from Night to Day (except for the first period)
+        if i > 0 and is_daytime and is_previous_night:
+            current_day_index += 1
+            
+        # If we've reached the target number of days, stop
+        if current_day_index >= target_days:
+            break
+            
+        # Update previous night status for next iteration
+        is_previous_night = not is_daytime
 
-        # Check if we should include this period based on days_limit
-        should_include = False
-        if period_day == "Today":
-            # Include current day if days_limit is 0 or greater
-            should_include = days_limit is None or days_limit >= 0
-        else:
-            # Include future days if we haven't exceeded the limit
-            should_include = days_limit is None or days_counted <= days_limit
+        # Create period object (dictionary for compatibility)
+        period = {
+            "day": day_name,
+            "content": forecast_text,
+            # Add other fields as needed by the consumer
+        }
+        periods.append(period)
+        _LOGGER.debug(f"Parsed period: {day_name} (Day {current_day_index})")
 
-        if should_include:
-            _LOGGER.debug(
-                f"Period {i+1}: {day_name} (day {day_number}) - Content length: {len(period_content)}"
-            )
-            periods.append({"day": day_name, "content": period_content})
-        else:
-            _LOGGER.debug(
-                f"Skipping period {i+1}: {day_name} (day {day_number}) - exceeds days_limit"
-            )
-
-    _LOGGER.debug(
-        f"Parsed {len(periods)} periods covering {days_counted} days with days_limit={days_limit}"
-    )
+    _LOGGER.info(f"Successfully parsed {len(periods)} forecast periods (covered {current_day_index + (1 if periods else 0)} days)")
     return periods

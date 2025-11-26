@@ -187,6 +187,7 @@ class APIDataProcessor:
         
         # Format wind speed (remove units if present)
         speed = period.wind_speed.replace(' mph', '').replace(' mph', '')
+        speed = speed.replace(' to ', '-')
         
         # Handle wind gusts
         wind_str = f"{direction_abbr}{speed}mph"

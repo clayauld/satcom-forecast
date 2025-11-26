@@ -29,7 +29,10 @@ class APIResponse:
 
 class APIError(Exception):
     """Custom exception for API-related errors."""
-    pass
+    
+    def __init__(self, message: str, error_info=None):
+        super().__init__(message)
+        self.error_info = error_info
 
 
 class WeatherGovAPIClient:
@@ -37,7 +40,7 @@ class WeatherGovAPIClient:
     
     def __init__(self, 
                  base_url: str = "https://api.weather.gov",
-                 user_agent: str = "SatComForecast/1.0",
+                 user_agent: str = "SatComForecast/1.0 (https://github.com/clayauld/satcom-forecast)",
                  timeout: int = 10,
                  retry_attempts: int = 3,
                  retry_delay: float = 1.0,
@@ -254,12 +257,12 @@ class WeatherGovAPIClient:
         if not response.data:
             raise APIError("No data in API response")
             
-        if 'properties' not in response.data:
-            raise APIError("Missing 'properties' in API response")
+        if 'properties' not in response.data and 'features' not in response.data:
+            raise APIError("Missing 'properties' or 'features' in API response")
             
         return response.data
         
-    async def get_gridpoint(self, lat: float, lon: float) -> Tuple[str, int, int]:
+    async def get_gridpoint(self, lat: float, lon: float) -> Tuple[str, int, int, str]:
         """
         Convert coordinates to NWS grid point.
         
@@ -268,7 +271,7 @@ class WeatherGovAPIClient:
             lon: Longitude coordinate
             
         Returns:
-            Tuple of (office, grid_x, grid_y)
+            Tuple of (office, grid_x, grid_y, forecast_url)
             
         Raises:
             APIError: If conversion fails
@@ -286,14 +289,15 @@ class WeatherGovAPIClient:
             office = properties['cwa']
             grid_x = properties['gridX']
             grid_y = properties['gridY']
+            forecast_url = properties.get('forecast')
             
             _LOGGER.debug(f"Grid point: office={office}, grid_x={grid_x}, grid_y={grid_y}")
-            return office, grid_x, grid_y
+            return office, grid_x, grid_y, forecast_url
             
         except KeyError as e:
             raise APIError(f"Missing required field in grid point response: {e}")
             
-    async def get_forecast(self, office: str, grid_x: int, grid_y: int) -> dict:
+    async def get_forecast(self, office: str, grid_x: int, grid_y: int, forecast_url: Optional[str] = None) -> dict:
         """
         Get forecast data for a grid point.
         
@@ -301,6 +305,7 @@ class WeatherGovAPIClient:
             office: NWS office code
             grid_x: Grid X coordinate
             grid_y: Grid Y coordinate
+            forecast_url: Optional direct URL for forecast (overrides construction)
             
         Returns:
             Forecast data dictionary
@@ -308,8 +313,12 @@ class WeatherGovAPIClient:
         Raises:
             APIError: If forecast fetch fails
         """
-        url = f"{self.base_url}/gridpoints/{office}/{grid_x},{grid_y}/forecast"
-        _LOGGER.debug(f"Fetching forecast for {office}/{grid_x},{grid_y}")
+        if forecast_url:
+            url = forecast_url
+        else:
+            url = f"{self.base_url}/gridpoints/{office}/{grid_x},{grid_y}/forecast"
+            
+        _LOGGER.debug(f"Fetching forecast for {office}/{grid_x},{grid_y} using URL: {url}")
         
         response = await self._make_request(url)
         data = self._validate_response(response)

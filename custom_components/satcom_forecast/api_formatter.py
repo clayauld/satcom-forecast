@@ -153,12 +153,14 @@ class APIFormatter:
                 # Build details string
                 details = []
                 if temp_info:
-                    if "high" in temp_info:
-                        details.append(temp_info["high"].replace("°", ""))
-                    if "low" in temp_info:
-                        details.append(temp_info["low"].replace("°", ""))
+                    for item in temp_info:
+                        if item.startswith("H:"):
+                            details.append(item.replace("H:", "").replace("°", ""))
+                        elif item.startswith("L:"):
+                            details.append(item.replace("L:", "").replace("°", ""))
+                            
                 if wind_info:
-                    details.append(wind_info)
+                    details.extend(wind_info)
                     
                 details_str = f" ({', '.join(details)})" if details else ""
                 
@@ -353,6 +355,7 @@ class APIFormatter:
         
         # Format wind speed
         speed = period.wind_speed.replace(' mph', '').replace(' mph', '')
+        speed = speed.replace(' to ', '-')
         
         # Handle wind gusts
         wind_str = f"{direction_abbr}{speed}mph"

@@ -17,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 class APIConfig:
     """Configuration settings for the Weather.gov API."""
     base_url: str = "https://api.weather.gov"
-    user_agent: str = "SatComForecast/1.0"
+    user_agent: str = "SatComForecast/1.0 (https://github.com/clayauld/satcom-forecast)"
     timeout: int = 10
     retry_attempts: int = 3
     retry_delay: float = 1.0
@@ -30,7 +30,7 @@ class APIConfig:
 @dataclass
 class FeatureFlags:
     """Feature flags for controlling API behavior."""
-    use_api: bool = False
+    use_api: bool = True
     fallback_to_html: bool = True
     enable_alerts: bool = False
     enable_caching: bool = True
@@ -89,7 +89,7 @@ class ConfigManager:
         # Feature Flags
         self.feature_flags.use_api = os.getenv(
             'WEATHER_USE_API', 
-            'false'
+            'true'
         ).lower() == 'true'
         self.feature_flags.fallback_to_html = os.getenv(
             'WEATHER_FALLBACK_HTML', 
@@ -180,10 +180,7 @@ class ConfigManager:
             'timeout': self.api_config.timeout,
             'retry_attempts': self.api_config.retry_attempts,
             'retry_delay': self.api_config.retry_delay,
-            'rate_limit_delay': self.api_config.rate_limit_delay,
-            'enable_alerts': self.api_config.enable_alerts,
-            'cache_duration': self.api_config.cache_duration,
-            'max_cache_size': self.api_config.max_cache_size
+            'rate_limit_delay': self.api_config.rate_limit_delay
         }
         
     def get_feature_flags_dict(self) -> Dict[str, bool]:
