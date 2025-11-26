@@ -1073,6 +1073,11 @@ def summarize_forecast(text, days=None):
             # If it's a night period (e.g. Tonight), it will be the name
             # If it's a day period (e.g. Thanksgiving Day), it will be the name
             base_name = period
+            
+            # Special handling: "This Afternoon" on day 0 should be "Today"
+            if current_day_index == 0 and base_name == "This Afternoon":
+                base_name = "Today"
+            
             if "Night" in base_name and base_name not in ["Tonight", "Overnight"]:
                  base_name = base_name.replace(" Night", "")
             day_display_names[current_day_index] = short_period(base_name)

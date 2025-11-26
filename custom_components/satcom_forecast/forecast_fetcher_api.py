@@ -14,6 +14,7 @@ from .api_data_processor import APIDataProcessor
 from .api_config import get_config, is_api_enabled, is_fallback_enabled
 from .api_cache import get_gridpoint_cache, get_forecast_cache
 from .api_models import ForecastData, ProcessedForecast
+from . import weather_utils
 
 # Import existing HTML fetcher for fallback
 from .forecast_fetcher import fetch_forecast as fetch_forecast_html
@@ -188,7 +189,7 @@ class ForecastFetcherAPI:
         periods_to_include = forecast_data.periods
         if days is not None:
             # Filter periods based on days parameter
-            periods_to_include = self._filter_periods_by_days(forecast_data.periods, days)
+            periods_to_include = weather_utils.filter_periods_by_days(forecast_data.periods, days)
             
         for period in periods_to_include:
             period_text = f"{period.name}: {period.detailed_forecast}"
@@ -196,56 +197,7 @@ class ForecastFetcherAPI:
             
         return "\n".join(text_parts)
         
-    def _filter_periods_by_days(self, periods: list, days: int) -> list:
-        """
-        Filter forecast periods based on days parameter.
-        
-        Args:
-            periods: List of forecast periods
-            days: Number of days to include
-            
-        Returns:
-            Filtered list of periods
-        """
-        # Handle days parameter
-        # days=0 means "Today" (current day)
-        # days=1 means "Today + Tomorrow" (current day + 1 day)
-        # So we want to select (days + 1) days
-        
-        _LOGGER.debug(f"_filter_periods_by_days input days: {days}")
-        
-        target_days = 1
-        if days is not None:
-            # Ensure non-negative
-            days_val = max(0, days)
-            target_days = days_val + 1
-            
-        _LOGGER.debug(f"Calculated target_days: {target_days}")
-            
-        filtered_periods = []
-        current_day_index = 0
-        
-        # Track if the previous period was a night period
-        # We initialize to False, but we handle the first period specially if needed
-        is_previous_night = False
-        
-        for i, period in enumerate(periods):
-            # Check if we are transitioning from Night to Day
-            # This marks the start of a new day (except for the very first period)
-            if i > 0 and period.is_daytime and is_previous_night:
-                current_day_index += 1
-                
-            # If we've reached the target number of days, stop
-            if current_day_index >= target_days:
-                break
-                
-            filtered_periods.append(period)
-            
-            # Update previous night status for next iteration
-            is_previous_night = not period.is_daytime
-            
-        _LOGGER.debug(f"Returning {len(filtered_periods)} filtered periods (covered {current_day_index + (1 if filtered_periods else 0)} days)")
-        return filtered_periods
+
         
     def _get_day_name(self, period_name: str) -> str:
         """

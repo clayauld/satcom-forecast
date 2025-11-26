@@ -3,6 +3,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 from dataclasses import dataclass
 from custom_components.satcom_forecast.forecast_fetcher_api import ForecastFetcherAPI
+from custom_components.satcom_forecast import weather_utils
 
 @dataclass
 class MockPeriod:
@@ -28,14 +29,16 @@ def test_filter_periods_by_days_n_plus_one(fetcher):
     # Let's assume standard start with Day.
     
     # days=0 -> target_days=1
-    result_0 = fetcher._filter_periods_by_days(periods, days=0)
+    result_0 = weather_utils.filter_periods_by_days(periods, days=0)
     # Day 1: Monday (Day), Monday Night (Night) -> 2 periods
     assert len(result_0) == 2
     assert result_0[0].name == "Monday"
     assert result_0[1].name == "Monday Night"
     
     # days=1 -> target_days=2
-    result_1 = fetcher._filter_periods_by_days(periods, days=1)
+    # days=1 -> target_days=2
+    result_1 = weather_utils.filter_periods_by_days(periods, days=1)
+    # Day 1: Monday, Monday Night
     # Day 1: Monday, Monday Night
     # Day 2: Tuesday, Tuesday Night
     # Total 4 periods
@@ -43,7 +46,9 @@ def test_filter_periods_by_days_n_plus_one(fetcher):
     assert result_1[-1].name == "Tuesday Night"
     
     # days=2 -> target_days=3
-    result_2 = fetcher._filter_periods_by_days(periods, days=2)
+    # days=2 -> target_days=3
+    result_2 = weather_utils.filter_periods_by_days(periods, days=2)
+    assert len(result_2) == 6
     assert len(result_2) == 6
     assert result_2[-1].name == "Wednesday Night"
 
@@ -64,7 +69,11 @@ def test_filter_periods_holiday_grouping(fetcher):
     # Wait, days=2 means "Today + 2 days" -> Today, Wed, Thanksgiving.
     # So we expect 3 days.
     
-    result = fetcher._filter_periods_by_days(periods, days=2)
+    # So we expect 3 days.
+    
+    result = weather_utils.filter_periods_by_days(periods, days=2)
+    
+    # Day 1: Today, Tonight
     
     # Day 1: Today, Tonight
     # Day 2: Wednesday, Wednesday Night
@@ -80,7 +89,9 @@ def test_filter_periods_holiday_grouping(fetcher):
     # causing it to return fewer periods or cut off early if it counted them as 2 days.
     
     # Let's try days=1 (Today + Wed) -> 4 periods
-    result_1 = fetcher._filter_periods_by_days(periods, days=1)
+    # Let's try days=1 (Today + Wed) -> 4 periods
+    result_1 = weather_utils.filter_periods_by_days(periods, days=1)
+    assert len(result_1) == 4
     assert len(result_1) == 4
     assert result_1[-1].name == "Wednesday Night"
 
@@ -94,13 +105,19 @@ def test_filter_periods_start_at_night(fetcher):
     
     # days=0 -> target_days=1
     # Should return just Tonight (Day 1)
-    result = fetcher._filter_periods_by_days(periods, days=0)
+    # days=0 -> target_days=1
+    # Should return just Tonight (Day 1)
+    result = weather_utils.filter_periods_by_days(periods, days=0)
+    assert len(result) == 1
     assert len(result) == 1
     assert result[0].name == "Tonight"
     
     # days=1 -> target_days=2
     # Day 1: Tonight
     # Day 2: Wednesday, Wednesday Night
-    result_2 = fetcher._filter_periods_by_days(periods, days=1)
+    # Day 1: Tonight
+    # Day 2: Wednesday, Wednesday Night
+    result_2 = weather_utils.filter_periods_by_days(periods, days=1)
+    assert len(result_2) == 3
     assert len(result_2) == 3
     assert result_2[1].name == "Wednesday"

@@ -78,7 +78,7 @@ class APIFormatter:
         self.logger.debug("Formatting full forecast")
         
         # Filter periods by days if specified
-        filtered_periods = self._filter_periods_by_days(periods, days)
+        filtered_periods = weather_utils.filter_periods_by_days(periods, days)
         
         formatted_lines = []
         
@@ -124,7 +124,7 @@ class APIFormatter:
         self.logger.debug("Formatting compact forecast")
         
         # Filter periods by days if specified
-        filtered_periods = self._filter_periods_by_days(periods, days)
+        filtered_periods = weather_utils.filter_periods_by_days(periods, days)
         
         result = []
         extreme_events = [
@@ -205,7 +205,7 @@ class APIFormatter:
         self.logger.debug("Formatting summary forecast")
         
         # Filter periods by days if specified
-        filtered_periods = self._filter_periods_by_days(periods, days)
+        filtered_periods = weather_utils.filter_periods_by_days(periods, days)
         
         # Group events by period
         period_events_dict = {}
@@ -228,7 +228,7 @@ class APIFormatter:
             
             if all_info:
                 # Get base period name
-                base_period = self._get_base_period_name(period.name)
+                base_period = self._get_day_name(period.name)
                 short_period_name = self._shorten_period_name(base_period)
                 
                 # Merge with existing events for this period
@@ -253,27 +253,7 @@ class APIFormatter:
         self.logger.debug(f"Summary forecast formatted, result length: {len(summary)} characters")
         return summary
         
-    def _filter_periods_by_days(self, periods: List[ForecastPeriod], days: Optional[int]) -> List[ForecastPeriod]:
-        """Filter periods based on days parameter."""
-        if days is None or days <= 0:
-            return periods
-            
-        # Group periods by day
-        day_groups = {}
-        for period in periods:
-            day_name = self._get_day_name(period.name)
-            if day_name not in day_groups:
-                day_groups[day_name] = []
-            day_groups[day_name].append(period)
-            
-        # Select the first N days
-        selected_days = list(day_groups.keys())[:days]
-        filtered_periods = []
-        
-        for day in selected_days:
-            filtered_periods.extend(day_groups[day])
-            
-        return filtered_periods
+
         
     def _get_day_name(self, period_name: str) -> str:
         """Extract day name from period name."""

@@ -34,7 +34,7 @@ class TestForecastParser:
         full_result = format_forecast(TEST_FORECAST, mode="full")
 
         assert "Afternoon: Rain(40%)" in compact_result
-        assert "Aft: Rn(80%),H:50°,SE10mph,L:41°,SE15mph" in summary_result
+        assert "Tdy: Rn(80%),H:50°,SE10mph,L:41°,SE15mph" in summary_result
         assert "Tngt:" not in summary_result
         assert "This Afternoon: A chance of showers" in full_result
 
@@ -141,8 +141,8 @@ Monday Night: Rain. Low around 35."""
 
         summary = summarize_forecast(period_test)
 
-        assert "Aft:" in summary
-        assert "Aft:" in summary
+        assert "Tdy:" in summary
+        assert "Aft:" not in summary
         assert "Tngt:" not in summary
         assert "Tdy:" in summary
         assert "Mon:" in summary

@@ -301,3 +301,59 @@ def extract_wind_info(period: ForecastPeriod) -> List[str]:
         wind_str += f" (G:{gust_speed}mph)"
         
     return [wind_str]
+
+
+def filter_periods_by_days(periods: List[ForecastPeriod], days: Optional[int]) -> List[ForecastPeriod]:
+    """
+    Filter forecast periods based on days parameter.
+    
+    Args:
+        periods: List of forecast periods
+        days: Number of days to include
+        
+    Returns:
+        Filtered list of periods
+    """
+    # Handle days parameter
+    # days=0 means "Today" (current day)
+    # days=1 means "Today + Tomorrow" (current day + 1 day)
+    # So we want to select (days + 1) days
+    
+    if days is None:
+        return periods
+    
+    _LOGGER.debug(f"filter_periods_by_days input days: {days}")
+    
+    target_days = 1
+
+    if days is not None:
+        # Ensure non-negative
+        days_val = max(0, days)
+        target_days = days_val + 1
+        
+    _LOGGER.debug(f"Calculated target_days: {target_days}")
+        
+    filtered_periods = []
+    current_day_index = 0
+    
+    # Track if the previous period was a night period
+    # We initialize to False, but we handle the first period specially if needed
+    is_previous_night = False
+    
+    for i, period in enumerate(periods):
+        # Check if we are transitioning from Night to Day
+        # This marks the start of a new day (except for the very first period)
+        if i > 0 and period.is_daytime and is_previous_night:
+            current_day_index += 1
+            
+        # If we've reached the target number of days, stop
+        if current_day_index >= target_days:
+            break
+            
+        filtered_periods.append(period)
+        
+        # Update previous night status for next iteration
+        is_previous_night = not period.is_daytime
+        
+    _LOGGER.debug(f"Returning {len(filtered_periods)} filtered periods (covered {current_day_index + (1 if filtered_periods else 0)} days)")
+    return filtered_periods

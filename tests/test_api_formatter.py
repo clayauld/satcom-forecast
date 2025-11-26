@@ -102,15 +102,15 @@ class TestAPIFormatter:
     def test_filter_periods_by_days(self, formatter, sample_periods):
         """Test filtering periods by days parameter."""
         # Test with days=1 (should include only first day)
-        filtered = formatter._filter_periods_by_days(sample_periods, 1)
+        filtered = weather_utils.filter_periods_by_days(sample_periods, 1)
         assert len(filtered) == 2  # Today and Tonight are same day
         
         # Test with days=None (should include all)
-        filtered = formatter._filter_periods_by_days(sample_periods, None)
+        filtered = weather_utils.filter_periods_by_days(sample_periods, None)
         assert len(filtered) == 2
         
         # Test with days=0 (should include all)
-        filtered = formatter._filter_periods_by_days(sample_periods, 0)
+        filtered = weather_utils.filter_periods_by_days(sample_periods, 0)
         assert len(filtered) == 2
     
     def test_get_day_name(self, formatter):
