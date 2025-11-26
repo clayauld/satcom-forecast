@@ -7,6 +7,7 @@ including retry logic, fallback mechanisms, and error reporting.
 
 import asyncio
 import logging
+import random
 import time
 from typing import Dict, Any, Optional, Callable, List, Union
 from dataclasses import dataclass, field
@@ -267,7 +268,6 @@ class ErrorHandler:
         
         if self.jitter:
             # Add random jitter (±25%)
-            import random
             jitter_factor = random.uniform(0.75, 1.25)
             delay *= jitter_factor
             

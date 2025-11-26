@@ -115,8 +115,8 @@ class ForecastFetcherAPI:
             
     async def _get_gridpoint(self, lat: float, lon: float) -> Tuple[str, int, int, Optional[str]]:
         """Get grid point from cache or API."""
-        cache_key = f"gridpoint_{lat}_{lon}"
-        cached_data = await self.gridpoint_cache.get(cache_key)
+        params = {"lat": lat, "lon": lon}
+        cached_data = await self.gridpoint_cache.get("gridpoint", params=params)
         if cached_data:
             _LOGGER.debug(f"Using cached grid point for {lat}, {lon}")
             return cached_data['office'], cached_data['grid_x'], cached_data['grid_y'], cached_data.get('forecast_url')
@@ -133,7 +133,7 @@ class ForecastFetcherAPI:
             'grid_y': grid_y,
             'forecast_url': forecast_url
         }
-        await self.gridpoint_cache.set(cache_key, cache_data)
+        await self.gridpoint_cache.set("gridpoint", cache_data, params=params)
         
         return office, grid_x, grid_y, forecast_url
         
@@ -151,8 +151,8 @@ class ForecastFetcherAPI:
             Forecast data dictionary
         """
         # Check cache first
-        cache_key = f"forecast_{office}_{grid_x}_{grid_y}"
-        cached_data = await self.forecast_cache.get(cache_key)
+        params = {"office": office, "grid_x": grid_x, "grid_y": grid_y}
+        cached_data = await self.forecast_cache.get("forecast", params=params)
         
         if cached_data:
             _LOGGER.debug("Using cached forecast data")
@@ -164,7 +164,7 @@ class ForecastFetcherAPI:
             forecast_data = await client.get_forecast(office, grid_x, grid_y, forecast_url)
             
         # Cache the result
-        await self.forecast_cache.set(cache_key, forecast_data)
+        await self.forecast_cache.set("forecast", forecast_data, params=params)
         
         return forecast_data
         
