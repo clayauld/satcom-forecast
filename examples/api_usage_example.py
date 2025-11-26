@@ -91,7 +91,7 @@ async def example_direct_api_usage():
         async with WeatherGovAPIClient() as client:
             # Get grid point
             print("Getting grid point...")
-            office, grid_x, grid_y = await client.get_gridpoint(lat, lon)
+            office, grid_x, grid_y, forecast_url = await client.get_gridpoint(lat, lon)
             print(f"Grid point: {office}/{grid_x},{grid_y}")
             
             # Get forecast
@@ -117,7 +117,7 @@ async def example_data_processing():
     try:
         # Get raw API data
         async with WeatherGovAPIClient() as client:
-            office, grid_x, grid_y = await client.get_gridpoint(lat, lon)
+            office, grid_x, grid_y, forecast_url = await client.get_gridpoint(lat, lon)
             forecast_data = await client.get_forecast(office, grid_x, grid_y)
         
         # Process data
