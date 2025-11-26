@@ -97,7 +97,8 @@ class WeatherGovAPIClient:
             
     async def _rate_limit(self):
         """Implement rate limiting between requests."""
-        current_time = asyncio.get_event_loop().time()
+        loop = asyncio.get_running_loop()
+        current_time = loop.time()
         time_since_last = current_time - self._last_request_time
         
         if time_since_last < self.rate_limit_delay:
@@ -105,7 +106,7 @@ class WeatherGovAPIClient:
             _LOGGER.debug(f"Rate limiting: sleeping for {sleep_time:.2f} seconds")
             await asyncio.sleep(sleep_time)
             
-        self._last_request_time = asyncio.get_event_loop().time()
+        self._last_request_time = loop.time()
         
     async def _make_request(self, url: str, method: str = "GET") -> APIResponse:
         """
