@@ -121,17 +121,15 @@ class WeatherGovAPIClient:
         Returns:
             APIResponse object with response data and metadata
         """
-        await self._ensure_session()
         await self._rate_limit()
-
-        if self._session is None:
-            raise APIError("Session not initialized")
 
         loop = asyncio.get_running_loop()
         start_time = loop.time()
 
         for attempt in range(self.retry_attempts):
             try:
+                await self._ensure_session()
+
                 _LOGGER.debug(
                     f"Making {method} request to {url} (attempt {attempt + 1})"
                 )
