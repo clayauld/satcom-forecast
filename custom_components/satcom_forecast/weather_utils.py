@@ -57,14 +57,23 @@ def check_significant_wind(period: ForecastPeriod) -> bool:
     Returns:
         True if wind is significant
     """
-    if not period.wind_speed:
-        return False
+    # Check wind speed
+    if period.wind_speed:
+        # Extract all numeric values from wind speed string
+        # This handles simple speeds "10 mph" and ranges "10 to 20 mph"
+        # We check if ANY speed in the range meets the threshold
+        wind_matches = re.findall(r"(\d+)", period.wind_speed)
+        for match in wind_matches:
+            if int(match) >= 15:
+                return True
 
-    # Extract numeric wind speed
-    wind_match = re.search(r"(\d+)", period.wind_speed)
-    if wind_match:
-        speed = int(wind_match.group(1))
-        return speed >= 15
+    # Check wind gusts if available
+    if period.wind_gust:
+        # Extract all numeric values from wind gust string
+        gust_matches = re.findall(r"(\d+)", period.wind_gust)
+        for match in gust_matches:
+            if int(match) >= 15:
+                return True
 
     return False
 
@@ -110,7 +119,8 @@ def infer_chance(event_type: str, forecast_text: str, period: ForecastPeriod) ->
             event_keywords = EVENT_TYPES.get(event_type, [])
             for keyword in event_keywords:
                 if keyword in context:
-                    # Skip if "precipitation" is in context unless we're looking for rain
+                    # Skip if "precipitation" is in context unless we're looking
+                    # for rain
                     if "precipitation" in context and event_type != "rain":
                         continue
 
@@ -379,6 +389,7 @@ def filter_periods_by_days(
         is_previous_night = not period.is_daytime
 
     _LOGGER.debug(
-        f"Returning {len(filtered_periods)} filtered periods (covered {current_day_index + (1 if filtered_periods else 0)} days)"
+        f"Returning {len(filtered_periods)} filtered periods "
+        f"(covered {current_day_index + (1 if filtered_periods else 0)} days)"
     )
     return filtered_periods

@@ -15,7 +15,7 @@ PART_NUMBERING_OVERHEAD = 8
 def split_message(
     text: str, device_type: str = "zoleo", custom_limit: Optional[int] = None
 ) -> List[str]:
-    """Split a message into parts based on device type and character limits, ensuring no part ever exceeds the limit (including part numbering)."""
+    """Split a message into parts based on device type and character limits."""
     # Reserve space for part numbering (e.g., "(1/10) ")
     # We'll use up to 8 chars for part numbering: "(99/99) "
     max_numbering_length = PART_NUMBERING_OVERHEAD
@@ -107,7 +107,8 @@ def smart_split_text(
     lines = text.split("\n")
 
     if len(lines) > 1:
-        # Check if this is summary format (pipe-separated) or compact/full format (newline-separated)
+        # Check if this is summary format (pipe-separated) or compact/full
+        # format (newline-separated)
         if " | " in text:
             # Summary format - split at pipe separators for better utilization
             parts = split_summary_format(text, effective_limit)
@@ -122,7 +123,7 @@ def smart_split_text(
 
 
 def split_multiline_text(lines: List[str], effective_limit: int) -> List[str]:
-    """Split multi-line text (compact/full format) more aggressively to fill character limits."""
+    """Split multi-line text (compact/full) aggressively to fill limits."""
     parts = []
     current_part: List[str] = []
     current_length = 0
@@ -142,7 +143,8 @@ def split_multiline_text(lines: List[str], effective_limit: int) -> List[str]:
         line_length = len(line)
         separator_length = 1 if current_part else 0  # Newline separator
 
-        # For day lines, check if we can add it to current part or need to start new part
+        # For day lines, check if we can add it to current part or need to
+        # start new part
         if is_day_line:
             # If current part is empty, start with this day
             if not current_part:
@@ -207,14 +209,15 @@ def split_multiline_text(lines: List[str], effective_limit: int) -> List[str]:
 
 
 def split_long_line_aggressively(line: str, effective_limit: int) -> List[str]:
-    """Split a long line aggressively across multiple parts to maximize utilization."""
+    """Split a long line aggressively across multiple parts."""
     parts = []
     remaining_line = line
 
     # Safety check: ensure effective_limit is positive
     if effective_limit <= 0:
         # If effective_limit is not positive, just return the line as-is
-        # This prevents infinite loops but may result in parts exceeding the intended limit
+        # This prevents infinite loops but may result in parts exceeding
+        # the intended limit
         return [line]
 
     while remaining_line:
@@ -231,7 +234,8 @@ def split_long_line_aggressively(line: str, effective_limit: int) -> List[str]:
                 split_at = i
                 break
 
-        # If no word boundary found, force split at limit (but this shouldn't happen with our logic)
+        # If no word boundary found, force split at limit (but this shouldn't happen
+        # with our logic)
         if split_at == effective_limit:
             split_at = effective_limit - 1
 
@@ -249,7 +253,7 @@ def split_long_line_aggressively(line: str, effective_limit: int) -> List[str]:
 def split_line_to_fill_space(
     line: str, available_space: int
 ) -> Optional[Tuple[str, str]]:
-    """Split a line to fill available space, returning (first_part, remaining_part) or None if not beneficial."""
+    """Split a line to fill space, returning (first, remaining) or None."""
     if len(line) <= available_space:
         return None  # Line fits completely, no need to split
 
@@ -342,7 +346,7 @@ def find_best_break_point(text: str, limit: int) -> int:
 
 
 def split_summary_format(text: str, effective_limit: int) -> List[str]:
-    """Split summary format text more aggressively at pipe separators and word boundaries."""
+    """Split summary format text aggressively at pipes and word boundaries."""
     # Split at pipe separators first
     segments = text.split(" | ")
 

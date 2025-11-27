@@ -94,7 +94,9 @@ def validate_imap_folder(
         return False, f"IMAP connection error: {str(e)}"
 
 
-class SatcomForecastConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore
+class SatcomForecastConfigFlow(
+    config_entries.ConfigFlow, domain=DOMAIN  # type: ignore
+):
     VERSION = 4
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
 

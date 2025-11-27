@@ -21,7 +21,8 @@ async def check_imap_for_gps(
     security: str = "SSL",
 ) -> List[Dict[str, Any]]:
     _LOGGER.debug(
-        "Checking IMAP for GPS coordinates - Host: %s, Port: %s, User: %s, Folder: %s, Security: %s",
+        "Checking IMAP for GPS coordinates - Host: %s, Port: %s, User: %s, "
+        "Folder: %s, Security: %s",
         host,
         port,
         username,
@@ -31,7 +32,7 @@ async def check_imap_for_gps(
 
     try:
         # Run the synchronous IMAP operation in a thread pool
-        result = await asyncio.to_thread(  # type: ignore[attr-defined]
+        result = await asyncio.to_thread(
             _check_imap_sync,
             host,
             port,
@@ -41,7 +42,7 @@ async def check_imap_for_gps(
             security,
         )
         # The result is already List[Dict[str, Any]] from _check_imap_sync
-        return result  # type: ignore[no-any-return]
+        return result
 
     except Exception as e:
         _LOGGER.exception("Error checking IMAP: %s", str(e))
@@ -206,7 +207,8 @@ def _check_imap_sync(
                     }
                 )
                 _LOGGER.debug("Added GPS request to processing queue")
-                # Mark the message as seen to avoid reprocessing it in future polling cycles
+                # Mark the message as seen to avoid reprocessing it in future
+                # polling cycles
                 try:
                     mail.store(num, "+FLAGS", "\\Seen")
                     _LOGGER.debug("Marked message %s as seen", num)
@@ -234,7 +236,8 @@ def _check_imap_sync(
 def extract_days_override(body: str) -> Optional[int]:
     """Extract days override from message body.
 
-    Looks for patterns like "5days", "5 days", "3day", "3 day", "0days", "current", "today" etc.
+    Looks for patterns like "5days", "5 days", "3day", "3 day", "0days",
+    "current", "today" etc.
     Returns the number of days (0-7) if found, otherwise None.
 
     Special values:
@@ -251,7 +254,7 @@ def extract_days_override(body: str) -> Optional[int]:
         return 0
 
     # Pattern to match: number 0-7 followed by optional space and "day" or "days"
-    # Examples: "5days", "5 days", "3day", "3 day", "0days", "0 day", "7days", "7 days"
+    # Examples: "5days", "5 days", "3day", "3 day", "0days", "0 day", "7days"
     # Excludes negative numbers like "-1days" and numbers outside 0-7
     pattern = r"(?<![\d-])([0-7])\s*(?:day|days)\b"
     match = re.search(pattern, body, re.IGNORECASE)

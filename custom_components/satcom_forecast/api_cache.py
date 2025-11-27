@@ -310,7 +310,8 @@ class CacheManager:
 
                     if total_cleaned > 0:
                         _LOGGER.debug(
-                            f"Background cleanup removed {total_cleaned} expired entries"
+                            f"Background cleanup removed {total_cleaned} "
+                            f"expired entries"
                         )
 
                     await asyncio.sleep(interval)

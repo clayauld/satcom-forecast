@@ -19,6 +19,7 @@ psutil>=5.9.0
 black>=23.0.0
 flake8>=6.0.0
 mypy>=1.0.0
+types-aiofiles>=23.0.0
 
 # Documentation
 mkdocs>=1.4.0

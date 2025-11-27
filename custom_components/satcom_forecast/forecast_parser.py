@@ -186,7 +186,7 @@ def normalize_spaces(text: str) -> str:
 
 
 def format_full_forecast(text: str) -> str:
-    """Format the full forecast with proper line breaks and better character utilization."""
+    """Format the full forecast with proper line breaks and better character use."""
     _LOGGER.debug("Formatting full forecast")
     cleaned_text = clean_forecast_text(text)
     lines = cleaned_text.strip().splitlines()
@@ -220,7 +220,7 @@ def format_full_forecast(text: str) -> str:
 
 
 def infer_chance(event: str, forecast_text: str) -> int:
-    """Infer probability percentage for weather events, prioritizing explicit percentages when available."""
+    """Infer probability percentage, prioritizing explicit percentages."""
     forecast_lower = forecast_text.lower()
 
     # First check for explicit percentages in the entire forecast text
@@ -231,7 +231,8 @@ def infer_chance(event: str, forecast_text: str) -> int:
     if precip_chance_match and event == "rain":
         return int(precip_chance_match.group(1))
 
-    # For non-rain events, look for percentages that are specifically associated with that event
+    # For non-rain events, look for percentages that are specifically
+    # associated with that event
     if event != "rain":
         # Look for event-specific percentage patterns
         event_keywords = event_types.get(event, [])
@@ -277,7 +278,8 @@ def infer_chance(event: str, forecast_text: str) -> int:
             # Check if the event keywords are in the same context as the percentage
             event_keywords = event_types.get(event, [])
             if any(kw in context for kw in event_keywords):
-                # Additional check: make sure this percentage isn't from precipitation
+                # Additional check: make sure this percentage isn't
+                # from precipitation
                 if "precipitation" not in context or event == "rain":
                     return percent_val
 
@@ -459,10 +461,20 @@ def extract_wind_info(forecast_text: str) -> List[str]:
     """Extracts wind direction and speed, supporting various formats including gusts."""
     # Pattern for direction and speed, with optional gusts
     patterns = [
-        r"(\b(?:north|south|east|west|northeast|southeast|southwest|northwest|north northeast|east northeast|east southeast|south southeast|south southwest|west southwest|west northwest|north northwest)\b) wind (\d+ to \d+|\d+) mph(?:, with gusts as high as (\d+) mph)?",
-        r"wind (\d+ to \d+|\d+) mph from the (\b(?:north|south|east|west|northeast|southeast|southwest|northwest|north northeast|east northeast|east southeast|south southeast|south southwest|west southwest|west northwest|north northwest)\b)",
-        r"(\b(?:north|south|east|west|northeast|southeast|southwest|northwest|north northeast|east northeast|east southeast|south southeast|south southwest|west southwest|west northwest|north northwest)\b) wind around (\d+) mph",
-        r"becoming (\b(?:north|south|east|west|northeast|southeast|southwest|northwest)\b) (\d+ to \d+|\d+) mph",
+        r"(\b(?:north|south|east|west|northeast|southeast|southwest|northwest|"
+        r"north northeast|east northeast|east southeast|south southeast|"
+        r"south southwest|west southwest|west northwest|north northwest)\b) "
+        r"wind (\d+ to \d+|\d+) mph(?:, with gusts as high as (\d+) mph)?",
+        r"wind (\d+ to \d+|\d+) mph from the (\b(?:north|south|east|west|"
+        r"northeast|southeast|southwest|northwest|north northeast|east northeast|"
+        r"east southeast|south southeast|south southwest|west southwest|"
+        r"west northwest|north northwest)\b)",
+        r"(\b(?:north|south|east|west|northeast|southeast|southwest|northwest|"
+        r"north northeast|east northeast|east southeast|south southeast|"
+        r"south southwest|west southwest|west northwest|north northwest)\b) "
+        r"wind around (\d+) mph",
+        r"becoming (\b(?:north|south|east|west|northeast|southeast|southwest|"
+        r"northwest)\b) (\d+ to \d+|\d+) mph",
     ]
 
     for pattern in patterns:
@@ -553,9 +565,19 @@ def format_compact_forecast(text: str) -> str:
                     )
 
                 wind_patterns = [
-                    r"(\b(?:north|south|east|west|northeast|southeast|southwest|northwest|north northeast|east northeast|east southeast|south southeast|south southwest|west southwest|west northwest|north northwest)\b) wind (\d+ to \d+|\d+) mph(?:, with gusts as high as (\d+) mph)?",
-                    r"wind (\d+ to \d+|\d+) mph from the (\b(?:north|south|east|west|northeast|southeast|southwest|northwest|north northeast|east northeast|east southeast|south southeast|south southwest|west southwest|west northwest|north northwest)\b)",
-                    r"(\b(?:north|south|east|west|northeast|southeast|southwest|northwest|north northeast|east northeast|east southeast|south southeast|south southwest|west southwest|west northwest|north northwest)\b) wind around (\d+) mph",
+                    r"(\b(?:north|south|east|west|northeast|southeast|southwest|"
+                    r"northwest|north northeast|east northeast|east southeast|"
+                    r"south southeast|south southwest|west southwest|west northwest|"
+                    r"north northwest)\b) wind (\d+ to \d+|\d+) mph(?:, with gusts "
+                    r"as high as (\d+) mph)?",
+                    r"wind (\d+ to \d+|\d+) mph from the (\b(?:north|south|east|west|"
+                    r"northeast|southeast|southwest|northwest|north northeast|"
+                    r"east northeast|east southeast|south southeast|south southwest|"
+                    r"west southwest|west northwest|north northwest)\b)",
+                    r"(\b(?:north|south|east|west|northeast|southeast|southwest|"
+                    r"northwest|north northeast|east northeast|east southeast|"
+                    r"south southeast|south southwest|west southwest|west northwest|"
+                    r"north northwest)\b) wind around (\d+) mph",
                 ]
                 for pattern in wind_patterns:
                     display_forecast = re.sub(
@@ -607,7 +629,8 @@ def format_compact_forecast(text: str) -> str:
                     else:
                         events_str = ", ".join(detected_events)
                         result.append(
-                            f"{day.strip()}: {events_str}{details_str} - {first_sentence}"
+                            f"{day.strip()}: {events_str}{details_str} - "
+                            f"{first_sentence}"
                         )
                 else:
                     result.append(f"{day.strip()}: {first_sentence}{details_str}")
@@ -788,8 +811,10 @@ def summarize_forecast(text: str, days: Optional[int] = None) -> str:
                 r"wind (?:from the )?(\w+) (?:around|near|up to|to) (\d+) mph",
                 r"(\w+) wind (\d+) mph",
                 r"wind (\w+) (\d+) mph",
-                r"(\w+) (?:around|near|up to|to) (\d+) mph",  # direction around speed mph
-                r"(\d+) to (\d+) mph(?:\W|$)",  # just a range with no direction, allow trailing words
+                # direction around speed mph
+                r"(\w+) (?:around|near|up to|to) (\d+) mph",
+                # just a range with no direction, allow trailing words
+                r"(\d+) to (\d+) mph(?:\W|$)",
                 r"(\w+)",  # just direction
             ]
             for pattern in wind_patterns:
@@ -864,7 +889,7 @@ def summarize_forecast(text: str, days: Optional[int] = None) -> str:
         return []
 
     def infer_chance(event: str, forecast_text: str) -> int:
-        """Infer probability percentage for weather events, prioritizing explicit percentages when available."""
+        """Infer probability percentage, prioritizing explicit percentages."""
         forecast_lower = forecast_text.lower()
 
         # First check for explicit percentages in the entire forecast text
@@ -875,7 +900,8 @@ def summarize_forecast(text: str, days: Optional[int] = None) -> str:
         if precip_chance_match and event == "rain":
             return int(precip_chance_match.group(1))
 
-        # For non-rain events, look for percentages that are specifically associated with that event
+        # For non-rain events, look for percentages that are specifically
+        # associated with that event
         if event != "rain":
             # Look for event-specific percentage patterns
             event_keywords = event_types.get(event, [])
@@ -893,7 +919,8 @@ def summarize_forecast(text: str, days: Optional[int] = None) -> str:
                     if match:
                         return int(match.group(1))
 
-        # Look for other explicit percentage patterns - but be more careful about context
+        # Look for other explicit percentage patterns - but be more careful
+        # about context
         percent_patterns = [
             r"(\d+)\s*percent[^.]*",  # "20 percent" format
             r"(\d+)%[^.]*",  # "20%" format
@@ -921,7 +948,8 @@ def summarize_forecast(text: str, days: Optional[int] = None) -> str:
                 # Check if the event keywords are in the same context as the percentage
                 event_keywords = event_types.get(event, [])
                 if any(kw in context for kw in event_keywords):
-                    # Additional check: make sure this percentage isn't from precipitation
+                    # Additional check: make sure this percentage isn't
+                    # from precipitation
                     if "precipitation" not in context or event == "rain":
                         return percent_val
 
@@ -1149,13 +1177,15 @@ def summarize_forecast(text: str, days: Optional[int] = None) -> str:
                         if not found:
                             existing_events.append(new_event)
                     else:
-                        # For events without probabilities, just add if not already present
+                        # For events without probabilities, just add if not
+                        # already present
                         if new_event not in existing_events:
                             existing_events.append(new_event)
             else:
                 period_events_dict[short_period_name] = all_info
 
-    # Convert dictionary to list format with pipe separators for better character utilization
+    # Convert dictionary to list format with pipe separators for better
+    # character utilization
     period_events = []
     for period, events in period_events_dict.items():
         if events:
@@ -1275,7 +1305,8 @@ def parse_forecast_periods(
             is_daytime = False
 
         # Check for Day/Night transition to increment day count
-        # A new day starts when we transition from Night to Day (except for the first period)
+        # A new day starts when we transition from Night to Day
+        # (except for the first period)
         if i > 0 and is_daytime and is_previous_night:
             current_day_index += 1
 
@@ -1296,6 +1327,7 @@ def parse_forecast_periods(
         _LOGGER.debug(f"Parsed period: {day_name} (Day {current_day_index})")
 
     _LOGGER.info(
-        f"Successfully parsed {len(periods)} forecast periods (covered {current_day_index + (1 if periods else 0)} days)"
+        f"Successfully parsed {len(periods)} forecast periods "
+        f"(covered {current_day_index + (1 if periods else 0)} days)"
     )
     return periods

@@ -77,7 +77,8 @@ class APIDataProcessor:
                     self.logger.debug(f"Parsed period: {period.name}")
                 except Exception as e:
                     self.logger.error(
-                        f"Failed to parse period {period_data.get('name', 'unknown')}: {e}"
+                        f"Failed to parse period "
+                        f"{period_data.get('name', 'unknown')}: {e}"
                     )
                     continue
 

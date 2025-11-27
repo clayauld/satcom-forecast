@@ -185,7 +185,8 @@ class APIFormatter:
                     else:
                         events_str = ", ".join(period_events)
                         result.append(
-                            f"{period.name.strip()}: {events_str}{details_str} - {first_sentence}"
+                            f"{period.name.strip()}: {events_str}{details_str} "
+                            f"- {first_sentence}"
                         )
                 else:
                     result.append(
@@ -365,8 +366,10 @@ class APIFormatter:
 
         # Remove wind patterns
         wind_patterns = [
-            r"(\b(?:north|south|east|west|northeast|southeast|southwest|northwest)\b) wind (\d+ to \d+|\d+) mph",
-            r"wind (\d+ to \d+|\d+) mph from the (\b(?:north|south|east|west|northeast|southeast|southwest|northwest)\b)",
+            r"(\b(?:north|south|east|west|northeast|southeast|southwest|northwest)\b) "
+            r"wind (\d+ to \d+|\d+) mph",
+            r"wind (\d+ to \d+|\d+) mph from the "
+            r"(\b(?:north|south|east|west|northeast|southeast|southwest|northwest)\b)",
         ]
         for pattern in wind_patterns:
             text = re.sub(pattern, "", text, flags=re.IGNORECASE)

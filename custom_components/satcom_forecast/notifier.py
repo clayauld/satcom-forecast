@@ -27,7 +27,7 @@ async def send_forecast_email(
 
     try:
         # Run the synchronous SMTP operation in a thread pool
-        result = await asyncio.to_thread(  # type: ignore[attr-defined]
+        result = await asyncio.to_thread(
             _send_email_sync,
             smtp_host,
             smtp_port,

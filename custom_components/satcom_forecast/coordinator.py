@@ -24,10 +24,8 @@ from .split_util import split_message
 if TYPE_CHECKING:
     # Only needed for static analysis; HA is not installed in the test image.
     from homeassistant.helpers.update_coordinator import (
-        DataUpdateCoordinator as _HADataUpdateCoordinator,  # pragma: no cover
+        DataUpdateCoordinator as DataUpdateCoordinatorBase,  # pragma: no cover
     )
-
-    DataUpdateCoordinatorBase = _HADataUpdateCoordinator  # alias for typing
 else:  # Runtime import with graceful fallback
     try:
         from homeassistant.helpers.update_coordinator import (
@@ -58,12 +56,12 @@ else:  # Runtime import with graceful fallback
 if TYPE_CHECKING:
     DataUpdateCoordinator = DataUpdateCoordinatorBase
 else:
-    DataUpdateCoordinator = DataUpdateCoordinatorBase  # type: ignore[misc,assignment,valid-type]
+    DataUpdateCoordinator = DataUpdateCoordinatorBase  # type: ignore[misc,assignment]
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class SatcomForecastCoordinator(DataUpdateCoordinatorBase):  # type: ignore[misc,valid-type]
+class SatcomForecastCoordinator(DataUpdateCoordinatorBase):
     """Periodically polls an IMAP inbox for GPS requests and dispatches NWS
     forecasts back to the requesting sender.
     """
@@ -252,7 +250,8 @@ class SatcomForecastCoordinator(DataUpdateCoordinatorBase):  # type: ignore[misc
                         self._data["last_coordinates"] = f"{msg['lat']}, {msg['lon']}"
 
                         _LOGGER.info(
-                            "Forecast sent successfully to %s for coordinates %s, %s (%d parts)",
+                            "Forecast sent successfully to %s for "
+                            "coordinates %s, %s (%d parts)",
                             msg["sender"],
                             msg["lat"],
                             msg["lon"],

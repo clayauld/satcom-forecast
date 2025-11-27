@@ -42,7 +42,9 @@ class WeatherGovAPIClient:
     def __init__(
         self,
         base_url: str = "https://api.weather.gov",
-        user_agent: str = "SatComForecast/1.0 (https://github.com/clayauld/satcom-forecast)",
+        user_agent: str = (
+            "SatComForecast/1.0 (https://github.com/clayauld/satcom-forecast)"
+        ),
         timeout: int = 10,
         retry_attempts: int = 3,
         retry_delay: float = 1.0,
@@ -148,7 +150,8 @@ class WeatherGovAPIClient:
                         try:
                             data = await response.json()
                             _LOGGER.debug(
-                                f"Successfully parsed JSON response ({len(str(data))} chars)"
+                                f"Successfully parsed JSON response "
+                                f"({len(str(data))} chars)"
                             )
                             return APIResponse(
                                 success=True,
@@ -169,7 +172,8 @@ class WeatherGovAPIClient:
                         if attempt < self.retry_attempts - 1:
                             wait_time = self.retry_delay * (2**attempt)
                             _LOGGER.warning(
-                                f"Server error {response.status}, retrying in {wait_time}s"
+                                f"Server error {response.status}, "
+                                f"retrying in {wait_time}s"
                             )
                             await asyncio.sleep(wait_time)
                             continue
@@ -186,7 +190,8 @@ class WeatherGovAPIClient:
                         _LOGGER.error(f"Client error {response.status}: {error_text}")
                         return APIResponse(
                             success=False,
-                            error=f"Client error: HTTP {response.status} - {error_text}",
+                            error=f"Client error: HTTP {response.status} - "
+                            f"{error_text}",
                             status_code=response.status,
                             response_time=response_time,
                         )
