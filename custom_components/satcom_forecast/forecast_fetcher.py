@@ -5,6 +5,7 @@ from typing import Optional, Union
 import aiofiles
 import aiohttp
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 
 from .forecast_parser import parse_forecast_periods
 
@@ -56,14 +57,14 @@ async def fetch_forecast(
         # Find the forecast div with the specific style
         forecast_div = soup.find("div", style="margin:25px 0px 0px 0px;")
 
-        if not forecast_div:
-            _LOGGER.warning("Forecast div not found in NWS response")
+        if not forecast_div or not isinstance(forecast_div, Tag):
+            _LOGGER.warning("Forecast div not found or invalid in NWS response")
             _LOGGER.debug(
                 "Available divs with style attributes: %s",
                 [
                     div.get("style", "no-style")
                     for div in soup.find_all("div")
-                    if div.get("style")
+                    if isinstance(div, Tag) and div.get("style")
                 ],
             )
             return "Unable to retrieve forecast data."
@@ -75,7 +76,7 @@ async def fetch_forecast(
 
         # Get the location and issue info
         location_info = forecast_div.find("font", size="3")
-        if location_info and hasattr(location_info, "get_text"):
+        if isinstance(location_info, Tag):
             location_text = location_info.get_text().strip()
             forecast_text += location_text + "\n"
             _LOGGER.debug("Found location info: %s", location_text)
