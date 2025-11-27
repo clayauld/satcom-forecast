@@ -72,7 +72,8 @@ async def test_cache_eviction(cache):
 
     assert len(cache._cache) == 5
 
-    # endpoint_1 should be gone (it was inserted second, but endpoint_0 was accessed recently)
+    # endpoint_1 should be gone (it was inserted second, but endpoint_0 was accessed
+    # recently)
     # Insertion order: 0, 1, 2, 3, 4.
     # Access: 0.
     # LRU order: 1, 2, 3, 4, 0.

@@ -70,7 +70,9 @@ def test_percentage_with_percent_word():
 
 
 def test_no_percentage_near_event():
-    """Test that when no percentage is near the event keyword, it falls back to keyword-based inference."""
+    """Test that when no percentage is near the event keyword, it falls back to
+    keyword-based inference.
+    """
     period = ForecastPeriod(
         name="Today",
         start_time="2024-01-01T06:00:00-05:00",

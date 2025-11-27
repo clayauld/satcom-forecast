@@ -11,19 +11,30 @@ sys.path.insert(
 )
 from forecast_parser import format_forecast, summarize_forecast  # noqa: E402
 
-TEST_FORECAST = """This Afternoon: A chance of showers. Mostly cloudy, with a high near 50. Southeast wind around 10 mph. Chance of precipitation is 40%.
-Tonight: Showers likely, mainly between 7pm and 10pm, then rain after 10pm. Low around 41. Southeast wind around 15 mph. Chance of precipitation is 80%.
-Thursday: Rain likely. Cloudy, with a high near 49. Southeast wind 10 to 15 mph. Chance of precipitation is 70%.
-Thursday Night: Rain likely, mainly before 10pm. Cloudy, with a low around 41. Southeast wind 5 to 15 mph. Chance of precipitation is 60%.
-Friday: Rain likely, mainly between 10am and 1pm. Cloudy, with a high near 51. Southeast wind around 10 mph. Chance of precipitation is 60%.
-Friday Night: A chance of rain before 7pm, then scattered showers after 7pm. Cloudy, with a low around 43. Southeast wind around 10 mph. Chance of precipitation is 50%.
-Saturday: Scattered showers before 10am, then a chance of rain after 10am. Cloudy, with a high near 52. Chance of precipitation is 30%.
-Saturday Night: A chance of rain. Cloudy, with a low around 43.
-Sunday: A chance of rain. Cloudy, with a high near 52.
-Sunday Night: A chance of rain. Cloudy, with a low around 43.
-Monday: A chance of rain. Mostly cloudy, with a high near 54.
-Monday Night: A chance of rain. Mostly cloudy, with a low around 44.
-Tuesday: A chance of rain. Mostly cloudy, with a high near 56."""
+TEST_FORECAST = (
+    "This Afternoon: A chance of showers. Mostly cloudy, with a high near 50. "
+    "Southeast wind around 10 mph. Chance of precipitation is 40%.\n"
+    "Tonight: Showers likely, mainly between 7pm and 10pm, then rain after 10pm. "
+    "Low around 41. Southeast wind around 15 mph. "
+    "Chance of precipitation is 80%.\n"
+    "Thursday: Rain likely. Cloudy, with a high near 49. "
+    "Southeast wind 10 to 15 mph. Chance of precipitation is 70%.\n"
+    "Thursday Night: Rain likely, mainly before 10pm. Cloudy, with a low "
+    "around 41. Southeast wind 5 to 15 mph. Chance of precipitation is 60%.\n"
+    "Friday: Rain likely, mainly between 10am and 1pm. Cloudy, with a high "
+    "near 51. Southeast wind around 10 mph. Chance of precipitation is 60%.\n"
+    "Friday Night: A chance of rain before 7pm, then scattered showers after 7pm. "
+    "Cloudy, with a low around 43. Southeast wind around 10 mph. "
+    "Chance of precipitation is 50%.\n"
+    "Saturday: Scattered showers before 10am, then a chance of rain after 10am. "
+    "Cloudy, with a high near 52. Chance of precipitation is 30%.\n"
+    "Saturday Night: A chance of rain. Cloudy, with a low around 43.\n"
+    "Sunday: A chance of rain. Cloudy, with a high near 52.\n"
+    "Sunday Night: A chance of rain. Cloudy, with a low around 43.\n"
+    "Monday: A chance of rain. Mostly cloudy, with a high near 54.\n"
+    "Monday Night: A chance of rain. Mostly cloudy, with a low around 44.\n"
+    "Tuesday: A chance of rain. Mostly cloudy, with a high near 56."
+)
 
 
 class TestForecastParser:
@@ -40,8 +51,11 @@ class TestForecastParser:
 
     def test_smoke_conditions(self) -> None:
         """Test smoke detection and labeling."""
-        smoke_forecast = """This Afternoon: Widespread haze. Mostly cloudy, with a high near 50. Southeast wind around 10 mph.
-Tonight: Widespread haze. Low around 41. Southeast wind around 15 mph."""
+        smoke_forecast = (
+            "This Afternoon: Widespread haze. Mostly cloudy, with a high near 50. "
+            "Southeast wind around 10 mph.\n"
+            "Tonight: Widespread haze. Low around 41. Southeast wind around 15 mph."
+        )
         areas_smoke_forecast = (
             "This Afternoon: Areas of smoke. Mostly sunny, with a high near 70."
         )
@@ -56,8 +70,13 @@ Tonight: Widespread haze. Low around 41. Southeast wind around 15 mph."""
 
     def test_explicit_percentages(self) -> None:
         """Test explicit percentage handling."""
-        explicit_forecast = """This Afternoon: A chance of showers. Mostly cloudy, with a high near 50. Southeast wind around 10 mph. Chance of precipitation is 40%.
-Tonight: Showers likely, mainly between 7pm and 10pm, then rain after 10pm. Low around 41. Southeast wind around 15 mph. Chance of precipitation is 80%."""
+        explicit_forecast = (
+            "This Afternoon: A chance of showers. Mostly cloudy, with a high near 50. "
+            "Southeast wind around 10 mph. Chance of precipitation is 40%.\n"
+            "Tonight: Showers likely, mainly between 7pm and 10pm, then rain after "
+            "10pm. Low around 41. Southeast wind around 15 mph. "
+            "Chance of precipitation is 80%."
+        )
 
         compact_result = format_forecast(explicit_forecast, mode="compact")
         summary_result = format_forecast(explicit_forecast, mode="summary")
@@ -68,8 +87,14 @@ Tonight: Showers likely, mainly between 7pm and 10pm, then rain after 10pm. Low 
 
     def test_smoke_with_precipitation(self) -> None:
         """Test that smoke and precipitation don't share percentages."""
-        test_text = """This Afternoon: Scattered showers. Areas of smoke. Mostly cloudy, with a high near 67. South wind around 5 mph. Chance of precipitation is 40%.
-Tonight: Showers, mainly before 1am, then rain after 1am. Areas of smoke. Mostly cloudy, with a low around 57. Southeast wind around 5 mph. Chance of precipitation is 80%."""
+        test_text = (
+            "This Afternoon: Scattered showers. Areas of smoke. Mostly cloudy, "
+            "with a high near 67. South wind around 5 mph. "
+            "Chance of precipitation is 40%.\n"
+            "Tonight: Showers, mainly before 1am, then rain after 1am. "
+            "Areas of smoke. Mostly cloudy, with a low around 57. "
+            "Southeast wind around 5 mph. Chance of precipitation is 80%."
+        )
 
         compact_result = format_forecast(test_text, mode="compact")
         summary_result = format_forecast(test_text, mode="summary")
@@ -118,10 +143,16 @@ Tonight: Showers, mainly before 1am, then rain after 1am. Areas of smoke. Mostly
 
     def test_temperature_wind_extraction(self) -> None:
         """Test temperature and wind information extraction."""
-        temp_wind_forecast = """Tonight: A chance of rain. Mostly cloudy, with a low around 46. Southeast wind 5 to 10 mph. Chance of precipitation is 30%.
-Wednesday: Rain likely. Cloudy, with a high near 61. Southeast wind 5 to 10 mph. Chance of precipitation is 70%.
-Wednesday Night: Rain. Cloudy, with a low around 45. East wind around 15 mph. Chance of precipitation is 80%.
-Thursday: Rain. Cloudy, with a high near 61. East wind 5 to 10 mph. Chance of precipitation is 90%."""
+        temp_wind_forecast = (
+            "Tonight: A chance of rain. Mostly cloudy, with a low around 46. "
+            "Southeast wind 5 to 10 mph. Chance of precipitation is 30%.\n"
+            "Wednesday: Rain likely. Cloudy, with a high near 61. "
+            "Southeast wind 5 to 10 mph. Chance of precipitation is 70%.\n"
+            "Wednesday Night: Rain. Cloudy, with a low around 45. "
+            "East wind around 15 mph. Chance of precipitation is 80%.\n"
+            "Thursday: Rain. Cloudy, with a high near 61. East wind 5 to 10 mph. "
+            "Chance of precipitation is 90%."
+        )
 
         summary = summarize_forecast(temp_wind_forecast)
 
@@ -163,34 +194,61 @@ Monday Night: Rain. Low around 35."""
 
     def test_summary_with_temp_wind(self) -> None:
         """Test summary format with temperature and wind information."""
-        sample_text = """
-Tonight: A chance of rain. Mostly cloudy, with a low around 46. Southeast wind 5 to 10 mph. Chance of precipitation is 30%.
-Wednesday: Rain likely. Cloudy, with a high near 61. Southeast wind 5 to 10 mph. Chance of precipitation is 70%.
-Wednesday Night: Rain. Cloudy, with a low around 45. East wind around 15 mph. Chance of precipitation is 80%.
-Thursday: Rain. Cloudy, with a high near 61. East wind 5 to 10 mph. Chance of precipitation is 90%.
-"""
+        sample_text = (
+            "\n"
+            "Tonight: A chance of rain. Mostly cloudy, with a low around 46. "
+            "Southeast wind 5 to 10 mph. Chance of precipitation is 30%.\n"
+            "Wednesday: Rain likely. Cloudy, with a high near 61. "
+            "Southeast wind 5 to 10 mph. Chance of precipitation is 70%.\n"
+            "Wednesday Night: Rain. Cloudy, with a low around 45. "
+            "East wind around 15 mph. Chance of precipitation is 80%.\n"
+            "Thursday: Rain. Cloudy, with a high near 61. East wind 5 to 10 mph. "
+            "Chance of precipitation is 90%.\n"
+        )
         summary = summarize_forecast(sample_text)
-        expected_summary = "Tngt: Rn(30%),L:46°,SE5-10mph\nWed: Rn(80%),H:61°,SE5-10mph,L:45°,E15mph\nThu: Rn(90%),H:61°,E5-10mph"  # Updated to include spaces after colons
+        expected_summary = (
+            "Tngt: Rn(30%),L:46°,SE5-10mph\n"
+            "Wed: Rn(80%),H:61°,SE5-10mph,L:45°,E15mph\n"
+            "Thu: Rn(90%),H:61°,E5-10mph"
+        )
         assert summary == expected_summary
 
     def test_real_world_summary(self) -> None:
         """Test a real-world forecast scenario."""
-        real_forecast_text = """
-Tonight: Mostly cloudy, with a low around 46. Light and variable wind becoming southeast 5 to 10 mph in the evening.
-Wednesday: A slight chance of showers after 4pm. Mostly cloudy, with a high near 61. Northwest wind around 5 mph.
-Wednesday Night: A 20 percent chance of showers. Mostly cloudy, with a low around 45. Southeast wind around 15 mph.
-Thursday: A 30 percent chance of rain. Mostly cloudy, with a high near 61. Southeast wind 5 to 10 mph.
-Thursday Night: A 20 percent chance of rain. Mostly cloudy, with a low around 47. East wind around 10 mph. Breezy.
-Friday: A 20 percent chance of rain. Mostly cloudy, with a high near 62. Northeast wind around 5 mph.
-Friday Night: Mostly cloudy, with a low around 48.
-Saturday: Partly sunny, with a high near 64.
-Saturday Night: Mostly cloudy, with a low around 48.
-Sunday: A 30 percent chance of rain. Mostly cloudy, with a high near 61.
-Sunday Night: A 20 percent chance of rain. Mostly cloudy, with a low around 47.
-Monday: A 30 percent chance of rain. Mostly cloudy, with a high near 61.
-"""
+        real_forecast_text = (
+            "\n"
+            "Tonight: Mostly cloudy, with a low around 46. Light and variable wind "
+            "becoming southeast 5 to 10 mph in the evening.\n"
+            "Wednesday: A slight chance of showers after 4pm. Mostly cloudy, "
+            "with a high near 61. Northwest wind around 5 mph.\n"
+            "Wednesday Night: A 20 percent chance of showers. Mostly cloudy, "
+            "with a low around 45. Southeast wind around 15 mph.\n"
+            "Thursday: A 30 percent chance of rain. Mostly cloudy, "
+            "with a high near 61. Southeast wind 5 to 10 mph.\n"
+            "Thursday Night: A 20 percent chance of rain. Mostly cloudy, "
+            "with a low around 47. East wind around 10 mph. Breezy.\n"
+            "Friday: A 20 percent chance of rain. Mostly cloudy, "
+            "with a high near 62. Northeast wind around 5 mph.\n"
+            "Friday Night: Mostly cloudy, with a low around 48.\n"
+            "Saturday: Partly sunny, with a high near 64.\n"
+            "Saturday Night: Mostly cloudy, with a low around 48.\n"
+            "Sunday: A 30 percent chance of rain. Mostly cloudy, "
+            "with a high near 61.\n"
+            "Sunday Night: A 20 percent chance of rain. Mostly cloudy, "
+            "with a low around 47.\n"
+            "Monday: A 30 percent chance of rain. Mostly cloudy, "
+            "with a high near 61.\n"
+        )
         summary = summarize_forecast(real_forecast_text)
-        expected_summary = "Tngt: L:46°,SE5-10mph\nWed: Rn(30%),H:61°,NW5mph,L:45°,SE15mph\nThu: Rn(30%),H:61°,SE5-10mph,L:47°,E10mph\nFri: Rn(20%),H:62°,NE5mph,L:48°\nSat: H:64°,L:48°\nSun: Rn(30%),H:61°,L:47°\nMon: Rn(30%),H:61°"
+        expected_summary = (
+            "Tngt: L:46°,SE5-10mph\n"
+            "Wed: Rn(30%),H:61°,NW5mph,L:45°,SE15mph\n"
+            "Thu: Rn(30%),H:61°,SE5-10mph,L:47°,E10mph\n"
+            "Fri: Rn(20%),H:62°,NE5mph,L:48°\n"
+            "Sat: H:64°,L:48°\n"
+            "Sun: Rn(30%),H:61°,L:47°\n"
+            "Mon: Rn(30%),H:61°"
+        )
         # Since Tngt is the first period and it's night, it stays as Tngt.
         # Wed + Wed Night -> Wed
         # Thu + Thu Night -> Thu
@@ -203,10 +261,14 @@ Monday: A 30 percent chance of rain. Mostly cloudy, with a high near 61.
         # "Wed: Rn(30%),H:61°,NW5mph,L:45°,SE15mph" -> This has H and L.
         # "Thu: Rn(30%),H:61°,SE5-10mph,L:47°,E10mph" -> This has H and L.
 
-        # The failure was: assert 'Tngt: L:46°,...Rn(30%),H:61°' == 'Tngt: L:46°,...Rn(30%),H:61°'
+        # The failure was: assert 'Tngt: L:46°,...Rn(30%),H:61°' == 'Tngt: L:46°,'
+        # '...Rn(30%),H:61°'
         # Wait, the failure message showed identical strings?
-        # FAILED tests/test_forecast_parser.py::TestForecastParser::test_real_world_summary - AssertionError: assert 'Tngt: L:46°,...Rn(30%),H:61°' == 'Tngt: L:46°,...Rn(30%),H:61°'
-        # This usually means there's a subtle difference (whitespace, invisible char, or order).
+        # FAILED tests/test_forecast_parser.py::TestForecastParser::
+        # test_real_world_summary - AssertionError: assert 'Tngt: L:46°,...
+        # Rn(30%),H:61°' == 'Tngt: L:46°,...Rn(30%),H:61°'
+        # This usually means there's a subtle difference (whitespace, invisible char,
+        # or order).
         # Let's re-verify the expected string carefully.
 
         # In the actual output (from reproduction script):
@@ -222,21 +284,25 @@ Monday: A 30 percent chance of rain. Mostly cloudy, with a high near 61.
         # Tngt: L:46°,SE5-10mph
         # Wed: Rn(30%),H:61°,NW5mph,L:45°,SE15mph
 
-        # I will update the expectation to be exactly what I think it should be based on the logic.
+        # I will update the expectation to be exactly what I think it should be
+        # based on the logic.
 
         assert summary == expected_summary
 
     def test_summarize_forecast_with_holidays(self) -> None:
         """Test that summarize_forecast correctly groups holidays and their nights."""
-        forecast_text = """
-Tonight: Rain likely. Low around 12. Northeast wind 5 mph.
-Wednesday: Rain likely. High near 27. Northeast wind 5 mph.
-Wednesday Night: Rain likely. Low around 26. Northeast wind 5 to 10 mph.
-Thanksgiving Day: Rain likely. High near 32. Northeast wind 10 mph.
-Thursday Night: Rain likely. Low around 29. Northeast wind 5 to 10 mph.
-Friday: Rain likely. High near 34. Northeast wind 5 to 10 mph.
-Friday Night: Rain likely. Low around 23.
-"""
+        forecast_text = (
+            "\n"
+            "Tonight: Rain likely. Low around 12. Northeast wind 5 mph.\n"
+            "Wednesday: Rain likely. High near 27. Northeast wind 5 mph.\n"
+            "Wednesday Night: Rain likely. Low around 26. "
+            "Northeast wind 5 to 10 mph.\n"
+            "Thanksgiving Day: Rain likely. High near 32. Northeast wind 10 mph.\n"
+            "Thursday Night: Rain likely. Low around 29. "
+            "Northeast wind 5 to 10 mph.\n"
+            "Friday: Rain likely. High near 34. Northeast wind 5 to 10 mph.\n"
+            "Friday Night: Rain likely. Low around 23.\n"
+        )
         summary = summarize_forecast(forecast_text)
 
         # Check that "Thanksgiving Day" (Tha) and "Thursday Night" are grouped

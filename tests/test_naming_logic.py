@@ -65,8 +65,11 @@ def test_parser_summary_today():
 
 
 def test_parser_summary_overnight():
-    """Test that 'Overnight' is summarized as 'Tdy' (or kept as ON if preferred, but let's check consistency)."""
-    # If forecast starts with Overnight, it's technically the start of the "day" from the user's perspective if they check late?
-    # Or maybe it should be "ON". The user request specifically mentioned "This Afternoon" -> "Tdy".
+    """Test that 'Overnight' is summarized as 'Tdy' (or kept as ON if preferred,
+    but let's check consistency)."""
+    # If forecast starts with Overnight, it's technically the start of the "day"
+    # from the user's perspective if they check late?
+    # Or maybe it should be "ON". The user request specifically mentioned
+    # "This Afternoon" -> "Tdy".
     # Let's stick to "This Afternoon" for now.
     pass

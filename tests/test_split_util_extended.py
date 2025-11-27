@@ -88,8 +88,8 @@ class TestSplitUtilExtended:
         # Wait, it tries to fill as much as possible.
         # If we give it space for just "A", it's 1 char.
         # If available space is 10. "A very" is 6. 6/10 = 0.6.
-        # Let's try a case where the first word is very short compared to available space,
-        # but the next word makes it overflow.
+        # Let's try a case where the first word is very short compared to available
+        # space, but the next word makes it overflow.
         # "I am" -> "I" (1). "am" (2).
         # If available space is 10. "I am" fits.
         # We need a case where current_length < available_space * 0.4
@@ -147,7 +147,10 @@ class TestSplitUtilExtended:
     def test_split_summary_format_aggressive(self):
         """Test split_summary_format splitting long segments."""
         # A segment longer than limit
-        text = "Short | This is a very long segment that needs to be split aggressively because it exceeds the limit | End"
+        text = (
+            "Short | This is a very long segment that needs to be split aggressively "
+            "because it exceeds the limit | End"
+        )
         parts = split_summary_format(text, effective_limit=20)
         # Should split the middle part
         assert len(parts) > 3

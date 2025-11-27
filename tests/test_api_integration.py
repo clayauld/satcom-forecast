@@ -85,7 +85,8 @@ class TestAPIIntegration:
         assert "isDaytime" in first_period
 
         print(
-            f"Retrieved forecast with {len(forecast_data['properties']['periods'])} periods"
+            f"Retrieved forecast with {len(forecast_data['properties']['periods'])} "
+            f"periods"
         )
 
     @pytest.mark.asyncio
@@ -245,8 +246,10 @@ class TestAPIIntegration:
 
         assert forecast1 == forecast2  # Should be identical
 
-        # Only assert timing if first call took significant time (indicating network request)
-        # If first call was extremely fast (< 10ms), it might have been cached externally or mocked
+        # Only assert timing if first call took significant time (indicating network
+        # request)
+        # If first call was extremely fast (< 10ms), it might have been cached
+        # externally or mocked
         if first_call_time > 0.01:
             assert second_call_time < first_call_time  # Should be faster
 

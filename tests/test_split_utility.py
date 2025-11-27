@@ -31,7 +31,9 @@ class TestSplitUtility:
 
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")
     def test_split_multiline_text_day_separation(self):
-        """Test that split_multiline_text properly separates days while combining efficiently."""
+        """Test that split_multiline_text properly separates days while combining
+        efficiently.
+        """
         # Create a compact format text with multiple days
         compact_text = """Tonight: Rain showers likely, mainly before 7am (L:52, SE5mph)
 Tuesday: Rain showers likely, mainly before 7am (H:64, SE5mph)
@@ -74,7 +76,9 @@ Thursday: A chance of rain between 7am and 1pm (H:62, W5mph)"""
 
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")
     def test_split_multiline_text_efficient_combination(self):
-        """Test that split_multiline_text efficiently combines multiple days into single parts."""
+        """Test that split_multiline_text efficiently combines multiple days into
+        single parts.
+        """
         # Create a compact format text with short day entries
         compact_text = """Tonight: Rain (L:52)
 Tuesday: Rain (H:64)
@@ -110,7 +114,9 @@ Wednesday: Partly sunny (H:63)"""
 
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")
     def test_split_message_format_detection(self):
-        """Test that split_message correctly detects format type and uses appropriate splitting."""
+        """Test that split_message correctly detects format type and uses appropriate
+        splitting.
+        """
         # Test compact format (newlines)
         compact_text = """Tonight: Rain showers likely, mainly before 7am (L:52, SE5mph)
 Tuesday: Rain showers likely, mainly before 7am (H:64, SE5mph)"""
@@ -131,12 +137,20 @@ Tuesday: Rain showers likely, mainly before 7am (H:64, SE5mph)"""
     def test_split_message_character_limits(self):
         """Test that split_message respects character limits."""
         # Create a long text that should be split
-        long_text = """Tonight: Rain showers likely, mainly before 7am. Low around 52. Southeast wind 5 mph. Chance of precipitation is 80%. Showers likely, mainly before 7am.
-Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 mph. Chance of precipitation is 60%. Showers likely, mainly before 7am.
-Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph.
-Wednesday: Partly sunny, with a high near 63. East wind 5 mph.
-Wednesday Night: A chance of rain between 10pm and 1am. Low around 52. Southeast wind 5 to 10 mph. Chance of precipitation is 30%.
-Thursday: A chance of rain between 7am and 1pm. High near 62. West wind 5 mph. Chance of precipitation is 30%."""
+        long_text = (
+            "Tonight: Rain showers likely, mainly before 7am. Low around 52. "
+            "Southeast wind 5 mph. Chance of precipitation is 80%. Showers likely, "
+            "mainly before 7am.\n"
+            "Tuesday: Rain showers likely, mainly before 7am. High near 64. "
+            "Southeast wind 5 mph. Chance of precipitation is 60%. Showers likely, "
+            "mainly before 7am.\n"
+            "Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph.\n"
+            "Wednesday: Partly sunny, with a high near 63. East wind 5 mph.\n"
+            "Wednesday Night: A chance of rain between 10pm and 1am. Low around 52. "
+            "Southeast wind 5 to 10 mph. Chance of precipitation is 30%.\n"
+            "Thursday: A chance of rain between 7am and 1pm. High near 62. "
+            "West wind 5 mph. Chance of precipitation is 30%."
+        )
 
         # Split with a small limit
         parts = split_message(long_text, device_type="zoleo")
@@ -154,12 +168,18 @@ Thursday: A chance of rain between 7am and 1pm. High near 62. West wind 5 mph. C
     def test_split_message_part_numbering(self):
         """Test that split_message adds part numbering when needed."""
         # Create a text that will be split into multiple parts
-        long_text = """Tonight: Rain showers likely, mainly before 7am. Low around 52. Southeast wind 5 mph. Chance of precipitation is 80%.
-Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 mph. Chance of precipitation is 60%.
-Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph.
-Wednesday: Partly sunny, with a high near 63. East wind 5 mph.
-Wednesday Night: A chance of rain between 10pm and 1am. Low around 52. Southeast wind 5 to 10 mph. Chance of precipitation is 30%.
-Thursday: A chance of rain between 7am and 1pm. High near 62. West wind 5 mph. Chance of precipitation is 30%."""
+        long_text = (
+            "Tonight: Rain showers likely, mainly before 7am. Low around 52. "
+            "Southeast wind 5 mph. Chance of precipitation is 80%.\n"
+            "Tuesday: Rain showers likely, mainly before 7am. High near 64. "
+            "Southeast wind 5 mph. Chance of precipitation is 60%.\n"
+            "Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph.\n"
+            "Wednesday: Partly sunny, with a high near 63. East wind 5 mph.\n"
+            "Wednesday Night: A chance of rain between 10pm and 1am. Low around 52. "
+            "Southeast wind 5 to 10 mph. Chance of precipitation is 30%.\n"
+            "Thursday: A chance of rain between 7am and 1pm. High near 62. "
+            "West wind 5 mph. Chance of precipitation is 30%."
+        )
 
         # Split the message
         parts = split_message(long_text, device_type="zoleo")

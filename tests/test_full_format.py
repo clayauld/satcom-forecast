@@ -33,12 +33,16 @@ class TestFullFormat:
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")
     def test_full_format_complete_forecast(self):
         """Test that full format preserves complete forecast information."""
-        sample_forecast = """Tonight: Rain showers likely, mainly before 7am. Low around 52. Southeast wind 5 mph. Chance of precipitation is 80%.
-Showers likely, mainly before 7am.
-Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 mph. Chance of precipitation is 60%.
-Showers likely, mainly before 7am
-Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph.
-Wednesday: Partly sunny, with a high near 63. East wind 5 mph."""
+        sample_forecast = (
+            "Tonight: Rain showers likely, mainly before 7am. Low around 52. "
+            "Southeast wind 5 mph. Chance of precipitation is 80%.\n"
+            "Showers likely, mainly before 7am.\n"
+            "Tuesday: Rain showers likely, mainly before 7am. High near 64. "
+            "Southeast wind 5 mph. Chance of precipitation is 60%.\n"
+            "Showers likely, mainly before 7am\n"
+            "Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph.\n"
+            "Wednesday: Partly sunny, with a high near 63. East wind 5 mph."
+        )
 
         # Format the full forecast
         full_result = format_full_forecast(sample_forecast)
@@ -62,9 +66,13 @@ Wednesday: Partly sunny, with a high near 63. East wind 5 mph."""
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")
     def test_full_format_preserves_structure(self):
         """Test that full format preserves the original forecast structure."""
-        sample_forecast = """Tonight: Rain showers likely, mainly before 7am. Low around 52. Southeast wind 5 mph. Chance of precipitation is 80%.
-Showers likely, mainly before 7am.
-Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 mph. Chance of precipitation is 60%."""
+        sample_forecast = (
+            "Tonight: Rain showers likely, mainly before 7am. Low around 52. "
+            "Southeast wind 5 mph. Chance of precipitation is 80%.\n"
+            "Showers likely, mainly before 7am.\n"
+            "Tuesday: Rain showers likely, mainly before 7am. High near 64. "
+            "Southeast wind 5 mph. Chance of precipitation is 60%."
+        )
 
         # Format the full forecast
         full_result = format_full_forecast(sample_forecast)
@@ -101,9 +109,15 @@ Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 
 
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")
     def test_full_format_no_abbreviations(self):
-        """Test that full format doesn't use abbreviations like compact or summary formats."""
-        sample_forecast = """Tonight: Rain showers likely, mainly before 7am. Low around 52. Southeast wind 5 mph. Chance of precipitation is 80%.
-Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 mph. Chance of precipitation is 60%."""
+        """Test that full format doesn't use abbreviations like compact or
+        summary formats.
+        """
+        sample_forecast = (
+            "Tonight: Rain showers likely, mainly before 7am. Low around 52. "
+            "Southeast wind 5 mph. Chance of precipitation is 80%.\n"
+            "Tuesday: Rain showers likely, mainly before 7am. High near 64. "
+            "Southeast wind 5 mph. Chance of precipitation is 60%."
+        )
 
         # Format the full forecast
         full_result = format_full_forecast(sample_forecast)
@@ -131,11 +145,17 @@ Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 
 
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")
     def test_full_format_splitting(self):
-        """Test that full format is correctly detected and split by the split_message function."""
-        sample_forecast = """Tonight: Rain showers likely, mainly before 7am. Low around 52. Southeast wind 5 mph. Chance of precipitation is 80%.
-Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 mph. Chance of precipitation is 60%.
-Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph.
-Wednesday: Partly sunny, with a high near 63. East wind 5 mph."""
+        """Test that full format is correctly detected and split by the
+        split_message function.
+        """
+        sample_forecast = (
+            "Tonight: Rain showers likely, mainly before 7am. Low around 52. "
+            "Southeast wind 5 mph. Chance of precipitation is 80%.\n"
+            "Tuesday: Rain showers likely, mainly before 7am. High near 64. "
+            "Southeast wind 5 mph. Chance of precipitation is 60%.\n"
+            "Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph.\n"
+            "Wednesday: Partly sunny, with a high near 63. East wind 5 mph."
+        )
 
         # Format the full forecast
         full_result = format_full_forecast(sample_forecast)
@@ -182,10 +202,14 @@ Wednesday: Partly sunny, with a high near 63. East wind 5 mph."""
 
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")
     def test_full_format_weather_events(self):
-        """Test that full format properly includes detailed weather event information."""
-        sample_forecast = """Tonight: Rain showers likely, mainly before 7am. Low around 52. Southeast wind 5 mph. Chance of precipitation is 80%.
-Showers likely, mainly before 7am.
-Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 mph. Chance of precipitation is 60%."""
+        """Test that full format properly includes detailed weather event info."""
+        sample_forecast = (
+            "Tonight: Rain showers likely, mainly before 7am. Low around 52. "
+            "Southeast wind 5 mph. Chance of precipitation is 80%.\n"
+            "Showers likely, mainly before 7am.\n"
+            "Tuesday: Rain showers likely, mainly before 7am. High near 64. "
+            "Southeast wind 5 mph. Chance of precipitation is 60%."
+        )
 
         # Format the full forecast
         full_result = format_full_forecast(sample_forecast)
@@ -194,8 +218,11 @@ Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 
         assert (
             "Rain showers likely" in full_result
         ), "Should contain detailed precipitation information"
-        # Note: The detailed timing information might not be preserved in the current implementation
-        # assert "Showers likely, mainly before 7am" in full_result, "Should contain detailed timing information"
+        # Note: The detailed timing information might not be preserved in the current
+        # implementation
+        # assert "Showers likely, mainly before 7am" in full_result, (
+        #     "Should contain detailed timing information"
+        # )
         assert (
             "Chance of precipitation is 80%" in full_result
         ), "Should contain detailed probability information"
@@ -206,9 +233,13 @@ Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")
     def test_full_format_period_separation(self):
         """Test that periods are properly separated and don't run together."""
-        sample_forecast = """Tonight: Rain showers likely, mainly before 7am. Low around 52. Southeast wind 5 mph. Chance of precipitation is 80%.
-Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 mph. Chance of precipitation is 60%.
-Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph."""
+        sample_forecast = (
+            "Tonight: Rain showers likely, mainly before 7am. Low around 52. "
+            "Southeast wind 5 mph. Chance of precipitation is 80%.\n"
+            "Tuesday: Rain showers likely, mainly before 7am. High near 64. "
+            "Southeast wind 5 mph. Chance of precipitation is 60%.\n"
+            "Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph."
+        )
 
         # Format the full forecast
         full_result = format_full_forecast(sample_forecast)
@@ -266,9 +297,13 @@ Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph."""
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")
     def test_full_format_vs_compact_format(self):
         """Test that full format provides more detail than compact format."""
-        sample_forecast = """Tonight: Rain showers likely, mainly before 7am. Low around 52. Southeast wind 5 mph. Chance of precipitation is 80%.
-Showers likely, mainly before 7am.
-Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 mph. Chance of precipitation is 60%."""
+        sample_forecast = (
+            "Tonight: Rain showers likely, mainly before 7am. Low around 52. "
+            "Southeast wind 5 mph. Chance of precipitation is 80%.\n"
+            "Showers likely, mainly before 7am.\n"
+            "Tuesday: Rain showers likely, mainly before 7am. High near 64. "
+            "Southeast wind 5 mph. Chance of precipitation is 60%."
+        )
 
         # Format both formats
         from forecast_parser import format_compact_forecast
@@ -285,8 +320,11 @@ Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 
         assert (
             "Chance of precipitation is 80%" in full_result
         ), "Full format should contain detailed probability"
-        # Note: The detailed timing information might not be preserved in the current implementation
-        # assert "Showers likely, mainly before 7am" in full_result, "Full format should contain detailed timing"
+        # Note: The detailed timing information might not be preserved in the current
+        # implementation
+        # assert "Showers likely, mainly before 7am" in full_result, (
+        #     "Full format should contain detailed timing"
+        # )
 
         # Compact format should be more concise
         assert (

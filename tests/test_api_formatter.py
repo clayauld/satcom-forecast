@@ -31,7 +31,9 @@ class TestAPIFormatter:
                 wind_speed="10 to 15 mph",
                 wind_direction="NW",
                 short_forecast="Sunny",
-                detailed_forecast="Sunny with a high near 75. Northwest wind 10 to 15 mph.",
+                detailed_forecast=(
+                    "Sunny with a high near 75. Northwest wind 10 to 15 mph."
+                ),
                 probability_of_precipitation=0,
             ),
             ForecastPeriod(
@@ -44,7 +46,9 @@ class TestAPIFormatter:
                 wind_speed="5 to 10 mph",
                 wind_direction="NW",
                 short_forecast="Clear",
-                detailed_forecast="Clear with a low around 55. Northwest wind 5 to 10 mph.",
+                detailed_forecast=(
+                    "Clear with a low around 55. Northwest wind 5 to 10 mph."
+                ),
                 probability_of_precipitation=0,
             ),
         ]
@@ -151,7 +155,9 @@ class TestAPIFormatter:
             start_time="2024-01-01T06:00:00-05:00",
             end_time="2024-01-01T18:00:00-05:00",
             is_daytime=True,
-            detailed_forecast="Rain likely with a high near 70. Chance of precipitation is 80%.",
+            detailed_forecast=(
+                "Rain likely with a high near 70. Chance of precipitation is 80%."
+            ),
         )
 
         events = formatter._detect_period_events(period, sample_events)
@@ -347,7 +353,10 @@ class TestAPIFormatter:
 
     def test_clean_forecast_for_display(self, formatter):
         """Test forecast text cleaning for display."""
-        text = "Sunny with a high near 75. Northwest wind 10 to 15 mph. Chance of precipitation is 0%."
+        text = (
+            "Sunny with a high near 75. Northwest wind 10 to 15 mph. "
+            "Chance of precipitation is 0%."
+        )
         cleaned = formatter._clean_forecast_for_display(text)
 
         # Should remove temperature and wind patterns
@@ -401,7 +410,9 @@ class TestAPIFormatter:
                 temperature=75,
                 wind_speed="15 mph",
                 wind_direction="NW",
-                detailed_forecast="Rain likely with a high near 75. Northwest wind 15 mph.",
+                detailed_forecast=(
+                    "Rain likely with a high near 75. Northwest wind 15 mph."
+                ),
             )
         ]
         events = [

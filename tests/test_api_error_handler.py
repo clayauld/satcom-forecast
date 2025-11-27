@@ -80,9 +80,11 @@ async def test_handle_error_retry(error_handler):
     # Second call calls retry_func again. It returns "Success".
 
     # Wait, retry_func is called inside handle_error.
-    # First call to handle_error: context.retry_count=0. Increments to 1. Calls retry_func.
+    # First call to handle_error: context.retry_count=0. Increments to 1.
+    # Calls retry_func.
     # retry_func raises. handle_error catches and recurses.
-    # Second call to handle_error: context.retry_count=1. Increments to 2. Calls retry_func.
+    # Second call to handle_error: context.retry_count=1. Increments to 2.
+    # Calls retry_func.
     # retry_func returns "Success".
 
     # So retry_func called twice.

@@ -76,7 +76,9 @@ def test_filter_periods_zero(mock_periods):
 
 
 def test_filter_periods_one(mock_periods):
-    """Test filtering with days=1 (should return Today + Tonight + Tuesday + Tuesday Night)."""
+    """Test filtering with days=1 (should return Today + Tonight + Tuesday +
+    Tuesday Night).
+    """
     # days=1 means "Today + Tomorrow"
     # target_days = 2
     result = filter_periods_by_days(mock_periods, 1)
