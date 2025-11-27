@@ -302,13 +302,15 @@ async def test_options_flow_update(mock_hass, mock_config_entry):
         "imap_folder": "INBOX",
     }
 
-    # Mock validate_imap_folder (since folder didn't change, it shouldn't be called, but just in case)
+    # Mock validate_imap_folder (since folder didn't change, it shouldn't be called,
+    # but just in case)
     mock_hass.async_add_executor_job.return_value = (True, None)
 
     # Since we are using MockConfigFlow, async_create_entry is already defined there
     # But we need to mock async_reload_entry import inside the method
     # The method does: from . import async_reload_entry
-    # We can mock sys.modules['custom_components.satcom_forecast'] to have async_reload_entry
+    # We can mock sys.modules['custom_components.satcom_forecast'] to have
+    # async_reload_entry
 
     async def mock_reload(*args, **kwargs):
         pass

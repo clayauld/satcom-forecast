@@ -75,7 +75,15 @@ def mock_hass():
         side_effect=return_future
     )
 
-    hass.config_entries.async_update_entry = MagicMock()
+    def update_entry_side_effect(entry, data=None, version=None, **kwargs):
+        if data:
+            entry.data.update(data)
+        if version is not None:
+            entry.version = version
+
+    hass.config_entries.async_update_entry = MagicMock(
+        side_effect=update_entry_side_effect
+    )
     hass.services = MagicMock()
     hass.services.async_register = MagicMock()
     hass.services.async_remove = MagicMock()

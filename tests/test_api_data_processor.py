@@ -33,7 +33,9 @@ class TestAPIDataProcessor:
                         "windSpeed": "10 to 15 mph",
                         "windDirection": "NW",
                         "shortForecast": "Sunny",
-                        "detailedForecast": "Sunny with a high near 75. Northwest wind 10 to 15 mph.",
+                        "detailedForecast": (
+                            "Sunny with a high near 75. Northwest wind 10 to 15 mph."
+                        ),
                         "probabilityOfPrecipitation": {"value": 0},
                         "relativeHumidity": {"value": 45},
                         "heatIndex": None,
@@ -54,7 +56,9 @@ class TestAPIDataProcessor:
                         "windSpeed": "5 to 10 mph",
                         "windDirection": "NW",
                         "shortForecast": "Clear",
-                        "detailedForecast": "Clear with a low around 55. Northwest wind 5 to 10 mph.",
+                        "detailedForecast": (
+                            "Clear with a low around 55. Northwest wind 5 to 10 mph."
+                        ),
                         "probabilityOfPrecipitation": {"value": 0},
                         "relativeHumidity": {"value": 60},
                         "heatIndex": None,
@@ -100,7 +104,9 @@ class TestAPIDataProcessor:
             start_time="2024-01-01T06:00:00-05:00",
             end_time="2024-01-01T18:00:00-05:00",
             is_daytime=True,
-            detailed_forecast="Rain likely with a high near 70. Chance of precipitation is 80%.",
+            detailed_forecast=(
+                "Rain likely with a high near 70. Chance of precipitation is 80%."
+            ),
         )
 
         events = processor.extract_weather_events(period)

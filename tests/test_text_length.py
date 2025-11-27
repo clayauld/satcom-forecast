@@ -12,9 +12,15 @@ sys.path.insert(
 from forecast_parser import format_forecast  # noqa: E402
 from split_util import split_message  # noqa: E402
 
-TEST_FORECAST = """This Afternoon: A chance of showers. Mostly cloudy, with a high near 50. Southeast wind around 10 mph. Chance of precipitation is 40%.
-Tonight: Showers likely, mainly between 7pm and 10pm, then rain after 10pm. Low around 41. Southeast wind around 15 mph. Chance of precipitation is 80%.
-Thursday: Rain likely. Cloudy, with a high near 49. Southeast wind 10 to 15 mph. Chance of precipitation is 70%."""
+TEST_FORECAST = (
+    "This Afternoon: A chance of showers. Mostly cloudy, with a high near 50. "
+    "Southeast wind around 10 mph. Chance of precipitation is 40%.\n"
+    "Tonight: Showers likely, mainly between 7pm and 10pm, then rain after 10pm. "
+    "Low around 41. Southeast wind around 15 mph. "
+    "Chance of precipitation is 80%.\n"
+    "Thursday: Rain likely. Cloudy, with a high near 49. "
+    "Southeast wind 10 to 15 mph. Chance of precipitation is 70%."
+)
 
 
 class TestTextLength:

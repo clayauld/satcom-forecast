@@ -127,8 +127,8 @@ class TestIMAPHandlerExtended:
         msg.set_content("This is text part. 34.5, -118.2")
         msg.add_alternative("<b>HTML part</b>", subtype="html")
 
-        # Convert to bytes (need to use policy or generator for older python versions if needed,
-        # but EmailMessage.as_bytes() should work)
+        # Convert to bytes (need to use policy or generator for older python versions
+        # if needed, but EmailMessage.as_bytes() should work)
         msg_bytes = msg.as_bytes()
 
         mock_imap.fetch.return_value = ("OK", [(b"1 (RFC822 {100}", msg_bytes)])

@@ -33,25 +33,35 @@ class TestCompactFormat:
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")
     def test_compact_format_newlines(self):
         """Test that compact format preserves newlines between days."""
-        sample_forecast = """Tonight: Rain showers likely, mainly before 7am. Low around 52. Southeast wind 5 mph. Chance of precipitation is 80%.
-Showers likely, mainly before 7am.
-Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 mph. Chance of precipitation is 60%.
-Showers likely, mainly before 7am
-Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph.
-Wednesday: Partly sunny, with a high near 63. East wind 5 mph.
-Wednesday Night: A chance of rain between 10pm and 1am. Low around 52. Southeast wind 5 to 10 mph. Chance of precipitation is 30%.
-A chance of rain between 10pm and 1am
-Thursday: A chance of rain between 7am and 1pm. High near 62. West wind 5 mph. Chance of precipitation is 30%.
-A chance of rain between 7am and 1pm
-Thursday Night: Mostly cloudy, with a low around 49.
-Friday: A chance of rain after 10am. High near 65. Chance of precipitation is 30%.
-A chance of rain after 10am
-Friday Night: A chance of rain. Low around 50. Chance of precipitation is 30%.
-A chance of rain
-Saturday: A chance of rain. High near 63. Chance of precipitation is 30%.
-A chance of rain
-Saturday Night: A chance of rain. Low around 50. Chance of precipitation is 30%.
-A chance of rain"""
+        sample_forecast = (
+            "Tonight: Rain showers likely, mainly before 7am. Low around 52. "
+            "Southeast wind 5 mph. Chance of precipitation is 80%.\n"
+            "Showers likely, mainly before 7am.\n"
+            "Tuesday: Rain showers likely, mainly before 7am. High near 64. "
+            "Southeast wind 5 mph. Chance of precipitation is 60%.\n"
+            "Showers likely, mainly before 7am\n"
+            "Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph.\n"
+            "Wednesday: Partly sunny, with a high near 63. East wind 5 mph.\n"
+            "Wednesday Night: A chance of rain between 10pm and 1am. Low around 52. "
+            "Southeast wind 5 to 10 mph. Chance of precipitation is 30%.\n"
+            "A chance of rain between 10pm and 1am\n"
+            "Thursday: A chance of rain between 7am and 1pm. High near 62. "
+            "West wind 5 mph. Chance of precipitation is 30%.\n"
+            "A chance of rain between 7am and 1pm\n"
+            "Thursday Night: Mostly cloudy, with a low around 49.\n"
+            "Friday: A chance of rain after 10am. High near 65. "
+            "Chance of precipitation is 30%.\n"
+            "A chance of rain after 10am\n"
+            "Friday Night: A chance of rain. Low around 50. "
+            "Chance of precipitation is 30%.\n"
+            "A chance of rain\n"
+            "Saturday: A chance of rain. High near 63. "
+            "Chance of precipitation is 30%.\n"
+            "A chance of rain\n"
+            "Saturday Night: A chance of rain. Low around 50. "
+            "Chance of precipitation is 30%.\n"
+            "A chance of rain"
+        )
 
         # Format the compact forecast
         compact_result = format_compact_forecast(sample_forecast)
@@ -88,9 +98,15 @@ A chance of rain"""
 
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")
     def test_compact_format_no_pipe_separators(self):
-        """Test that compact format doesn't use pipe separators that would trigger summary format detection."""
-        sample_forecast = """Tonight: Rain showers likely, mainly before 7am. Low around 52. Southeast wind 5 mph. Chance of precipitation is 80%.
-Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 mph. Chance of precipitation is 60%."""
+        """Test that compact format doesn't use pipe separators that would
+        trigger summary format detection.
+        """
+        sample_forecast = (
+            "Tonight: Rain showers likely, mainly before 7am. Low around 52. "
+            "Southeast wind 5 mph. Chance of precipitation is 80%.\n"
+            "Tuesday: Rain showers likely, mainly before 7am. High near 64. "
+            "Southeast wind 5 mph. Chance of precipitation is 60%."
+        )
 
         # Format the compact forecast
         compact_result = format_compact_forecast(sample_forecast)
@@ -107,11 +123,17 @@ Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 
 
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")
     def test_compact_format_splitting(self):
-        """Test that compact format is correctly detected and split by the split_message function."""
-        sample_forecast = """Tonight: Rain showers likely, mainly before 7am. Low around 52. Southeast wind 5 mph. Chance of precipitation is 80%.
-Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 mph. Chance of precipitation is 60%.
-Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph.
-Wednesday: Partly sunny, with a high near 63. East wind 5 mph."""
+        """Test that compact format is correctly detected and split by the
+        split_message function.
+        """
+        sample_forecast = (
+            "Tonight: Rain showers likely, mainly before 7am. Low around 52. "
+            "Southeast wind 5 mph. Chance of precipitation is 80%.\n"
+            "Tuesday: Rain showers likely, mainly before 7am. High near 64. "
+            "Southeast wind 5 mph. Chance of precipitation is 60%.\n"
+            "Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph.\n"
+            "Wednesday: Partly sunny, with a high near 63. East wind 5 mph."
+        )
 
         # Format the compact forecast
         compact_result = format_compact_forecast(sample_forecast)
@@ -159,9 +181,13 @@ Wednesday: Partly sunny, with a high near 63. East wind 5 mph."""
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")
     def test_compact_format_day_separation(self):
         """Test that days are properly separated and don't run together."""
-        sample_forecast = """Tonight: Rain showers likely, mainly before 7am. Low around 52. Southeast wind 5 mph. Chance of precipitation is 80%.
-Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 mph. Chance of precipitation is 60%.
-Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph."""
+        sample_forecast = (
+            "Tonight: Rain showers likely, mainly before 7am. Low around 52. "
+            "Southeast wind 5 mph. Chance of precipitation is 80%.\n"
+            "Tuesday: Rain showers likely, mainly before 7am. High near 64. "
+            "Southeast wind 5 mph. Chance of precipitation is 60%.\n"
+            "Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph."
+        )
 
         # Format the compact forecast
         compact_result = format_compact_forecast(sample_forecast)

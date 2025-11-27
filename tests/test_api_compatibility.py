@@ -192,7 +192,9 @@ class TestAPICompatibility:
                 start_time="2024-01-01T06:00:00-05:00",
                 end_time="2024-01-01T18:00:00-05:00",
                 is_daytime=True,
-                detailed_forecast="Rain likely with a high near 70. Chance of precipitation is 80%.",
+                detailed_forecast=(
+                    "Rain likely with a high near 70. Chance of precipitation is 80%."
+                ),
             ),
             ForecastPeriod(
                 name="Tonight",
@@ -206,7 +208,9 @@ class TestAPICompatibility:
                 start_time="2024-01-02T06:00:00-05:00",
                 end_time="2024-01-02T18:00:00-05:00",
                 is_daytime=True,
-                detailed_forecast="Snow likely with a high near 30. Heavy snow possible.",
+                detailed_forecast=(
+                    "Snow likely with a high near 30. Heavy snow possible."
+                ),
             ),
         ]
 
@@ -321,7 +325,8 @@ class TestAPICompatibility:
                 assert len(full) >= 500, f"Full length {len(full)} below minimum 500"
 
                 print(
-                    f"✓ {lat}, {lon}: Summary={len(summary)}, Compact={len(compact)}, Full={len(full)}"
+                    f"✓ {lat}, {lon}: Summary={len(summary)}, "
+                    f"Compact={len(compact)}, Full={len(full)}"
                 )
 
             except Exception as e:
@@ -365,7 +370,8 @@ class TestAPICompatibility:
                 assert len(api_forecast) > 50
 
                 print(
-                    f"Days {days}: HTML={len(html_forecast)} chars, API={len(api_forecast)} chars"
+                    f"Days {days}: HTML={len(html_forecast)} chars, "
+                    f"API={len(api_forecast)} chars"
                 )
 
         except Exception as e:

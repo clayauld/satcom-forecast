@@ -30,7 +30,8 @@ def check_installation_path():
     if not installed_path:
         print("❌ Integration not found in common locations")
         print(
-            "Please ensure you copied the entire 'custom_components/satcom_forecast' folder"
+            "Please ensure you copied the entire 'custom_components/satcom_forecast' "
+            "folder"
         )
         return False
 
@@ -163,7 +164,8 @@ def main():
         print("1. Restart Home Assistant completely")
         print("2. Check Home Assistant logs for any error messages")
         print(
-            "3. Try searching for 'SatCom Forecast' or 'satcom' in the integration search"
+            "3. Try searching for 'SatCom Forecast' or 'satcom' in the integration "
+            "search"
         )
     else:
         print("\nInstallation structure looks correct.")

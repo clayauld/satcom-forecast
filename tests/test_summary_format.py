@@ -30,11 +30,17 @@ class TestSummaryFormat:
 
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")
     def test_summary_format_space_after_colon(self):
-        """Test that summary format includes a space after the colon following day names."""
-        sample_forecast = """Tonight: Rain showers likely, mainly before 7am. Low around 52. Southeast wind 5 mph. Chance of precipitation is 80%.
-Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 mph. Chance of precipitation is 60%.
-Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph.
-Wednesday: Partly sunny, with a high near 63. East wind 5 mph."""
+        """Test that summary format includes a space after the colon following day
+        names.
+        """
+        sample_forecast = (
+            "Tonight: Rain showers likely, mainly before 7am. Low around 52. "
+            "Southeast wind 5 mph. Chance of precipitation is 80%.\n"
+            "Tuesday: Rain showers likely, mainly before 7am. High near 64. "
+            "Southeast wind 5 mph. Chance of precipitation is 60%.\n"
+            "Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph.\n"
+            "Wednesday: Partly sunny, with a high near 63. East wind 5 mph."
+        )
 
         # Format the summary forecast
         summary_result = summarize_forecast(sample_forecast)
@@ -56,9 +62,13 @@ Wednesday: Partly sunny, with a high near 63. East wind 5 mph."""
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")
     def test_summary_format_day_separation(self):
         """Test that summary format properly separates days with newlines."""
-        sample_forecast = """Tonight: Rain showers likely, mainly before 7am. Low around 52. Southeast wind 5 mph. Chance of precipitation is 80%.
-Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 mph. Chance of precipitation is 60%.
-Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph."""
+        sample_forecast = (
+            "Tonight: Rain showers likely, mainly before 7am. Low around 52. "
+            "Southeast wind 5 mph. Chance of precipitation is 80%.\n"
+            "Tuesday: Rain showers likely, mainly before 7am. High near 64. "
+            "Southeast wind 5 mph. Chance of precipitation is 60%.\n"
+            "Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph."
+        )
 
         # Format the summary forecast
         summary_result = summarize_forecast(sample_forecast)
@@ -98,8 +108,12 @@ Tuesday Night: Partly cloudy, with a low around 47. West wind 5 mph."""
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")
     def test_summary_format_weather_events(self):
         """Test that summary format properly includes weather events."""
-        sample_forecast = """Tonight: Rain showers likely, mainly before 7am. Low around 52. Southeast wind 5 mph. Chance of precipitation is 80%.
-Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 mph. Chance of precipitation is 60%."""
+        sample_forecast = (
+            "Tonight: Rain showers likely, mainly before 7am. Low around 52. "
+            "Southeast wind 5 mph. Chance of precipitation is 80%.\n"
+            "Tuesday: Rain showers likely, mainly before 7am. High near 64. "
+            "Southeast wind 5 mph. Chance of precipitation is 60%."
+        )
 
         # Format the summary forecast
         summary_result = summarize_forecast(sample_forecast)
@@ -117,8 +131,12 @@ Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")
     def test_summary_format_no_newlines(self):
         """Test that summary format uses newlines for separation."""
-        sample_forecast = """Tonight: Rain showers likely, mainly before 7am. Low around 52. Southeast wind 5 mph. Chance of precipitation is 80%.
-Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 mph. Chance of precipitation is 60%."""
+        sample_forecast = (
+            "Tonight: Rain showers likely, mainly before 7am. Low around 52. "
+            "Southeast wind 5 mph. Chance of precipitation is 80%.\n"
+            "Tuesday: Rain showers likely, mainly before 7am. High near 64. "
+            "Southeast wind 5 mph. Chance of precipitation is 60%."
+        )
 
         # Format the summary forecast
         summary_result = summarize_forecast(sample_forecast)
@@ -133,9 +151,15 @@ Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 
 
     @pytest.mark.skipif(not HAS_HA, reason="Home Assistant not available")
     def test_summary_format_splitting_detection(self):
-        """Test that summary format is correctly detected by the split_message function."""
-        sample_forecast = """Tonight: Rain showers likely, mainly before 7am. Low around 52. Southeast wind 5 mph. Chance of precipitation is 80%.
-Tuesday: Rain showers likely, mainly before 7am. High near 64. Southeast wind 5 mph. Chance of precipitation is 60%."""
+        """Test that summary format is correctly detected by the split_message
+        function.
+        """
+        sample_forecast = (
+            "Tonight: Rain showers likely, mainly before 7am. Low around 52. "
+            "Southeast wind 5 mph. Chance of precipitation is 80%.\n"
+            "Tuesday: Rain showers likely, mainly before 7am. High near 64. "
+            "Southeast wind 5 mph. Chance of precipitation is 60%."
+        )
 
         # Format the summary forecast
         summary_result = summarize_forecast(sample_forecast)
