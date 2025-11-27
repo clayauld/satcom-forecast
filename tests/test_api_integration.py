@@ -400,7 +400,7 @@ class TestAPIPerformance:
                     office, grid_x, grid_y, forecast_url = await client.get_gridpoint(
                         40.7128, -74.0060
                     )
-                    forecast_data = await client.get_forecast(office, grid_x, grid_y)
+                    await client.get_forecast(office, grid_x, grid_y)
 
                     current_memory = process.memory_info().rss / 1024 / 1024  # MB
                     print(f"Request {i+1}: {current_memory:.1f} MB")

@@ -4,7 +4,7 @@ import email
 import os
 import sys
 from email.message import Message
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -22,7 +22,6 @@ try:
     from imap_handler import (
         _check_imap_sync,
         _safe_decode_payload,
-        check_imap_for_gps,
         extract_days_override,
     )
 except ImportError:

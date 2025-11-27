@@ -1,9 +1,8 @@
 """Extended tests for coordinator functionality."""
 
-import asyncio
 import os
 import sys
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 

@@ -84,7 +84,6 @@ class TestSplitUtilExtended:
 
     def test_split_line_to_fill_space_not_beneficial(self):
         """Test split_line_to_fill_space rejects if not beneficial."""
-        line = "A very long line"
         # Available space 20. "A" is 1 char. 1/20 = 0.05 < 0.4.
         # Wait, it tries to fill as much as possible.
         # If we give it space for just "A", it's 1 char.

@@ -5,7 +5,6 @@ Unit tests for API client module.
 import asyncio
 from unittest.mock import AsyncMock, Mock, patch
 
-import aiohttp
 import pytest
 
 from custom_components.satcom_forecast.api_client import (

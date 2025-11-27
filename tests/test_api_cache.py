@@ -1,14 +1,11 @@
 """Test the API Cache."""
 
 import asyncio
-import time
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from custom_components.satcom_forecast.api_cache import (
     APICache,
-    CacheEntry,
     CacheManager,
     get_alerts_cache,
     get_cache_manager,

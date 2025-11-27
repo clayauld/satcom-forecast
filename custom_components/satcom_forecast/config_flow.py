@@ -95,7 +95,7 @@ def validate_imap_folder(
 
 
 class SatcomForecastConfigFlow(
-    config_entries.ConfigFlow, domain=DOMAIN  # type: ignore
+    config_entries.ConfigFlow, domain=DOMAIN  # type: ignore[call-arg]
 ):
     VERSION = 4
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
@@ -170,7 +170,7 @@ class SatcomForecastConfigFlow(
 
             if not is_valid:
                 errors["base"] = "invalid_folder"
-                errors["imap_folder"] = error_message
+                errors["imap_folder"] = str(error_message)
             else:
                 return self.async_create_entry(
                     title="SatCom Forecast", data={**self._credentials, **user_input}
@@ -219,6 +219,8 @@ class SatcomForecastConfigFlow(
 
 class SatcomForecastOptionsFlow(config_entries.OptionsFlow):
     """Handle options."""
+
+    config_entry: config_entries.ConfigEntry
 
     def __init__(self) -> None:
         """Initialize options flow."""
@@ -297,7 +299,7 @@ class SatcomForecastOptionsFlow(config_entries.OptionsFlow):
 
                     if not is_valid:
                         errors["base"] = "invalid_folder"
-                        errors["imap_folder"] = error_message
+                        errors["imap_folder"] = str(error_message)
                         return self.async_show_form(
                             step_id="init",
                             data_schema=self._get_schema(user_input),

@@ -1,9 +1,7 @@
 """Test the API Error Handler."""
 
 import asyncio
-import time
-from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -11,9 +9,7 @@ from custom_components.satcom_forecast.api_error_handler import (
     APIError,
     CircuitBreaker,
     ErrorCategory,
-    ErrorContext,
     ErrorHandler,
-    ErrorInfo,
     ErrorSeverity,
     create_error_context,
 )

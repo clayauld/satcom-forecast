@@ -1,6 +1,7 @@
 """Test the SatCom Forecast init."""
 
 import asyncio
+import importlib
 import sys
 from unittest.mock import MagicMock, patch
 
@@ -43,13 +44,12 @@ class MockConfigEntry:
 
 sys.modules["homeassistant.config_entries"].ConfigEntry = MockConfigEntry
 
-import importlib
 
 # Import module under test
-import custom_components.satcom_forecast
+import custom_components.satcom_forecast  # noqa: E402
 
 importlib.reload(custom_components.satcom_forecast)
-from custom_components.satcom_forecast import (
+from custom_components.satcom_forecast import (  # noqa: E402
     DOMAIN,
     async_migrate_entry,
     async_reload_entry,
@@ -141,10 +141,19 @@ async def test_async_migrate_entry_v2_to_v3(mock_hass):
     result = await async_migrate_entry(mock_hass, entry)
 
     assert result is True
-    mock_hass.config_entries.async_update_entry.assert_called_once()
-    call_args = mock_hass.config_entries.async_update_entry.call_args
-    assert call_args[1]["version"] == 3
-    assert call_args[1]["data"]["polling_interval"] == 5
+    # The migration will run v2->v3 AND v3->v4, so we expect 2 calls
+    assert mock_hass.config_entries.async_update_entry.call_count == 2
+
+    # Check the first call (v2->v3)
+    call_args_1 = mock_hass.config_entries.async_update_entry.call_args_list[0]
+    assert call_args_1[1]["data"]["polling_interval"] == 5
+
+    # Check the second call (v3->v4)
+    call_args_2 = mock_hass.config_entries.async_update_entry.call_args_list[1]
+    assert call_args_2[1]["data"]["imap_security"] == "SSL"
+
+    # Verify final version
+    assert entry.version == 4
 
 
 async def test_async_migrate_entry_v3_to_v4(mock_hass):
@@ -156,8 +165,10 @@ async def test_async_migrate_entry_v3_to_v4(mock_hass):
     assert result is True
     mock_hass.config_entries.async_update_entry.assert_called_once()
     call_args = mock_hass.config_entries.async_update_entry.call_args
-    assert call_args[1]["version"] == 4
     assert call_args[1]["data"]["imap_security"] == "SSL"
+
+    # Verify final version
+    assert entry.version == 4
 
 
 async def test_async_reload_entry(mock_hass):

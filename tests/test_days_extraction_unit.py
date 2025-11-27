@@ -1,8 +1,6 @@
 import os
 import sys
 
-import pytest
-
 # Add custom_components/satcom_forecast to path
 sys.path.insert(
     0,
@@ -11,7 +9,7 @@ sys.path.insert(
     ),
 )
 
-from imap_handler import extract_days_override
+from imap_handler import extract_days_override  # noqa: E402
 
 
 class TestDaysExtraction:

@@ -57,20 +57,19 @@ sys.modules["homeassistant"].data_entry_flow = sys.modules[
     "homeassistant.data_entry_flow"
 ]
 
-import importlib
+import importlib  # noqa: E402
 
-import custom_components.satcom_forecast.config_flow
+import custom_components.satcom_forecast.config_flow  # noqa: E402
 
 # Now import the module under test
-from custom_components.satcom_forecast.const import DOMAIN
-
-importlib.reload(custom_components.satcom_forecast.config_flow)
-from custom_components.satcom_forecast.config_flow import (
+from custom_components.satcom_forecast.config_flow import (  # noqa: E402
     SatcomForecastConfigFlow,
     SatcomForecastOptionsFlow,
     get_imap_folders,
     validate_imap_folder,
 )
+
+importlib.reload(custom_components.satcom_forecast.config_flow)
 
 
 @pytest.fixture

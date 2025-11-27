@@ -2,9 +2,9 @@
 Pytest configuration and fixtures for SatCom Forecast tests.
 """
 
-import os
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock
 
 # Add the custom_components directory to the Python path
 project_root = Path(__file__).parent.parent
@@ -14,8 +14,6 @@ sys.path.insert(0, str(custom_components_path))
 # Add the satcom_forecast directory to the Python path
 satcom_forecast_path = custom_components_path / "satcom_forecast"
 sys.path.insert(0, str(satcom_forecast_path))
-
-from unittest.mock import MagicMock
 
 # Mock homeassistant modules
 sys.modules["homeassistant"] = MagicMock()

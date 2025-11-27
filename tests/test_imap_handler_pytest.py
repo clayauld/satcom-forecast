@@ -6,7 +6,7 @@ Tests the IMAP handler functionality and error handling.
 import asyncio
 import os
 import sys
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 

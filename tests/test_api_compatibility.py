@@ -3,12 +3,10 @@ Compatibility tests to ensure API output matches current HTML implementation.
 """
 
 import asyncio
-from unittest.mock import AsyncMock, patch
 
 import pytest
 
 from custom_components.satcom_forecast.api_data_processor import APIDataProcessor
-from custom_components.satcom_forecast.api_formatter import APIFormatter
 from custom_components.satcom_forecast.api_models import ForecastPeriod
 from custom_components.satcom_forecast.forecast_fetcher import (
     fetch_forecast as fetch_forecast_html,
@@ -213,7 +211,6 @@ class TestAPICompatibility:
         ]
 
         processor = APIDataProcessor()
-        formatter = APIFormatter()
 
         # Extract events from each period
         all_events = []
@@ -479,6 +476,13 @@ class TestRegressionCompatibility:
         from custom_components.satcom_forecast.forecast_parser import (
             format_forecast as original_format,
         )
+
+        assert WeatherGovAPIClient
+        assert APIDataProcessor
+        assert APIFormatter
+        assert SatcomForecastCoordinator
+        assert original_fetch
+        assert original_format
 
         print("✓ All imports successful")
 

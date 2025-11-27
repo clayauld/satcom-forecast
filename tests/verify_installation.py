@@ -70,7 +70,7 @@ def check_required_files(integration_path):
 
 def check_manifest(integration_path):
     """Check if manifest.json is valid."""
-    print(f"\nChecking manifest.json...")
+    print("\nChecking manifest.json...")
 
     manifest_path = os.path.join(integration_path, "manifest.json")
     try:
@@ -91,7 +91,7 @@ def check_manifest(integration_path):
 
 def check_file_permissions(integration_path):
     """Check file permissions."""
-    print(f"\nChecking file permissions...")
+    print("\nChecking file permissions...")
 
     try:
         # Check if files are readable

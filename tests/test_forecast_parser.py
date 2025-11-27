@@ -9,7 +9,7 @@ sys.path.insert(
         os.path.dirname(__file__), "..", "custom_components", "satcom_forecast"
     ),
 )
-from forecast_parser import format_forecast, summarize_forecast
+from forecast_parser import format_forecast, summarize_forecast  # noqa: E402
 
 TEST_FORECAST = """This Afternoon: A chance of showers. Mostly cloudy, with a high near 50. Southeast wind around 10 mph. Chance of precipitation is 40%.
 Tonight: Showers likely, mainly between 7pm and 10pm, then rain after 10pm. Low around 41. Southeast wind around 15 mph. Chance of precipitation is 80%.

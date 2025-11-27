@@ -2,8 +2,6 @@
 Unit tests for API data processor module.
 """
 
-from unittest.mock import Mock
-
 import pytest
 
 from custom_components.satcom_forecast import weather_utils

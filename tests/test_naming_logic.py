@@ -2,10 +2,8 @@
 Test naming logic for day summaries.
 """
 
-import pytest
-
 from custom_components.satcom_forecast.api_formatter import APIFormatter
-from custom_components.satcom_forecast.api_models import ForecastPeriod, WeatherEvent
+from custom_components.satcom_forecast.api_models import ForecastPeriod
 from custom_components.satcom_forecast.forecast_parser import summarize_forecast
 
 
