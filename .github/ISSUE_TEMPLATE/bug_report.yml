@@ -1,25 +1,78 @@
-
 name: Bug Report
 description: Report a problem with the SatCom Forecast integration.
 labels: ["bug"]
 body:
   - type: markdown
     attributes:
-      value: "Thanks for reporting a bug! Please fill out the following:"
-  - type: input
-    id: environment
-    attributes:
-      label: Home Assistant version
-    validations:
-      required: true
+      value: |
+        Thanks for reporting a bug! Please fill out the following fields to help us fix it.
+
   - type: textarea
     id: description
     attributes:
-      label: What happened?
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
     validations:
       required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '....'
+        3. Scroll down to '....'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      placeholder: e.g. 2023.1.0
+    validations:
+      required: true
+
+  - type: input
+    id: integration_version
+    attributes:
+      label: Integration version
+      placeholder: e.g. 0.1.0
+    validations:
+      required: true
+
+  - type: input
+    id: python_version
+    attributes:
+      label: Python version
+      placeholder: e.g. 3.9.0
+    validations:
+      required: false
+
   - type: textarea
     id: logs
     attributes:
       label: Relevant logs
+      description: Please copy and paste any relevant logs here.
       render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Add any other context about the problem here. If applicable, add screenshots to help explain your problem.
+    validations:
+      required: false

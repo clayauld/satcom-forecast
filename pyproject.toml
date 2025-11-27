@@ -39,6 +39,7 @@ dev = [
     "flake8>=6.0.0",
     "mypy>=1.0.0",
     "pre-commit>=3.0.0",
+    "types-aiofiles>=23.0.0",
 ]
 
 [tool.black]
@@ -72,7 +73,7 @@ exclude = [
 ]
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.9"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -85,6 +86,12 @@ warn_unused_ignores = true
 warn_no_return = true
 warn_unreachable = true
 strict_equality = true
+mypy_path = "."
+namespace_packages = true
+explicit_package_bases = true
+exclude = [
+    "tests/",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -92,10 +99,22 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = [
+    "-v",
+    "--tb=short",
     "--strict-markers",
     "--strict-config",
+    "--disable-warnings",
+    "--asyncio-mode=auto",
     "--cov=custom_components/satcom_forecast",
     "--cov-report=term-missing",
     "--cov-report=html",
+    "--cov-report=xml",
 ]
 asyncio_mode = "auto"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "regression: marks tests as regression tests",
+    "compatibility: marks tests as compatibility tests",
+]

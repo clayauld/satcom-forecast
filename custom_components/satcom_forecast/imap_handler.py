@@ -21,7 +21,8 @@ async def check_imap_for_gps(
     security: str = "SSL",
 ) -> List[Dict[str, Any]]:
     _LOGGER.debug(
-        "Checking IMAP for GPS coordinates - Host: %s, Port: %s, User: %s, Folder: %s, Security: %s",
+        "Checking IMAP for GPS coordinates - Host: %s, Port: %s, User: %s, "
+        "Folder: %s, Security: %s",
         host,
         port,
         username,
@@ -40,6 +41,7 @@ async def check_imap_for_gps(
             folder,
             security,
         )
+        # The result is already List[Dict[str, Any]] from _check_imap_sync
         return result
 
     except Exception as e:
@@ -130,20 +132,30 @@ def _check_imap_sync(
         message_count = len(messages[0].split()) if messages and messages[0] else 0
         _LOGGER.debug("Found %d unread messages", message_count)
 
-        result = []
+        result: List[Dict[str, Any]] = []
         for num in messages[0].split():
             _LOGGER.debug("Processing message number: %s", num)
 
-            typ, data = mail.fetch(num, "(RFC822)")
+            typ, data = mail.fetch(num, "(RFC822)")  # type: ignore[assignment]
             if typ != "OK":
                 _LOGGER.debug("Failed to fetch message %s: %s", num, typ)
                 continue
 
-            if not data or not isinstance(data[0], tuple):
+            if not data:
+                _LOGGER.debug("No data for msg %s", num)
+                continue
+
+            # Check if data[0] is tuple before accessing
+            first_item = data[0]
+            if not isinstance(first_item, tuple):
                 _LOGGER.debug("Unexpected fetch data format for msg %s: %s", num, data)
                 continue
 
-            payload = data[0][1]
+            if len(first_item) < 2:  # type: ignore[unreachable]
+                _LOGGER.debug("Incomplete fetch data for msg %s", num)
+                continue
+
+            payload = first_item[1]
             if not isinstance(payload, (bytes, bytearray)):
                 _LOGGER.debug("Skipping non-bytes payload for msg %s", num)
                 continue
@@ -195,7 +207,8 @@ def _check_imap_sync(
                     }
                 )
                 _LOGGER.debug("Added GPS request to processing queue")
-                # Mark the message as seen to avoid reprocessing it in future polling cycles
+                # Mark the message as seen to avoid reprocessing it in future
+                # polling cycles
                 try:
                     mail.store(num, "+FLAGS", "\\Seen")
                     _LOGGER.debug("Marked message %s as seen", num)
@@ -223,7 +236,8 @@ def _check_imap_sync(
 def extract_days_override(body: str) -> Optional[int]:
     """Extract days override from message body.
 
-    Looks for patterns like "5days", "5 days", "3day", "3 day", "0days", "current", "today" etc.
+    Looks for patterns like "5days", "5 days", "3day", "3 day", "0days",
+    "current", "today" etc.
     Returns the number of days (0-7) if found, otherwise None.
 
     Special values:
@@ -233,12 +247,14 @@ def extract_days_override(body: str) -> Optional[int]:
     - etc.
     """
     # First check for special keywords
-    if re.search(r"\b(current|today)\b", body, re.IGNORECASE):
-        _LOGGER.debug("Found special keyword 'current' or 'today', returning 0 days")
+    if re.search(r"\b(current|today|tonight)\b", body, re.IGNORECASE):
+        _LOGGER.debug(
+            "Found special keyword 'current', 'today', or 'tonight', returning 0 days"
+        )
         return 0
 
     # Pattern to match: number 0-7 followed by optional space and "day" or "days"
-    # Examples: "5days", "5 days", "3day", "3 day", "0days", "0 day", "7days", "7 days"
+    # Examples: "5days", "5 days", "3day", "3 day", "0days", "0 day", "7days"
     # Excludes negative numbers like "-1days" and numbers outside 0-7
     pattern = r"(?<![\d-])([0-7])\s*(?:day|days)\b"
     match = re.search(pattern, body, re.IGNORECASE)
@@ -276,10 +292,10 @@ def _safe_decode_payload(payload: Any) -> str:
 
     # Fallback: assume bytes-like – try UTF-8 first and ignore errors.
     try:
-        return payload.decode("utf-8", errors="ignore")
+        return payload.decode("utf-8", errors="ignore")  # type: ignore[no-any-return]
     except Exception:  # pragma: no cover – extremely rare encodings
         try:
-            return payload.decode(errors="ignore")  # Use system default
+            return payload.decode(errors="ignore")  # type: ignore[no-any-return]
         except Exception:
             # As a last resort, repr() keeps us from crashing the loop.
             return repr(payload)

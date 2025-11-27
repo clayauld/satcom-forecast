@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from .const import DEFAULT_POLLING_INTERVAL
-from .forecast_fetcher import fetch_forecast
+from .forecast_fetcher_api import fetch_forecast
 from .forecast_parser import format_forecast
 from .imap_handler import check_imap_for_gps
 from .notifier import send_forecast_email
@@ -24,18 +24,16 @@ from .split_util import split_message
 if TYPE_CHECKING:
     # Only needed for static analysis; HA is not installed in the test image.
     from homeassistant.helpers.update_coordinator import (
-        DataUpdateCoordinator as _HADataUpdateCoordinator,  # pragma: no cover
+        DataUpdateCoordinator as DataUpdateCoordinatorBase,  # pragma: no cover
     )
-
-    DataUpdateCoordinatorBase = _HADataUpdateCoordinator  # alias for typing
 else:  # Runtime import with graceful fallback
     try:
         from homeassistant.helpers.update_coordinator import (
-            DataUpdateCoordinator as DataUpdateCoordinatorBase,  # type: ignore
+            DataUpdateCoordinator as DataUpdateCoordinatorBase,
         )
     except ImportError:  # pragma: no cover
 
-        class DataUpdateCoordinatorBase:  # type: ignore
+        class DataUpdateCoordinatorBase:
             """Lightweight stub used when Home-Assistant is absent."""
 
             def __init__(
@@ -55,12 +53,15 @@ else:  # Runtime import with graceful fallback
 
 
 # Re-export under the public name expected by the rest of the module.
-DataUpdateCoordinator = DataUpdateCoordinatorBase  # type: ignore[var-annotated]
+if TYPE_CHECKING:
+    DataUpdateCoordinator = DataUpdateCoordinatorBase
+else:
+    DataUpdateCoordinator = DataUpdateCoordinatorBase  # type: ignore[misc,assignment]
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class SatcomForecastCoordinator(DataUpdateCoordinator):
+class SatcomForecastCoordinator(DataUpdateCoordinatorBase):
     """Periodically polls an IMAP inbox for GPS requests and dispatches NWS
     forecasts back to the requesting sender.
     """
@@ -132,7 +133,10 @@ class SatcomForecastCoordinator(DataUpdateCoordinator):
                 )
 
                 # Determine number of days to include
-                days = msg.get("days") or self.config.get("default_days", 3)
+                days = msg.get("days")
+                if days is None:
+                    days = self.config.get("default_days", 3)
+
                 _LOGGER.debug(
                     "Using %d days for forecast (override: %s, default: %s)",
                     days,
@@ -158,7 +162,7 @@ class SatcomForecastCoordinator(DataUpdateCoordinator):
                     )
                     _LOGGER.debug("Formatting forecast using format: %s", format_type)
 
-                    forecast = format_forecast(forecast_text, format_type, days)
+                    forecast = format_forecast(forecast_text, str(format_type), days)
                     _LOGGER.debug(
                         "Forecast formatted successfully, length: %d characters",
                         len(forecast),
@@ -246,7 +250,8 @@ class SatcomForecastCoordinator(DataUpdateCoordinator):
                         self._data["last_coordinates"] = f"{msg['lat']}, {msg['lon']}"
 
                         _LOGGER.info(
-                            "Forecast sent successfully to %s for coordinates %s, %s (%d parts)",
+                            "Forecast sent successfully to %s for "
+                            "coordinates %s, %s (%d parts)",
                             msg["sender"],
                             msg["lat"],
                             msg["lon"],

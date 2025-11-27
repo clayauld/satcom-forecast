@@ -78,6 +78,8 @@ pre-commit run --all-files
 
 ## Code Standards
 
+Please refer to our detailed [Testing and Linting Strategy](development/TESTING_AND_LINTING_STRATEGY.md) for a comprehensive overview of our tooling and reasoning.
+
 ### Python Style Guide
 
 We follow [PEP 8](https://www.python.org/dev/peps/pep-0008/) with some modifications:
