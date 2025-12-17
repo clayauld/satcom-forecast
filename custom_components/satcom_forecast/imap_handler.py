@@ -12,6 +12,14 @@ from typing import Any, Dict, List, Optional, Union, cast
 _LOGGER = logging.getLogger(__name__)
 
 
+def is_valid_email(email_address: str) -> bool:
+    """Validate email address format."""
+    # Simple but effective regex for email validation
+    # This allows for standard email formats while rejecting obvious garbage
+    pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+    return bool(re.match(pattern, email_address))
+
+
 async def check_imap_for_gps(
     host: str,
     port: int,
@@ -163,6 +171,14 @@ def _check_imap_sync(
             msg: Message = email.message_from_bytes(payload)
             sender_header = msg.get("From", "")
             from_email = parseaddr(sender_header)[1] if sender_header else "unknown"
+
+            # Validate sender email for security
+            if not is_valid_email(from_email):
+                _LOGGER.warning(
+                    "Skipping message from invalid email address: %s", from_email
+                )
+                continue
+
             _LOGGER.debug("Processing message from: %s", from_email)
 
             body = ""
