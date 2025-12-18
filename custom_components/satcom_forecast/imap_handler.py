@@ -11,6 +11,9 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 _LOGGER = logging.getLogger(__name__)
 
+# Security limit to prevent Denial of Service
+MAX_EMAIL_LIMIT = 10
+
 
 async def check_imap_for_gps(
     host: str,
@@ -20,12 +23,18 @@ async def check_imap_for_gps(
     folder: str = "INBOX",
     security: str = "SSL",
 ) -> List[Dict[str, Any]]:
+    # Redact username for logging
+    masked_user = (
+        f"{username[:3]}...@{username.split('@')[1]}"
+        if "@" in username and len(username) > 3
+        else "***"
+    )
     _LOGGER.debug(
         "Checking IMAP for GPS coordinates - Host: %s, Port: %s, User: %s, "
         "Folder: %s, Security: %s",
         host,
         port,
-        username,
+        masked_user,
         folder,
         security,
     )
@@ -80,7 +89,13 @@ def _check_imap_sync(
             mail = imaplib.IMAP4(host, port)
             _LOGGER.debug("IMAP unencrypted connection established successfully")
 
-        _LOGGER.debug("Attempting login for user: %s", username)
+        # Mask user in login log attempt
+        masked_user = (
+            f"{username[:3]}...@{username.split('@')[1]}"
+            if "@" in username and len(username) > 3
+            else "***"
+        )
+        _LOGGER.debug("Attempting login for user: %s", masked_user)
         mail.login(username, password)
         _LOGGER.debug("IMAP login successful")
 
@@ -129,11 +144,21 @@ def _check_imap_sync(
                 _LOGGER.error("Search error details: %s", messages)
             return []
 
-        message_count = len(messages[0].split()) if messages and messages[0] else 0
+        msg_nums = messages[0].split()
+        message_count = len(msg_nums) if messages and messages[0] else 0
         _LOGGER.debug("Found %d unread messages", message_count)
 
+        # Limit the number of messages to process to prevent DoS
+        if message_count > MAX_EMAIL_LIMIT:
+            _LOGGER.warning(
+                "Too many unread messages (%d). Limiting to %d to prevent overload.",
+                message_count,
+                MAX_EMAIL_LIMIT,
+            )
+            msg_nums = msg_nums[:MAX_EMAIL_LIMIT]
+
         result: List[Dict[str, Any]] = []
-        for num in messages[0].split():
+        for num in msg_nums:
             _LOGGER.debug("Processing message number: %s", num)
 
             typ, data = mail.fetch(num, "(RFC822)")  # type: ignore[assignment]
