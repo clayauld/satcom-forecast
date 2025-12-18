@@ -46,6 +46,13 @@ EVENT_TYPES = {
     "flood warning": ["flood warning", "flash flood warning"],
 }
 
+# Pre-compiled regex patterns for performance
+WIND_SPEED_PATTERN = re.compile(r"(\d+)")
+PERCENT_PATTERNS = [
+    re.compile(r"(\d+)\s*percent"),
+    re.compile(r"(\d+)%"),
+]
+
 
 def check_significant_wind(period: ForecastPeriod) -> bool:
     """
@@ -62,7 +69,7 @@ def check_significant_wind(period: ForecastPeriod) -> bool:
         # Extract all numeric values from wind speed string
         # This handles simple speeds "10 mph" and ranges "10 to 20 mph"
         # We check if ANY speed in the range meets the threshold
-        wind_matches = re.findall(r"(\d+)", period.wind_speed)
+        wind_matches = WIND_SPEED_PATTERN.findall(period.wind_speed)
         for match in wind_matches:
             if int(match) >= 15:
                 return True
@@ -70,7 +77,7 @@ def check_significant_wind(period: ForecastPeriod) -> bool:
     # Check wind gusts if available
     if period.wind_gust:
         # Extract all numeric values from wind gust string
-        gust_matches = re.findall(r"(\d+)", period.wind_gust)
+        gust_matches = WIND_SPEED_PATTERN.findall(period.wind_gust)
         for match in gust_matches:
             if int(match) >= 15:
                 return True
@@ -94,19 +101,13 @@ def infer_chance(event_type: str, forecast_text: str, period: ForecastPeriod) ->
     if event_type == "rain" and period.probability_of_precipitation is not None:
         return period.probability_of_precipitation
 
-    # Look for explicit percentages in forecast text
-    percent_patterns = [
-        r"(\d+)\s*percent",
-        r"(\d+)%",
-    ]
-
     # Track the best match (closest percentage to an event keyword)
     best_match = None
     best_distance = float("inf")
 
-    for pattern in percent_patterns:
+    for pattern in PERCENT_PATTERNS:
         # Use finditer to get match objects with positions
-        for match_obj in re.finditer(pattern, forecast_text):
+        for match_obj in pattern.finditer(forecast_text):
             percent_val = int(match_obj.group(1))
             match_pos = match_obj.start()
 
