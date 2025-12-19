@@ -11,6 +11,9 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 _LOGGER = logging.getLogger(__name__)
 
+# Limit the number of emails processed per run to prevent DoS/timeouts
+MAX_EMAIL_LIMIT = 10
+
 
 async def check_imap_for_gps(
     host: str,
@@ -21,11 +24,10 @@ async def check_imap_for_gps(
     security: str = "SSL",
 ) -> List[Dict[str, Any]]:
     _LOGGER.debug(
-        "Checking IMAP for GPS coordinates - Host: %s, Port: %s, User: %s, "
+        "Checking IMAP for GPS coordinates - Host: %s, Port: %s, User: ***, "
         "Folder: %s, Security: %s",
         host,
         port,
-        username,
         folder,
         security,
     )
@@ -80,7 +82,7 @@ def _check_imap_sync(
             mail = imaplib.IMAP4(host, port)
             _LOGGER.debug("IMAP unencrypted connection established successfully")
 
-        _LOGGER.debug("Attempting login for user: %s", username)
+        _LOGGER.debug("Attempting login for user: ***")
         mail.login(username, password)
         _LOGGER.debug("IMAP login successful")
 
@@ -129,11 +131,21 @@ def _check_imap_sync(
                 _LOGGER.error("Search error details: %s", messages)
             return []
 
-        message_count = len(messages[0].split()) if messages and messages[0] else 0
+        all_messages = messages[0].split() if messages and messages[0] else []
+        message_count = len(all_messages)
         _LOGGER.debug("Found %d unread messages", message_count)
 
+        # Apply limit to prevent DoS
+        if message_count > MAX_EMAIL_LIMIT:
+            _LOGGER.warning(
+                "Too many messages (%d), processing only first %d to prevent overload",
+                message_count,
+                MAX_EMAIL_LIMIT,
+            )
+            all_messages = all_messages[:MAX_EMAIL_LIMIT]
+
         result: List[Dict[str, Any]] = []
-        for num in messages[0].split():
+        for num in all_messages:
             _LOGGER.debug("Processing message number: %s", num)
 
             typ, data = mail.fetch(num, "(RFC822)")  # type: ignore[assignment]
@@ -163,7 +175,13 @@ def _check_imap_sync(
             msg: Message = email.message_from_bytes(payload)
             sender_header = msg.get("From", "")
             from_email = parseaddr(sender_header)[1] if sender_header else "unknown"
-            _LOGGER.debug("Processing message from: %s", from_email)
+            # Redact email for privacy in logs
+            redacted_email = (
+                f"{from_email[:3]}***@***{from_email.split('@')[-1]}"
+                if "@" in from_email
+                else "***"
+            )
+            _LOGGER.debug("Processing message from: %s", redacted_email)
 
             body = ""
             if msg.is_multipart():
