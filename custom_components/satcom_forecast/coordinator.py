@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, Dict, Optional
@@ -116,168 +117,177 @@ class SatcomForecastCoordinator(DataUpdateCoordinatorBase):
             self._data["gps_received_count"] += len(messages)
             _LOGGER.info("Found %d GPS requests to process", len(messages))
 
-        for i, msg in enumerate(messages):
-            _LOGGER.debug(
-                "Processing message %d/%d from %s with coordinates %s, %s",
-                i + 1,
-                len(messages),
-                msg.get("sender", "unknown"),
-                msg.get("lat"),
-                msg.get("lon"),
-            )
-
-            try:
-                # Fetch forecast using the dedicated module
-                _LOGGER.debug(
-                    "Fetching forecast for coordinates %s, %s", msg["lat"], msg["lon"]
-                )
-
-                # Determine number of days to include
-                days = msg.get("days")
-                if days is None:
-                    days = self.config.get("default_days", 3)
-
-                _LOGGER.debug(
-                    "Using %d days for forecast (override: %s, default: %s)",
-                    days,
-                    msg.get("days"),
-                    self.config.get("default_days", 3),
-                )
-                _LOGGER.debug(
-                    "Config default_days value: %s", self.config.get("default_days")
-                )
-                _LOGGER.debug("Message days override: %s", msg.get("days"))
-
-                forecast_text = await fetch_forecast(msg["lat"], msg["lon"], days)
-
-                if forecast_text and not forecast_text.startswith("NWS error"):
-                    _LOGGER.debug(
-                        "Forecast fetched successfully, length: %d characters",
-                        len(forecast_text),
-                    )
-
-                    # Format the forecast based on user preference
-                    format_type = msg.get("format") or self.config.get(
-                        "forecast_format", "summary"
-                    )
-                    _LOGGER.debug("Formatting forecast using format: %s", format_type)
-
-                    forecast = format_forecast(forecast_text, str(format_type), days)
-                    _LOGGER.debug(
-                        "Forecast formatted successfully, length: %d characters",
-                        len(forecast),
-                    )
-
-                    # Determine target device type and optional custom character limit
-                    device_type = self.config.get("device_type", "zoleo")
-                    # Character limit may come from YAML/ConfigEntry as a string;
-                    # attempt to cast to int and fall back to None if it fails.
-                    character_limit_raw = self.config.get("character_limit")
-                    try:
-                        character_limit = (
-                            int(character_limit_raw)
-                            if character_limit_raw is not None
-                            else None
-                        )
-                    except (TypeError, ValueError):
-                        _LOGGER.warning(
-                            "Invalid character_limit value '%s' (type %s); falling back to default",  # noqa: E501
-                            character_limit_raw,
-                            type(character_limit_raw).__name__,
-                        )
-                        character_limit = None
-
-                    _LOGGER.debug(
-                        "Using split_message with device_type='%s', character_limit=%s",
-                        device_type,
-                        character_limit,
-                    )
-
-                    # Pass parameters explicitly to avoid type mismatches
-                    message_parts = split_message(
-                        forecast,
-                        device_type=device_type,
-                        custom_limit=character_limit if character_limit else None,
-                    )
-                    _LOGGER.debug("Message split into %d parts", len(message_parts))
-
-                    # Send each part of the forecast
-                    success = True
-                    for i, part in enumerate(message_parts):
-                        _LOGGER.debug(
-                            "Sending part %d/%d to %s (length: %d chars)",
-                            i + 1,
-                            len(message_parts),
-                            msg["sender"],
-                            len(part),
-                        )
-
-                        part_success = await send_forecast_email(
-                            self.config["smtp_host"],
-                            self.config["smtp_port"],
-                            self.config["smtp_user"],
-                            self.config["smtp_pass"],
-                            msg["sender"],
-                            part,
-                            subject=(
-                                f"NWS Forecast Update ({i+1}/{len(message_parts)})"
-                                if len(message_parts) > 1
-                                else "NWSForecast Update"
-                            ),
-                        )
-                        if not part_success:
-                            success = False
-                            _LOGGER.error(
-                                "Failed to send part %d/%d to %s",
-                                i + 1,
-                                len(message_parts),
-                                msg["sender"],
-                            )
-                            break
-                        else:
-                            _LOGGER.debug(
-                                "Successfully sent part %d/%d to %s",
-                                i + 1,
-                                len(message_parts),
-                                msg["sender"],
-                            )
-
-                    if success:
-                        # Update tracking data
-                        self._data["last_forecast_time"] = datetime.now().isoformat()
-                        self._data["last_sender"] = msg["sender"]
-                        self._data["last_forecast"] = forecast
-                        self._data["last_coordinates"] = f"{msg['lat']}, {msg['lon']}"
-
-                        _LOGGER.info(
-                            "Forecast sent successfully to %s for "
-                            "coordinates %s, %s (%d parts)",
-                            msg["sender"],
-                            msg["lat"],
-                            msg["lon"],
-                            len(message_parts),
-                        )
-                        _LOGGER.debug("Updated coordinator data: %s", self._data)
-                    else:
-                        _LOGGER.error(
-                            "Failed to send forecast email to %s", msg["sender"]
-                        )
-                else:
-                    _LOGGER.error(
-                        "Failed to fetch forecast for coordinates %s, %s: %s",
-                        msg["lat"],
-                        msg["lon"],
-                        forecast_text,
-                    )
-
-            except Exception as e:
-                _LOGGER.error(
-                    "Forecast dispatch failed for %s: %s",
-                    msg.get("sender", "unknown"),
-                    e,
-                )
-                _LOGGER.debug("Exception details:", exc_info=True)
+        # Process all messages concurrently
+        tasks = [
+            self._process_message(msg, i, len(messages))
+            for i, msg in enumerate(messages)
+        ]
+        if tasks:
+            await asyncio.gather(*tasks)
 
         _LOGGER.debug("Coordinator update cycle completed")
         self.data = self._data.copy()
         return self.data
+
+    async def _process_message(
+        self, msg: Dict[str, Any], index: int, total: int
+    ) -> None:
+        """Process a single message: fetch forecast and send email."""
+        _LOGGER.debug(
+            "Processing message %d/%d from %s with coordinates %s, %s",
+            index + 1,
+            total,
+            msg.get("sender", "unknown"),
+            msg.get("lat"),
+            msg.get("lon"),
+        )
+
+        try:
+            # Fetch forecast using the dedicated module
+            _LOGGER.debug(
+                "Fetching forecast for coordinates %s, %s", msg["lat"], msg["lon"]
+            )
+
+            # Determine number of days to include
+            days = msg.get("days")
+            if days is None:
+                days = self.config.get("default_days", 3)
+
+            _LOGGER.debug(
+                "Using %d days for forecast (override: %s, default: %s)",
+                days,
+                msg.get("days"),
+                self.config.get("default_days", 3),
+            )
+            _LOGGER.debug(
+                "Config default_days value: %s", self.config.get("default_days")
+            )
+            _LOGGER.debug("Message days override: %s", msg.get("days"))
+
+            forecast_text = await fetch_forecast(msg["lat"], msg["lon"], days)
+
+            if forecast_text and not forecast_text.startswith("NWS error"):
+                _LOGGER.debug(
+                    "Forecast fetched successfully, length: %d characters",
+                    len(forecast_text),
+                )
+
+                # Format the forecast based on user preference
+                format_type = msg.get("format") or self.config.get(
+                    "forecast_format", "summary"
+                )
+                _LOGGER.debug("Formatting forecast using format: %s", format_type)
+
+                forecast = format_forecast(forecast_text, str(format_type), days)
+                _LOGGER.debug(
+                    "Forecast formatted successfully, length: %d characters",
+                    len(forecast),
+                )
+
+                # Determine target device type and optional custom character limit
+                device_type = self.config.get("device_type", "zoleo")
+                # Character limit may come from YAML/ConfigEntry as a string;
+                # attempt to cast to int and fall back to None if it fails.
+                character_limit_raw = self.config.get("character_limit")
+                try:
+                    character_limit = (
+                        int(character_limit_raw)
+                        if character_limit_raw is not None
+                        else None
+                    )
+                except (TypeError, ValueError):
+                    _LOGGER.warning(
+                        "Invalid character_limit value '%s' (type %s); falling back to default",  # noqa: E501
+                        character_limit_raw,
+                        type(character_limit_raw).__name__,
+                    )
+                    character_limit = None
+
+                _LOGGER.debug(
+                    "Using split_message with device_type='%s', character_limit=%s",
+                    device_type,
+                    character_limit,
+                )
+
+                # Pass parameters explicitly to avoid type mismatches
+                message_parts = split_message(
+                    forecast,
+                    device_type=device_type,
+                    custom_limit=character_limit if character_limit else None,
+                )
+                _LOGGER.debug("Message split into %d parts", len(message_parts))
+
+                # Send each part of the forecast
+                success = True
+                for i, part in enumerate(message_parts):
+                    _LOGGER.debug(
+                        "Sending part %d/%d to %s (length: %d chars)",
+                        i + 1,
+                        len(message_parts),
+                        msg["sender"],
+                        len(part),
+                    )
+
+                    part_success = await send_forecast_email(
+                        self.config["smtp_host"],
+                        self.config["smtp_port"],
+                        self.config["smtp_user"],
+                        self.config["smtp_pass"],
+                        msg["sender"],
+                        part,
+                        subject=(
+                            f"NWS Forecast Update ({i+1}/{len(message_parts)})"
+                            if len(message_parts) > 1
+                            else "NWSForecast Update"
+                        ),
+                    )
+                    if not part_success:
+                        success = False
+                        _LOGGER.error(
+                            "Failed to send part %d/%d to %s",
+                            i + 1,
+                            len(message_parts),
+                            msg["sender"],
+                        )
+                        break
+                    else:
+                        _LOGGER.debug(
+                            "Successfully sent part %d/%d to %s",
+                            i + 1,
+                            len(message_parts),
+                            msg["sender"],
+                        )
+
+                if success:
+                    # Update tracking data
+                    self._data["last_forecast_time"] = datetime.now().isoformat()
+                    self._data["last_sender"] = msg["sender"]
+                    self._data["last_forecast"] = forecast
+                    self._data["last_coordinates"] = f"{msg['lat']}, {msg['lon']}"
+
+                    _LOGGER.info(
+                        "Forecast sent successfully to %s for "
+                        "coordinates %s, %s (%d parts)",
+                        msg["sender"],
+                        msg["lat"],
+                        msg["lon"],
+                        len(message_parts),
+                    )
+                    _LOGGER.debug("Updated coordinator data: %s", self._data)
+                else:
+                    _LOGGER.error("Failed to send forecast email to %s", msg["sender"])
+            else:
+                _LOGGER.error(
+                    "Failed to fetch forecast for coordinates %s, %s: %s",
+                    msg["lat"],
+                    msg["lon"],
+                    forecast_text,
+                )
+
+        except Exception as e:
+            _LOGGER.error(
+                "Forecast dispatch failed for %s: %s",
+                msg.get("sender", "unknown"),
+                e,
+            )
+            _LOGGER.debug("Exception details:", exc_info=True)
